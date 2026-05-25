@@ -48,6 +48,9 @@ async function init() {
 
   // Carte
   initMap('map');
+  // Garantir l'affichage Leaflet même si le DOM n'est pas encore stable
+  setTimeout(() => invalidateMapSize(), 300);
+  setTimeout(() => invalidateMapSize(), 800);
 
   // Navigation onglets
   initNavTabs(onPanelChange);

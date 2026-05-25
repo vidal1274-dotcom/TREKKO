@@ -384,8 +384,12 @@ html, body {
    BLOC 06 — CARTE
    ========================================================= */
 #panel-map { position: relative; }
-#map-container { flex: 1; position: relative; }
-#map { width: 100%; height: 100%; }
+#map-container { flex: 1; position: relative; min-height: 0; }
+#map {
+  width: 100%;
+  height: 100%;
+  min-height: calc(100dvh - var(--header-height) - var(--nav-height) - var(--filters-height) - var(--location-bar-height));
+}
 
 #map-overlay-info {
   position: absolute;
