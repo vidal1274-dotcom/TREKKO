@@ -2,7 +2,7 @@
    BLOC 01 — IMPORTS PRINCIPAUX
    ========================================================= */
 import { loadSites, cacheSitesLocally, getDataStats, applyManualGpsCorrection, recalcDistances } from './data-loader.js';
-import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode } from './map.js';
+import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize } from './map.js';
 import { renderSiteMarkers, buildSiteBadges, focusOnSite } from './markers.js';
 import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilterChips, setProcheThreshold } from './filters.js';
 import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT } from './geolocation.js';
@@ -314,7 +314,9 @@ function initLocationBar() {
    BLOC 06 — PANNEAU CHANGEMENT
    ========================================================= */
 function onPanelChange(panelId) {
-  if (panelId === 'panel-map') fitBoundsToSites(_filteredSites);
+  if (panelId === 'panel-map') {
+    setTimeout(() => { invalidateMapSize(); fitBoundsToSites(_filteredSites); }, 50);
+  }
   if (panelId === 'panel-photos') updatePhotoPanel();
 }
 
@@ -531,14 +533,18 @@ function onWelcomeModeSelect(mode) {
     });
   }
 
-  if (mode.id === 'car') {
-    _filteredSites = sortSites([..._sites], 'distance');
-    renderAll();
-  } else if (mode.id === 'map' || mode.trackMode) {
-    fitBoundsToSites(_filteredSites);
-  } else if (mode.id === 'deals') {
-    renderEconomyPanel(getBestDeals(_filteredSites, 30));
-  }
+  // Laisser le DOM se mettre à jour avant d'agir sur la carte
+  setTimeout(() => {
+    if (mode.id === 'car') {
+      _filteredSites = sortSites([..._sites], 'distance');
+      renderAll();
+    } else if (mode.id === 'map' || mode.trackMode) {
+      invalidateMapSize();
+      fitBoundsToSites(_filteredSites);
+    } else if (mode.id === 'deals') {
+      renderEconomyPanel(getBestDeals(_filteredSites, 30));
+    }
+  }, 100);
 }
 
 /* =========================================================

@@ -36,6 +36,7 @@ export function initMap(containerId = 'map') {
 export function getMap() { return _map; }
 export function getMarkersLayer() { return _markersLayer; }
 export function getPhotoMarkersLayer() { return _photoMarkersLayer; }
+export function invalidateMapSize() { if (_map) _map.invalidateSize(); }
 
 /* =========================================================
    BLOC 02 — NAVIGATION CARTE
