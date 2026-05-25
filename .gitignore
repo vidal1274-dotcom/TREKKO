@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Node / NPM (si futur build)
+node_modules/
+
+# Données sensibles
+.env
+.env.local
+*.key
+*.pem
+
+# Photos et uploads locaux (non versionnés)
+backend/uploads/
+backend/thumbnails/
+data/photos/
+
+# Base de données locale
+backend/*.db
+backend/*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Logs
+*.log
+logs/
+
+# Caches
+.cache/

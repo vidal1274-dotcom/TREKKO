@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#e94560" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SortiesNîmes" />
+  <title>Mes Sorties Nîmes</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        crossorigin="" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     HEADER PRINCIPAL
+═══════════════════════════════════════════════ -->
+<header id="app-header">
+  <div class="header-left">
+    <span class="app-logo">🗺️</span>
+    <span class="app-title">Mes Sorties Nîmes</span>
+  </div>
+  <div class="header-center">
+    <div id="search-container">
+      <input type="search" id="global-search-input"
+             placeholder="Chercher : lieu, activité, budget, sans péage…"
+             autocomplete="off" autocorrect="off" spellcheck="false" />
+      <button id="search-clear-btn" class="btn-icon" aria-label="Effacer" style="display:none">✕</button>
+      <div id="search-suggestions" class="search-suggestions hidden"></div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button id="btn-network-status" class="btn-icon" title="Statut réseau">📶</button>
+    <button id="btn-vehicle-quick" class="btn-icon" title="Mon véhicule">🚗</button>
+    <button id="btn-surprise" class="btn-icon" title="Surprenez-moi !" aria-label="Idée surprise">🎲</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════
+     BANDEAU RÉSEAU
+═══════════════════════════════════════════════ -->
+<div id="network-banner" class="network-banner hidden"></div>
+
+<!-- ═══════════════════════════════════════════════
+     NAVIGATION PRINCIPALE (onglets)
+═══════════════════════════════════════════════ -->
+<nav id="main-nav">
+  <button class="nav-tab active" data-panel="panel-map">🗺️ Carte</button>
+  <button class="nav-tab" data-panel="panel-list">📋 Liste</button>
+  <button class="nav-tab" data-panel="panel-economy">💰 Bons plans</button>
+  <button class="nav-tab" data-panel="panel-photos">📷 Photos</button>
+  <button class="nav-tab" data-panel="panel-settings">⚙️ Paramètres</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════
+     FILTRES RAPIDES
+═══════════════════════════════════════════════ -->
+<div id="filters-bar">
+  <div class="filters-scroll">
+    <button class="filter-chip active" data-filter="all">Tous</button>
+    <button class="filter-chip" data-filter="gratuit">Gratuit</button>
+    <button class="filter-chip" data-filter="sans_peage">Sans péage</button>
+    <button class="filter-chip" data-filter="proche">Proche (&lt;30km)</button>
+    <button class="filter-chip" data-filter="nature">Nature</button>
+    <button class="filter-chip" data-filter="patrimoine">Patrimoine</button>
+    <button class="filter-chip" data-filter="famille">Famille</button>
+    <button class="filter-chip" data-filter="balade">Balade</button>
+    <button class="filter-chip" data-filter="marche">Marché</button>
+    <button class="filter-chip" data-filter="photo">📷 Photo</button>
+    <button class="filter-chip" data-filter="recharge">⚡ Recharge</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CONTENEUR PRINCIPAL
+═══════════════════════════════════════════════ -->
+<main id="app-main">
+
+  <!-- Panneau Carte -->
+  <section id="panel-map" class="panel active">
+    <div id="map-container">
+      <div id="map"></div>
+      <div id="map-overlay-info" class="hidden"></div>
+    </div>
+  </section>
+
+  <!-- Panneau Liste -->
+  <section id="panel-list" class="panel">
+    <div id="list-stats" class="list-stats"></div>
+    <div id="sites-list" class="sites-list"></div>
+  </section>
+
+  <!-- Panneau Bons Plans -->
+  <section id="panel-economy" class="panel">
+    <div id="economy-header">
+      <h2>💰 Bons plans économiques</h2>
+      <p class="subtitle">Sorties triées par rapport intérêt / prix</p>
+    </div>
+    <div id="economy-filters" class="economy-filters">
+      <button class="eco-filter active" data-eco="all">Tous</button>
+      <button class="eco-filter" data-eco="gratuit">Gratuits</button>
+      <button class="eco-filter" data-eco="proche">Proches</button>
+      <button class="eco-filter" data-eco="sans_peage">Sans péage</button>
+      <button class="eco-filter" data-eco="electrique">Électrique ✓</button>
+    </div>
+    <div id="economy-list" class="economy-list"></div>
+  </section>
+
+  <!-- Panneau Photos -->
+  <section id="panel-photos" class="panel">
+    <div class="panel-header">
+      <h2>📷 Photos géolocalisées</h2>
+      <div class="photo-actions">
+        <button id="btn-take-photo" class="btn-primary">📸 Prendre une photo</button>
+        <button id="btn-import-photo" class="btn-secondary">📁 Importer</button>
+        <button id="btn-sync-photos" class="btn-secondary">☁️ Sync NAS</button>
+      </div>
+    </div>
+    <div id="photo-sync-status" class="sync-status"></div>
+    <div id="photos-grid" class="photos-grid"></div>
+    <input type="file" id="photo-file-input" accept="image/*" capture="environment" style="display:none" multiple />
+  </section>
+
+  <!-- Panneau Paramètres -->
+  <section id="panel-settings" class="panel">
+    <div class="settings-container">
+
+      <!-- Profil véhicule -->
+      <div class="settings-section" id="section-vehicle">
+        <h3>🚗 Mon véhicule</h3>
+        <div class="vehicle-type-selector">
+          <button class="vtype-btn active" data-vtype="thermal">🔥 Thermique</button>
+          <button class="vtype-btn" data-vtype="electric">⚡ Électrique</button>
+          <button class="vtype-btn" data-vtype="hybrid">⚡🔥 Hybride</button>
+        </div>
+
+        <!-- Paramètres thermique -->
+        <div id="thermal-params" class="vehicle-params">
+          <label>Carburant
+            <select id="fuel-type">
+              <option value="essence">Essence</option>
+              <option value="diesel">Diesel</option>
+              <option value="hybrid_essence">Hybride essence</option>
+              <option value="hybrid_diesel">Hybride diesel</option>
+              <option value="gpl">GPL</option>
+            </select>
+          </label>
+          <label>Consommation (L/100 km)
+            <input type="number" id="thermal-consumption" min="2" max="30" step="0.1" value="6.5" />
+          </label>
+          <label>Prix carburant (€/L) — <span class="verify-tag">à vérifier</span>
+            <input type="number" id="fuel-price" min="0.5" max="5" step="0.01" placeholder="Ex: 1.85" />
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="avoid-tolls" checked /> Éviter les péages si possible
+          </label>
+        </div>
+
+        <!-- Paramètres électrique -->
+        <div id="electric-params" class="vehicle-params hidden">
+          <label>Consommation (kWh/100 km)
+            <input type="number" id="ev-consumption" min="5" max="40" step="0.5" value="17" />
+          </label>
+          <label>Mode de recharge
+            <select id="charge-mode">
+              <option value="home">Domicile</option>
+              <option value="public_charger">Borne extérieure</option>
+              <option value="mixed">Mixte</option>
+              <option value="free">Gratuite possible</option>
+            </select>
+          </label>
+          <label>Prix kWh domicile (€) — <span class="verify-tag">à vérifier</span>
+            <input type="number" id="home-kwh-price" min="0.05" max="2" step="0.01" placeholder="Ex: 0.18" />
+          </label>
+          <label>Prix kWh borne (€) — <span class="verify-tag">à vérifier</span>
+            <input type="number" id="public-kwh-price" min="0.1" max="2" step="0.01" placeholder="Ex: 0.45" />
+          </label>
+          <div id="mixed-charge-params">
+            <label>% recharge domicile
+              <input type="range" id="home-charge-ratio" min="0" max="100" value="70" />
+              <span id="home-charge-ratio-display">70%</span>
+            </label>
+          </div>
+          <label>Pertes recharge (%)
+            <input type="number" id="charging-loss" min="0" max="30" step="1" value="10" />
+          </label>
+        </div>
+
+        <label>Marge sécurité trajet (%)
+          <input type="number" id="safety-margin" min="0" max="30" step="1" value="10" />
+        </label>
+        <p class="info-disclaimer">⚠️ Valeurs indicatives. Ajustez selon votre véhicule et les prix réels.</p>
+        <button id="btn-save-vehicle" class="btn-primary">💾 Enregistrer mon véhicule</button>
+        <div id="vehicle-save-status" class="save-status"></div>
+      </div>
+
+      <!-- Vérification énergie -->
+      <div class="settings-section" id="section-energy-check">
+        <h3>⚡ Vérification énergie</h3>
+        <p class="info-disclaimer">Les prix changent régulièrement. Vérifiez avant chaque sortie.</p>
+        <div id="energy-verification-links" class="verification-links"></div>
+      </div>
+
+      <!-- Paramètres NAS -->
+      <div class="settings-section" id="section-nas">
+        <h3>💾 Serveur NAS (photos)</h3>
+        <label>URL NAS <span class="verify-tag">optionnel</span>
+          <input type="url" id="nas-url" placeholder="http://192.168.1.x:5000" />
+        </label>
+        <label>Clé API NAS
+          <input type="password" id="nas-api-key" placeholder="Votre clé API (stockée localement)" />
+        </label>
+        <button id="btn-test-nas" class="btn-secondary">🔌 Tester la connexion NAS</button>
+        <div id="nas-test-status" class="save-status"></div>
+        <button id="btn-save-nas" class="btn-primary">💾 Enregistrer</button>
+      </div>
+
+      <!-- Import / Export -->
+      <div class="settings-section">
+        <h3>📦 Import / Export données</h3>
+        <button id="btn-export-data" class="btn-secondary">⬇️ Exporter mes données</button>
+        <button id="btn-import-data" class="btn-secondary">⬆️ Importer des données</button>
+        <input type="file" id="import-data-input" accept=".json" style="display:none" />
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════
+     MODALE FICHE SITE
+═══════════════════════════════════════════════ -->
+<div id="site-detail-modal" class="modal hidden">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <button class="modal-close" id="modal-close-btn">✕</button>
+    <div id="site-detail-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODALE PROGRAMME JOURNÉE
+═══════════════════════════════════════════════ -->
+<div id="day-plan-modal" class="modal hidden">
+  <div class="modal-overlay"></div>
+  <div class="modal-content modal-wide">
+    <button class="modal-close" id="day-plan-close-btn">✕</button>
+    <div id="day-plan-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     TOAST NOTIFICATIONS
+═══════════════════════════════════════════════ -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════ -->
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<!-- exifr pour lecture GPS EXIF -->
+<script src="assets/vendor/exifr.min.js"></script>
+
+<!-- Modules JS (ESM) -->
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "Mes Sorties Nîmes",
+  "short_name": "SortiesNîmes",
+  "description": "Préparez vos sorties week-end autour de Nîmes : carte, budget, coût énergie, bons plans et photos.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1a1a2e",
+  "theme_color": "#e94560",
+  "lang": "fr",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "assets/screenshots/dashboard.png", "sizes": "1280x720", "type": "image/png" }
+  ],
+  "categories": ["travel", "lifestyle", "navigation"]
+}
