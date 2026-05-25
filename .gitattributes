@@ -1,0 +1,16 @@
+# Normalisation fins de ligne
+* text=auto
+*.js text eol=lf
+*.py text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.ps1 text eol=crlf
+*.sh text eol=lf
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.pdf binary
+*.db binary
