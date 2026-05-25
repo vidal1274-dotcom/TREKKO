@@ -1,7 +1,27 @@
 # Changelog — Mes Sorties Nîmes (Sortie_WE)
 
-## v1.0.0-stable-mvp _(à venir)_
+## v1.0.0-stable-mvp — 2026-05-25
 - Version MVP stable et complète.
+- 36 modules JavaScript modulaires (ESM).
+- Carte Leaflet interactive (OpenStreetMap).
+- Profil véhicule thermique / électrique / hybride.
+- Calcul coût énergie trajet (carburant ou recharge) avec marge de sécurité.
+- Comparaison thermique / électrique tous scénarios.
+- Moteur économie financière + score éco 0-100.
+- Barre de recherche globale intelligente (gratuit, sans péage, < X€, < X km...).
+- Budget estimatif complet (trajet + péage + parking + visites + repas).
+- Retours visiteurs : liens légaux vers sources publiques.
+- Score de fiabilité des informations.
+- Moteur "Me surprendre" avec critères économiques.
+- Programme de journée exportable.
+- Photos géolocalisées EXIF + stockage IndexedDB (aucune perte).
+- Sync NAS avec file d'attente persistante + retry.
+- Backend Flask NAS (SQLite, upload photos, health check).
+- Gestion réseau adaptative (offline / 2G / 3G / 4G / WiFi-5G).
+- PWA offline-first (Service Worker cache-first).
+- Convertisseur Excel → JSON (tools/convert_excel_to_json.py).
+- Script release PowerShell (scripts/git-release.ps1).
+- Support iPhone Safari + PC Chrome/Edge.
 
 ## v0.9.0-nas-sync _(à venir)_
 - Synchronisation photos vers NAS Flask/SQLite.
