@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS
    ========================================================= */
-import { getMarkersLayer, createSiteIcon, flyToSite } from './map.js';
+import { getMarkersLayer, createSiteIcon, getSiteStatusColor, flyToSite } from './map.js';
 import { formatCurrency, formatDistance, buildWazeLink, buildGoogleMapsLink } from './utils.js';
 import { setState } from './state.js';
 
@@ -42,17 +42,28 @@ export function renderSiteMarkers(sites, onSiteClick) {
    ========================================================= */
 function buildSiteTooltipHtml(site) {
   const dist = site.distance_km != null ? `${site.distance_km} km` : '';
-  const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratu');
+  const color = getSiteStatusColor(site);
+  const isFerme  = (site.statut || '').toLowerCase().includes('ferm');
+  const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratuit');
   const sansPeage = site.sans_peage || (site.vigilance || '').toLowerCase().includes('sans p');
+
+  const statusLabel = isFerme
+    ? '<span style="color:#e74c3c;font-weight:800">🔴 Fermé</span>'
+    : isGratuit
+      ? '<span style="color:#2ecc71;font-weight:800">🟢 Gratuit</span>'
+      : '<span style="color:#f5a623;font-weight:800">🟠 Payant</span>';
+
   const tags = [
-    isGratuit ? '<span style="color:#2ecc71;font-weight:700">Gratuit</span>' : null,
+    statusLabel,
     sansPeage ? '<span style="color:#5dade2">Sans péage</span>' : null,
     site.eco_score != null ? `<span style="color:#2ecc71">🌿 ${site.eco_score}/100</span>` : null,
+    site.tarif_verifie ? '<span style="color:#7fb3d3">✓ Prix vérifié</span>' : null,
   ].filter(Boolean).join(' · ');
 
-  return `<div style="font-weight:800;font-size:14px;margin-bottom:3px">${site.destination || 'Site'}</div>
-    <div style="font-size:12px;color:#a0a0b0;margin-bottom:4px">${site.secteur || ''} ${dist ? '· ' + dist : ''}</div>
-    ${tags ? `<div style="font-size:12px">${tags}</div>` : ''}`;
+  return `<div style="font-weight:800;font-size:14px;margin-bottom:3px;color:${color}">${site.destination || 'Site'}</div>
+    <div style="font-size:12px;color:#a0a0b0;margin-bottom:5px">${site.secteur || ''} ${dist ? '· ' + dist : ''}</div>
+    <div style="font-size:12px;line-height:1.6">${tags}</div>
+    ${site.budget_indicatif ? `<div style="font-size:11px;color:#888;margin-top:4px;max-width:220px;white-space:normal">${site.budget_indicatif.substring(0,80)}…</div>` : ''}`;
 }
 
 /* =========================================================

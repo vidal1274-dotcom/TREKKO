@@ -1,0 +1,24 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "Sortie_WE — Mes Sorties Nîmes"
+    }
+  ],
+  "settings": {
+    "window.title": "Sortie_WE — Mes Sorties Nîmes",
+    "explorer.compactFolders": false,
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "mhutchie.git-graph",
+      "eamodio.gitlens",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint"
+    ]
+  }
+}

@@ -57,9 +57,16 @@ export function clearPhotoMarkers() {
 /* =========================================================
    BLOC 04 — ICÔNES PERSONNALISÉES
    ========================================================= */
+export function getSiteStatusColor(site) {
+  const statut = (site.statut || '').toLowerCase();
+  const budget = (site.budget_indicatif || '').toLowerCase();
+  if (statut === 'fermé' || statut.includes('ferm')) return '#e74c3c';
+  if (site.gratuit || budget.includes('gratuit')) return '#27ae60';
+  return '#f5a623';
+}
+
 export function createSiteIcon(site) {
-  const isGratuit = site.gratuit || (site.budget_indicatif||'').toLowerCase().includes('gratu');
-  const color = isGratuit ? '#27ae60' : site.distance_km < 30 ? '#3498db' : '#e94560';
+  const color = getSiteStatusColor(site);
   const emoji = getSiteEmoji(site);
   return L.divIcon({
     html: `<div style="background:${color};border-radius:50% 50% 50% 0;width:32px;height:32px;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">

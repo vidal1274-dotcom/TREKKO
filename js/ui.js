@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS
    ========================================================= */
-import { buildSiteBadges } from './markers.js';
+import { buildSiteBadges, getSiteStatusColor } from './markers.js';
 import { formatDistance, formatCurrency, createElement } from './utils.js';
 
 /* =========================================================
@@ -78,6 +78,9 @@ function getSiteTypeMeta(site) {
 function buildSiteCard(site, vehicleProfile) {
   const badges = buildSiteBadges(site);
   const meta   = getSiteTypeMeta(site);
+  const statusColor = getSiteStatusColor(site);
+  const isFerme  = (site.statut || '').toLowerCase().includes('ferm');
+  const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratuit');
   const distStr = site.distance_km != null ? `${site.distance_km} km` : '—';
   let budgetStr = '';
   if (site.budget_min != null) {
@@ -94,23 +97,28 @@ function buildSiteCard(site, vehicleProfile) {
   const ecoStr = site.eco_score != null
     ? `<span class="site-eco-pill">🌿 ${site.eco_score}</span>` : '';
 
+  const fermeBadge = isFerme ? '<span class="badge badge-danger">🔴 Fermé</span>' : '';
+  const tarifVerifBadge = site.tarif_verifie ? '<span class="badge badge-info" title="Prix vérifié sur source officielle">✓ Prix vérifié</span>' : '';
+
   const card = createElement('div', 'site-card', `
-    <div class="site-card-icon">${meta.emoji}</div>
+    <div class="site-card-icon" style="background:${statusColor}18;border:1.5px solid ${statusColor}40">${meta.emoji}</div>
     <div class="site-card-body">
       <div class="site-card-header">
-        <span class="site-name">${site.destination || site.nom || 'Site'}</span>
+        <span class="site-name" style="${isFerme ? 'opacity:0.5;text-decoration:line-through' : ''}">${site.destination || site.nom || 'Site'}</span>
         <span class="site-dist-pill">${distStr}</span>
       </div>
       <div class="site-sector">${meta.label}</div>
-      <div class="site-badges">${badges}</div>
+      <div class="site-badges">${fermeBadge}${badges}${tarifVerifBadge}</div>
       ${site.programme_court ? `<div class="site-summary">${site.programme_court.substring(0, 95)}…</div>` : ''}
       <div class="site-card-footer">
-        <span class="site-budget-tag">${budgetStr}</span>
+        <span class="site-budget-tag" style="color:${statusColor}">${budgetStr}</span>
         ${energyStr}
         ${ecoStr}
       </div>
     </div>`);
   card.dataset.type = meta.type;
+  card.style.setProperty('--card-accent', statusColor);
+  if (isFerme) card.style.opacity = '0.65';
   return card;
 }
 
