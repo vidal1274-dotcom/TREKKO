@@ -146,7 +146,7 @@ async function init() {
 
   // PWA service worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('./service-worker.js')
       .then(() => console.log('[app] Service Worker enregistré'))
       .catch(e => console.warn('[app] Service Worker non enregistré', e));
   }
