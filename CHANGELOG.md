@@ -1,5 +1,12 @@
 # Changelog — Mes Sorties Nîmes (Sortie_WE)
 
+## v1.2.0-builtin-dataset — 2026-05-25
+- Dataset intégré : 30 sites réels autour de Nîmes avec GPS complets.
+- Aucune dépendance à un fichier Excel — app 100% autonome.
+- Sites couvrant : villages/marchés, nature/randonnée, mer/plage, patrimoine, grottes, caves.
+- Distances de 8 km (Gallargues) à 80 km (Cirque de Navacelles).
+- Git Graph installé dans VS Code (.vscode/extensions.json).
+
 ## v1.0.0-stable-mvp — 2026-05-25
 - Version MVP stable et complète.
 - 36 modules JavaScript modulaires (ESM).
