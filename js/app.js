@@ -80,6 +80,10 @@ async function startApp() {
 
   _upd('2/6 map init…');
   initMap('map');
+  setTimeout(() => {
+    const m = document.getElementById('map');
+    _upd('map: ' + (m ? m.clientWidth+'x'+m.clientHeight : 'introuvable'));
+  }, 600);
   setTimeout(() => invalidateMapSize(), 300);
   setTimeout(() => invalidateMapSize(), 800);
 
