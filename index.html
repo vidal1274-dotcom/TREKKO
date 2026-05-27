@@ -418,61 +418,21 @@
 <div id="toast-container" aria-live="polite"></div>
 
 <!-- ═══════════════════════════════════════════════
-     ÉCRAN DE CHARGEMENT (visible immédiatement)
-═══════════════════════════════════════════════ -->
-<div id="app-boot" style="position:fixed;inset:0;background:#1a1b2e;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99990;gap:12px">
-  <div style="font-size:56px">🗺️</div>
-  <div style="color:#e94560;font-size:26px;font-weight:bold;letter-spacing:2px">TREKKO</div>
-  <div id="app-boot-msg" style="color:#7a7d99;font-size:13px">Chargement…</div>
-  <div id="app-boot-err" style="display:none;margin-top:16px;padding:14px 16px;background:#e74c3c22;border:1px solid #e74c3c44;border-radius:10px;color:#e94560;font-size:11px;max-width:92vw;word-break:break-all;white-space:pre-wrap;text-align:left"></div>
-</div>
-
-<!-- ═══════════════════════════════════════════════
      SCRIPTS
 ═══════════════════════════════════════════════ -->
 <!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- exifr pour lecture GPS EXIF -->
 <script src="assets/vendor/exifr.min.js"></script>
 
-<!-- Diagnostic erreurs JS/modules -->
-<script>
-(function(){
-  var errors = [];
-  function showErr(msg) {
-    var e = document.getElementById('app-boot-err');
-    var m = document.getElementById('app-boot-msg');
-    if (e) { e.style.display='block'; e.textContent = msg; }
-    if (m) m.textContent = 'Erreur de démarrage';
-  }
-  window.addEventListener('error', function(e) {
-    var msg = '⚠️ Erreur JS\n' + (e.message||'(vide)') + '\n' + ((e.filename||'').split('/').pop()||'?') + ':' + (e.lineno||0) + '\nURL: ' + location.href;
-    errors.push(msg);
-    showErr(msg);
-    var d = document.getElementById('critical-error');
-    if (d) { d.style.display='block'; d.textContent = msg; }
-  });
-  window.addEventListener('unhandledrejection', function(e) {
-    var msg = '⚠️ Erreur module\n' + (e.reason||'(vide)') + '\nURL: ' + location.href;
-    errors.push(msg);
-    showErr(msg);
-    var d = document.getElementById('critical-error');
-    if (d) { d.style.display='block'; d.textContent = msg; }
-  });
-  // Timeout 10s : si l'app ne démarre pas, afficher diagnostic
-  setTimeout(function() {
-    var boot = document.getElementById('app-boot');
-    if (boot && boot.style.display !== 'none') {
-      var info = 'L\'app n\'a pas démarré en 10s\n\nURL: ' + location.href + '\nSW: ' + ('serviceWorker' in navigator ? 'supporté' : 'non supporté') + '\nModule: ' + (typeof Promise !== 'undefined' ? 'ok' : 'non supporté') + (errors.length ? '\n\nErreur:\n' + errors.join('\n') : '\n\nAucune erreur JS détectée — vérifiez la console du navigateur');
-      showErr(info);
-    }
-  }, 10000);
-})();
-</script>
 <div id="critical-error" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#e74c3c;color:#fff;padding:12px;font-size:13px;z-index:99999;word-break:break-all;white-space:pre-wrap"></div>
+<script>
+window.addEventListener('error',function(e){var d=document.getElementById('critical-error');if(d){d.style.display='block';d.textContent='JS: '+(e.message||'?')+' '+((e.filename||'').split('/').pop())+':'+e.lineno;}});
+window.addEventListener('unhandledrejection',function(e){var d=document.getElementById('critical-error');if(d){d.style.display='block';d.textContent='Module: '+(e.reason||'?');}});
+</script>
 
 <!-- Modules JS (ESM) -->
-<script type="module" src="js/app.js?v=6"></script>
+<script type="module" src="js/app.js?v=7"></script>
 
 </body>
 </html>

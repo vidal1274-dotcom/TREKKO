@@ -51,54 +51,25 @@ let _originCoords  = null; // {lat, lon} — null = UCHAUD_COORDS
 /* =========================================================
    BLOC 03 — INITIALISATION PRINCIPALE
    ========================================================= */
-function _dbg(step) {
-  try {
-    let el = document.getElementById('_dbg_bar');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = '_dbg_bar';
-      el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:#1a1b2e;color:#e94560;padding:6px 10px;font:12px monospace;text-align:center;pointer-events:none';
-      document.body.appendChild(el);
-    }
-    el.textContent = '⚙️ ' + step;
-  } catch(e2) {}
-}
-
 async function init() {
-  _dbg('init');
-  // Garder le boot overlay jusqu'à ce que l'app soit prête
-  const bootEl = document.getElementById('app-boot');
-
-  // Auth en premier — tout le reste attend la connexion
   initAuthScreen(async (user) => {
-    _dbg('auth ok');
     const logoutBtn = document.getElementById('btn-logout');
     if (logoutBtn) {
       logoutBtn.classList.remove('hidden');
-      logoutBtn.title = `Connecté : ${user.username} — Cliquer pour se déconnecter`;
+      logoutBtn.title = `${user.username}`;
       logoutBtn.textContent = `👤 ${user.username}`;
       logoutBtn.addEventListener('click', () => { logout(); location.reload(); });
     }
-    try {
-      await startApp();
-      _dbg('ok');
-      setTimeout(() => { try { document.getElementById('_dbg_bar')?.remove(); } catch(e){} }, 3000);
-    } catch(err) {
-      _dbg('ERREUR: ' + err.message);
+    try { await startApp(); } catch(err) {
       const d = document.getElementById('critical-error');
-      if (d) { d.style.display = 'block'; d.textContent = '⚠️ startApp: ' + err.message + '\n' + (err.stack||''); }
-    } finally {
-      if (bootEl) bootEl.style.display = 'none';
+      if (d) { d.style.display='block'; d.textContent='Erreur: '+err.message; }
     }
   });
 }
 
 async function startApp() {
-  _dbg('réseau...');
   initNetworkManager();
   initNetworkUI();
-
-  _dbg('carte...');
   initMap('map');
   // Garantir l'affichage Leaflet même si le DOM n'est pas encore stable
   setTimeout(() => invalidateMapSize(), 300);
@@ -112,7 +83,6 @@ async function startApp() {
   applyVehicleToUI(_vehicleProfile);
   initVehicleSettingsUI();
 
-  _dbg('sites...');
   showLoading('sites-list', 'Chargement des sites…');
   try {
     _sites = await loadSites();
@@ -147,7 +117,6 @@ async function startApp() {
   // Barre localisation + slider distance
   initLocationBar();
 
-  _dbg('welcome...');
   initWelcomeScreen(onWelcomeModeSelect);
   switchToPanel('panel-map');
   setTimeout(() => { invalidateMapSize(); fitBoundsToSites(_filteredSites); }, 200);
