@@ -185,13 +185,6 @@ async function startApp() {
   window.__trackGoogleSearch = (label, url) => addGoogleSearchToHistory(decodeURIComponent(label), url);
   window.__exportDayPlan = (format) => showToast('Export programme — fonctionnalité complète disponible dans les prochaines versions.', 'info');
 
-  // PWA service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log('[app] Service Worker enregistré'))
-      .catch(e => console.warn('[app] Service Worker non enregistré', e));
-  }
-
   // Fermeture modales
   document.getElementById('modal-close-btn')?.addEventListener('click', closeSiteDetail);
   document.getElementById('day-plan-close-btn')?.addEventListener('click', () => {

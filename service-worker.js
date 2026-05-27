@@ -1,16 +1,8 @@
-/* =========================================================
-   SERVICE WORKER v8 — RESET COMPLET
-   Supprime tous les anciens caches (chemins absolus incorrects
-   pour GitHub Pages /Sortie_WE/) et passe les requêtes au réseau.
-   ========================================================= */
-const CACHE_NAME = 'trekko-v8';
+/* SERVICE WORKER v9 — supprime tous les caches, aucune interception réseau */
+const CACHE_NAME = 'trekko-v9';
 
-// Installe immédiatement sans attendre
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
+self.addEventListener('install', () => { self.skipWaiting(); });
 
-// Active et SUPPRIME TOUS les anciens caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -19,12 +11,4 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Passe toutes les requêtes au réseau sans interception
-// (restaure le comportement normal du navigateur)
-self.addEventListener('fetch', () => {
-  // Pas d'interception — le navigateur gère directement
-});
-
-self.addEventListener('message', event => {
-  if (event.data === 'skipWaiting') self.skipWaiting();
-});
+/* Pas de fetch handler → toutes les requêtes passent au réseau directement */
