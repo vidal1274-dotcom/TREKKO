@@ -360,7 +360,7 @@ function initLocationBar() {
 /* =========================================================
    BLOC 06 — PANNEAU CHANGEMENT
    ========================================================= */
-function onPanelChange(panelId) {
+async function onPanelChange(panelId) {
   if (panelId === 'panel-map') {
     setTimeout(() => { invalidateMapSize(); fitBoundsToSites(_filteredSites); }, 50);
   }
