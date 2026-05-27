@@ -1,8 +1,9 @@
 {
   "name": "TREKKO",
   "short_name": "TREKKO",
-  "description": "TREKKO — Explorez, tracez, vivez vos aventures.",,
-  "start_url": "/",
+  "description": "TREKKO — Explorez, tracez, vivez vos aventures.",
+  "start_url": "/TREKKO/",
+  "scope": "/TREKKO/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#1a1a2e",
