@@ -114,7 +114,15 @@ export function initWelcomeScreen(onModeSelect) {
   // Bouton retour accueil (header)
   document.getElementById('btn-welcome-home')?.addEventListener('click', showWelcomeScreen);
 
-  showWelcomeScreen();
+  // N'afficher l'écran d'accueil QUE si l'utilisateur n'a jamais choisi de mode
+  const lastMode = localStorage.getItem(LS_KEY_LAST_MODE);
+  if (!lastMode) {
+    showWelcomeScreen();
+  } else {
+    // Reprendre directement le dernier mode sans afficher l'écran
+    const mode = MODES.find(m => m.id === lastMode) || MODES.find(m => m.id === 'map');
+    if (onModeSelect && mode) onModeSelect(mode);
+  }
 }
 
 export function showWelcomeScreen() {
