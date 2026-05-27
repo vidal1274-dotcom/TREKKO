@@ -52,6 +52,10 @@ let _originCoords  = null; // {lat, lon} — null = UCHAUD_COORDS
    BLOC 03 — INITIALISATION PRINCIPALE
    ========================================================= */
 async function init() {
+  // Cacher l'écran de boot dès que JS démarre
+  const bootEl = document.getElementById('app-boot');
+  if (bootEl) bootEl.style.display = 'none';
+
   // Auth en premier — tout le reste attend la connexion
   initAuthScreen(async (user) => {
     const logoutBtn = document.getElementById('btn-logout');
