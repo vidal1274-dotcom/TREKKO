@@ -17,7 +17,6 @@ export async function renderPhotoMarkers(onPhotoClick) {
 
   withGps.forEach(photo => {
     const marker = L.marker([photo.lat, photo.lon], { icon: createPhotoIcon() });
-    marker.bindPopup(buildPhotoPopupHtml(photo), { maxWidth: 220 });
     if (onPhotoClick) marker.on('click', () => onPhotoClick(photo));
     layer.addLayer(marker);
   });

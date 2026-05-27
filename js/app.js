@@ -199,12 +199,7 @@ function renderAll() {
   });
   const bestDeals = getBestDeals(_filteredSites, 30);
   renderEconomyPanel(bestDeals);
-  renderPhotoMarkers((photo) => {
-    if (photo.site_id) {
-      const site = _sites.find(s => s.id === photo.site_id);
-      if (site) openSiteDetail(site, _vehicleProfile);
-    }
-  });
+  renderPhotoMarkers((photo) => openPhotoFullscreen(photo));
 }
 
 /* =========================================================
@@ -566,7 +561,28 @@ function renderEnergyVerificationLinks() {
 }
 
 /* =========================================================
-   BLOC 10b — SÉLECTION MODE ACCUEIL
+   BLOC 10b — VISIONNEUSE PHOTO PLEIN ÉCRAN
+   ========================================================= */
+function openPhotoFullscreen(photo) {
+  const src = photo.thumbnail;
+  if (!src) return;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  const img = document.createElement('img');
+  img.src = src;
+  img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;touch-action:pinch-zoom';
+  const info = document.createElement('div');
+  info.style.cssText = 'position:absolute;bottom:0;left:0;right:0;padding:12px 16px;background:linear-gradient(transparent,rgba(0,0,0,0.75));color:#fff;font-size:13px;font-family:sans-serif;pointer-events:none';
+  const date = photo.taken_at ? new Date(photo.taken_at).toLocaleDateString('fr-FR') : '';
+  info.textContent = (photo.filename || '') + (date ? ' — ' + date : '');
+  overlay.appendChild(img);
+  overlay.appendChild(info);
+  overlay.addEventListener('click', () => overlay.remove());
+  document.body.appendChild(overlay);
+}
+
+/* =========================================================
+   BLOC 10c — SÉLECTION MODE ACCUEIL
    ========================================================= */
 function onWelcomeModeSelect(mode) {
   if (!mode) return;
