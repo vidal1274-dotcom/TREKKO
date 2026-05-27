@@ -116,6 +116,7 @@ async function startApp() {
 
   // Enregistrement de parcours GPS
   initTrackingUI();
+  initRunningScreen();
 
   // Bascule couche carte
   document.getElementById('btn-map-layer')?.addEventListener('click', () => {
@@ -561,6 +562,93 @@ function renderEnergyVerificationLinks() {
 }
 
 /* =========================================================
+   BLOC 10a — RUNNING SCREEN
+   ========================================================= */
+let _rsInterval  = null;
+let _rsStartTime = null;
+
+function initRunningScreen() {
+  document.getElementById('btn-rs-back')?.addEventListener('click', () => {
+    document.getElementById('running-screen')?.classList.add('hidden');
+  });
+
+  document.getElementById('btn-rs-toggle')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-rs-toggle');
+    if (isTracking()) {
+      clearInterval(_rsInterval); _rsInterval = null;
+      const stat = getLiveStats();
+      const sid  = await stopTracking();
+      _rsStartTime = null;
+      await _loadCarnet();
+      if (sid && stat.calories > 0 && _saveJournalToSession)
+        await _saveJournalToSession(sid, { final_calories: stat.calories });
+      clearTrack();
+      btn.textContent = '▶  DÉMARRER';
+      btn.classList.remove('rs-stop');
+      _rsResetMetrics();
+      showRunSummaryWithJournal(stat, 'running', 20,
+        parseInt(localStorage.getItem('trekko_weight_kg') || '70', 10), sid);
+    } else {
+      const label = `🏃 Course — ${new Date().toLocaleDateString('fr-FR')}`;
+      await startTracking(label, false, 'running', 20,
+        parseInt(localStorage.getItem('trekko_weight_kg') || '70', 10));
+      _rsStartTime = Date.now();
+      btn.textContent = '⏹  STOP';
+      btn.classList.add('rs-stop');
+      _rsInterval = setInterval(_rsUpdate, 1000);
+    }
+  });
+}
+
+function _rsResetMetrics() {
+  ['rs-timer','rs-distance','rs-pace','rs-speed','rs-elev','rs-calories'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = id === 'rs-timer' ? '0:00' : id === 'rs-distance' ? '0.00' : '—';
+  });
+  const w = document.getElementById('rs-water'); if (w) w.textContent = '💧 —';
+}
+
+function _rsFormatTimer(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+function _rsFormatPace(p) {
+  if (!p || p > 60) return '—';
+  return `${Math.floor(p)}'${String(Math.round((p % 1) * 60)).padStart(2,'0')}"`;
+}
+
+function _rsUpdate() {
+  if (!_rsStartTime) return;
+  const stats = getLiveStats();
+  const dur   = Date.now() - _rsStartTime;
+  const durMin = dur / 60000;
+  const wt    = parseInt(localStorage.getItem('trekko_weight_kg') || '70', 10);
+  const water = calculateWaterNeeds('running', durMin, 20);
+
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('rs-timer',    _rsFormatTimer(dur));
+  set('rs-distance', stats.distanceKm.toFixed(2));
+  set('rs-pace',     _rsFormatPace(stats.paceMinKm));
+  set('rs-speed',    stats.speedKmh.toFixed(1));
+  set('rs-elev',     `+${stats.elevGainM}`);
+  set('rs-calories', stats.calories || 0);
+  set('rs-water',    `💧 ${water.mlPerHour} mL/h`);
+
+  if (stats.autoPaused) {
+    const d = document.getElementById('rs-distance');
+    if (d) d.style.opacity = '0.5';
+  }
+}
+
+function showRunningScreen() {
+  switchToPanel('panel-map');
+  setTimeout(() => invalidateMapSize(), 150);
+  document.getElementById('running-screen')?.classList.remove('hidden');
+}
+
+/* =========================================================
    BLOC 10b — VISIONNEUSE PHOTO PLEIN ÉCRAN
    ========================================================= */
 function openPhotoFullscreen(photo) {
@@ -586,6 +674,7 @@ function openPhotoFullscreen(photo) {
    ========================================================= */
 function onWelcomeModeSelect(mode) {
   if (!mode) return;
+  if (mode.id === 'running') { showRunningScreen(); return; }
   switchToPanel(mode.panel);
 
   if (mode.trackMode) {

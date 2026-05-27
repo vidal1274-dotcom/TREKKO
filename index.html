@@ -385,6 +385,37 @@
 </main>
 
 <!-- ═══════════════════════════════════════════════
+     RUNNING SCREEN (style Strava / Adidas)
+═══════════════════════════════════════════════ -->
+<div id="running-screen" class="hidden">
+  <div class="rs-handle"></div>
+  <div class="rs-header">
+    <button id="btn-rs-back" class="rs-icon-btn">✕</button>
+    <div class="rs-title">🏃 COURSE</div>
+    <div class="rs-icon-btn" style="visibility:hidden">·</div>
+  </div>
+  <div class="rs-timer" id="rs-timer">0:00</div>
+  <div class="rs-main">
+    <div class="rs-metric-block">
+      <div class="rs-big-val" id="rs-distance">0.00</div>
+      <div class="rs-big-lbl">DISTANCE (km)</div>
+    </div>
+    <div class="rs-sep"></div>
+    <div class="rs-metric-block">
+      <div class="rs-big-val" id="rs-pace">—</div>
+      <div class="rs-big-lbl">ALLURE (min/km)</div>
+    </div>
+  </div>
+  <div class="rs-secondary">
+    <div class="rs-sm"><div class="rs-sm-val" id="rs-speed">0.0</div><div class="rs-sm-lbl">km/h</div></div>
+    <div class="rs-sm"><div class="rs-sm-val" id="rs-elev">+0</div><div class="rs-sm-lbl">m D+</div></div>
+    <div class="rs-sm"><div class="rs-sm-val" id="rs-calories">0</div><div class="rs-sm-lbl">kcal</div></div>
+  </div>
+  <div class="rs-water" id="rs-water">💧 —</div>
+  <button id="btn-rs-toggle" class="rs-btn-start">▶&nbsp;&nbsp;DÉMARRER</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
      MODALE FICHE SITE
 ═══════════════════════════════════════════════ -->
 <div id="site-detail-modal" class="modal hidden">
@@ -450,7 +481,7 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 </script>
 
 <!-- Modules JS (ESM) -->
-<script type="module" src="js/app.js?v=17"></script>
+<script type="module" src="js/app.js?v=18"></script>
 
 </body>
 </html>
