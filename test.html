@@ -3,38 +3,70 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Test TREKKO</title>
+  <title>TREKKO — Nettoyage</title>
   <style>
-    body{margin:0;background:#0d0f1a;color:#eaeaf0;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;text-align:center;padding:20px}
-    h1{color:#e94560;font-size:32px}
-    .ok{background:#2ecc7133;border:1px solid #2ecc71;border-radius:10px;padding:12px 24px;font-size:16px}
-    .info{font-size:12px;color:#7a7d99;max-width:90vw;word-break:break-all}
+    body{margin:0;background:#0d0f1a;color:#eaeaf0;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;text-align:center;padding:20px}
+    h1{color:#e94560;font-size:28px;margin:0}
+    .box{background:#1a1f3a;border:1px solid #2ecc71;border-radius:12px;padding:16px 28px;font-size:15px;max-width:90vw}
+    .ok{color:#2ecc71;font-size:18px}
+    .countdown{font-size:40px;font-weight:bold;color:#e94560}
+    .info{font-size:12px;color:#7a7d99}
   </style>
 </head>
 <body>
   <h1>🗺️ TREKKO</h1>
-  <div class="ok">✅ HTML + CSS OK</div>
-  <div class="ok" id="js-ok" style="display:none">✅ JavaScript OK</div>
-  <div class="info" id="info">Chargement JS...</div>
+  <div class="box">
+    <div class="ok" id="msg">⏳ Nettoyage en cours…</div>
+  </div>
+  <div class="countdown" id="cpt">3</div>
+  <div class="box info" id="status">Suppression Service Worker…</div>
+
   <script>
-    /* Supprime tout service worker et tout cache avant de s'afficher */
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        regs.forEach(function(r) { r.unregister(); });
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(keys) {
-        keys.forEach(function(k) { caches.delete(k); });
-      });
+    var done = 0;
+    var total = 2;
+
+    function check() {
+      done++;
+      if (done >= total) {
+        document.getElementById('msg').textContent = '✅ Nettoyage terminé !';
+        document.getElementById('status').textContent = 'Redirection vers TREKKO…';
+        var n = 3;
+        document.getElementById('cpt').textContent = n;
+        var iv = setInterval(function() {
+          n--;
+          document.getElementById('cpt').textContent = n;
+          if (n <= 0) {
+            clearInterval(iv);
+            window.location.replace('./');
+          }
+        }, 1000);
+      }
     }
 
-    document.getElementById('js-ok').style.display='block';
-    document.getElementById('info').textContent =
-      'Nav : ' + navigator.userAgent.split(' ').slice(-2).join(' ') + '\n' +
-      'URL : ' + location.href + '\n' +
-      'SW  : ' + ('serviceWorker' in navigator ? 'oui' : 'non') + '\n' +
-      'OK  : tout fonctionne';
+    // 1. Unregister all service workers
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        var p = regs.map(function(r) { return r.unregister(); });
+        return Promise.all(p);
+      }).then(function() {
+        document.getElementById('status').textContent += ' ✓ SW supprimé.';
+        check();
+      }).catch(function() { check(); });
+    } else {
+      check();
+    }
+
+    // 2. Clear all caches
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+      }).then(function() {
+        document.getElementById('status').textContent += ' Cache supprimé.';
+        check();
+      }).catch(function() { check(); });
+    } else {
+      check();
+    }
   </script>
 </body>
 </html>
