@@ -71,21 +71,25 @@ async function init() {
 }
 
 async function startApp() {
+  const _d = document.getElementById('dbg');
+  const _upd = (t) => { if (_d) _d.textContent = t; };
+
+  _upd('1/6 network…');
   initNetworkManager();
   initNetworkUI();
+
+  _upd('2/6 map init…');
   initMap('map');
-  // Garantir l'affichage Leaflet même si le DOM n'est pas encore stable
   setTimeout(() => invalidateMapSize(), 300);
   setTimeout(() => invalidateMapSize(), 800);
 
-  // Navigation onglets
+  _upd('3/6 nav+vehicle…');
   initNavTabs(onPanelChange);
-
-  // Profil véhicule
   _vehicleProfile = loadVehicleProfile();
   applyVehicleToUI(_vehicleProfile);
   initVehicleSettingsUI();
 
+  _upd('4/6 loadSites…');
   showLoading('sites-list', 'Chargement des sites…');
   try {
     _sites = await loadSites();
@@ -94,14 +98,13 @@ async function startApp() {
     _filteredSites = sortSites([..._sites], 'distance');
     renderAll();
     const stats = getDataStats(_sites);
-    console.log(`[app] ${stats.total} sites chargés, ${stats.withGps} avec GPS, ${stats.withoutGps} sans GPS`);
     if (stats.withoutGps > 0) showToast(`${stats.withoutGps} site(s) sans coordonnées GPS — badge affiché.`, 'warning', 5000);
   } catch(e) {
-    console.error('[app] Erreur chargement sites', e);
+    _upd('ERREUR sites: ' + e.message);
     showToast('Erreur chargement données. Mode hors ligne activé.', 'error');
   }
 
-  // Photos
+  _upd('5/6 photos+search…');
   initPhotoUI();
   setupAutoSync(getNetworkStatus);
 
@@ -120,9 +123,11 @@ async function startApp() {
   // Barre localisation + slider distance
   initLocationBar();
 
+  _upd('6/6 welcome+panel…');
   initWelcomeScreen(onWelcomeModeSelect);
   switchToPanel('panel-map');
   setTimeout(() => { invalidateMapSize(); fitBoundsToSites(_filteredSites); }, 200);
+  setTimeout(() => { _upd('✅ APP OK — ' + (_sites.length||0) + ' sites'); }, 500);
 
   // Enregistrement de parcours GPS
   initTrackingUI();
