@@ -11,7 +11,7 @@ import { loadVehicleProfile } from './vehicle-profile.js';
 import { initGlobalSearch, interpretSearchQuery } from './global-search.js';
 import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
 import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
-import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=23';
+import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=24';
 import { initNetworkManager, getNetworkStatus } from './network-manager.js';
 import { initNetworkUI } from './network-ui.js';
 import { loadAllPhotos, importPhotos } from './photos.js';

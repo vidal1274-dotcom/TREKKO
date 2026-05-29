@@ -377,8 +377,8 @@ html, body {
   overflow: hidden;
 }
 
-.panel { display: none; width: 100%; height: 100%; overflow: hidden; }
-.panel.active { display: flex; flex-direction: column; }
+.panel { display: none !important; width: 100%; height: 100%; overflow: hidden; }
+.panel.active { display: flex !important; flex-direction: column; }
 
 /* =========================================================
    BLOC 06 — CARTE

@@ -7,23 +7,29 @@ import { formatDistance, formatCurrency, createElement } from './utils.js';
 /* =========================================================
    BLOC 02 — NAVIGATION ONGLETS
    ========================================================= */
+function _applyPanel(panelId) {
+  document.querySelectorAll('.nav-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.panel === panelId)
+  );
+  document.querySelectorAll('.panel').forEach(p => {
+    const on = p.id === panelId;
+    p.classList.toggle('active', on);
+    p.style.display = on ? 'flex' : 'none'; // force inline — court-circuite tout CSS
+    p.style.flexDirection = on ? 'column' : '';
+  });
+}
+
 export function initNavTabs(onPanelChange) {
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      const panelId = tab.dataset.panel;
-      const panel = document.getElementById(panelId);
-      if (panel) panel.classList.add('active');
-      if (onPanelChange) onPanelChange(panelId);
+      _applyPanel(tab.dataset.panel);
+      if (onPanelChange) onPanelChange(tab.dataset.panel);
     });
   });
 }
 
 export function switchToPanel(panelId) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.panel === panelId));
-  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === panelId));
+  _applyPanel(panelId);
 }
 
 /* =========================================================
