@@ -108,25 +108,39 @@ export function initWelcomeScreen(onModeSelect) {
   // (showWelcomeScreen est appelé depuis app.js après init)
 }
 
+const _UI_IDS = ['app-header','main-nav','filters-bar','location-bar','network-banner'];
+
 export function showWelcomeScreen() {
-  // Masquer tous les panneaux pour que rien n'apparaisse derrière l'écran d'accueil
-  document.querySelectorAll('.panel').forEach(p => { p.style.display = 'none'; });
+  // Masquer tout l'UI applicatif — rien ne doit transparaître derrière
+  _UI_IDS.forEach(id => {
+    const n = document.getElementById(id);
+    if (n) n.style.visibility = 'hidden';
+  });
+  document.querySelectorAll('.panel').forEach(p => { p.style.visibility = 'hidden'; });
 
   const el = document.getElementById('welcome-screen');
   if (el) {
     el.classList.remove('hidden');
-    el.style.display = 'flex';
+    el.style.cssText = 'display:flex !important; z-index:99999 !important; visibility:visible !important;';
     el.classList.add('welcome-animate-in');
     setTimeout(() => el.classList.remove('welcome-animate-in'), 400);
   }
 }
 
 export function hideWelcomeScreen() {
+  // Restaurer la visibilité de l'UI
+  _UI_IDS.forEach(id => {
+    const n = document.getElementById(id);
+    if (n) n.style.visibility = '';
+  });
+  document.querySelectorAll('.panel').forEach(p => { p.style.visibility = ''; });
+
   const el = document.getElementById('welcome-screen');
   if (el) {
     el.classList.add('welcome-animate-out');
     setTimeout(() => {
       el.classList.remove('welcome-animate-out');
+      el.style.cssText = '';
       el.classList.add('hidden');
     }, 280);
   }

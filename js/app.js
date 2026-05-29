@@ -23,7 +23,7 @@ import { showToast } from './utils.js';
 import { buildVerificationLinks } from './energy-rules.js';
 import { exportAllData, importData } from './import-export.js';
 import { addGoogleSearchToHistory } from './google-search.js';
-import { initWelcomeScreen, showWelcomeScreen } from './welcome.js';
+import { initWelcomeScreen, showWelcomeScreen } from './welcome.js?v=2';
 import { initAuthScreen, logout, getCurrentUser } from './auth.js';
 import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=26';
 import { getVisitedIds } from './visited.js?v=25';
