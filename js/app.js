@@ -402,7 +402,7 @@ async function onPanelChange(panelId) {
   }
   if (panelId === 'panel-photos') updatePhotoPanel();
   if (panelId === 'panel-prog') {
-    if (!_initProg) {
+    if (false && !_initProg) { // désactivé temporairement
       const m = await import('./programmation.js?v=2');
       _initProg = m.initProgPanel;
       _refreshProg = m.refreshProgPanel;

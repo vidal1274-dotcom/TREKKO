@@ -309,42 +309,8 @@
 
   <!-- Panneau Programmation -->
   <section id="panel-prog" class="panel">
-    <!-- Barre d'outils -->
-    <div class="prog-toolbar">
-      <div class="prog-search-wrap">
-        <input type="text" id="prog-search" placeholder="&#x1F50D; Rechercher un site&#x2026;" autocomplete="off" />
-        <div id="prog-suggestions" class="prog-suggestions hidden"></div>
-      </div>
-      <div class="prog-chips-row">
-        <button class="prog-chip active" data-pfilter="all">Tous</button>
-        <button class="prog-chip" data-pfilter="gratuit">Gratuit</button>
-        <button class="prog-chip" data-pfilter="sans_peage">Sans p&#xE9;age</button>
-        <button class="prog-chip" data-pfilter="nature">Nature</button>
-        <button class="prog-chip" data-pfilter="famille">Famille</button>
-        <button class="prog-chip" data-pfilter="patrimoine">Patrimoine</button>
-      </div>
-      <div class="prog-actions-row">
-        <button id="btn-prog-generate" class="prog-gen-btn">&#x1F4C5; G&#xE9;n&#xE9;rer ma journ&#xE9;e</button>
-        <button id="btn-prog-clear" class="prog-action-btn">&#x1F5D1; Vider</button>
-        <button id="btn-prog-save" class="prog-action-btn">&#x1F4BE; Sauver</button>
-      </div>
-    </div>
-    <!-- Stats du parcours -->
-    <div id="prog-stats" class="prog-stats hidden">
-      <span id="prog-stat-stops">0 &#xE9;tapes</span>
-      <span class="prog-sep">&#xB7;</span>
-      <span id="prog-stat-dist">0 km</span>
-      <span class="prog-sep">&#xB7;</span>
-      <span id="prog-stat-time">0h00</span>
-    </div>
-    <!-- Corps : liste gauche + carte droite -->
-    <div class="prog-body">
-      <div class="prog-list-col">
-        <div id="prog-waypoints" class="prog-waypoints">
-          <div class="prog-empty">Aucune &#xE9;tape &#x2014; recherchez ou g&#xE9;n&#xE9;rez un programme</div>
-        </div>
-      </div>
-      <div id="prog-map" class="prog-map"></div>
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#5a5d7a;font-size:15px;">
+      &#x1F4CD; En cours de construction&#x2026;
     </div>
   </section>
 
@@ -511,7 +477,7 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 <button id="btn-scroll-top" aria-label="Retour en haut">↑</button>
 
 <!-- Modules JS (ESM) -->
-<script type="module" src="js/app.js?v=32"></script>
+<script type="module" src="js/app.js?v=33"></script>
 
 </body>
 </html>
