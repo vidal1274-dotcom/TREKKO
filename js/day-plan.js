@@ -4,7 +4,7 @@
 import { formatCurrency, haversineDistance } from './utils.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
 import { lsGet, lsSet, lsDel } from './storage.js';
-import { Nages_COORDS } from './config.js';
+import { UCHAUD_COORDS } from './config.js';
 import { filterUnvisited } from './visited.js';
 
 const LS_KEY          = 'day_plan';
@@ -38,7 +38,7 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
     .slice(0, 20);
 
   // 3. Nearest-neighbor depuis Nages
-  const [originLat, originLon] = Nages_COORDS;
+  const [originLat, originLon] = UCHAUD_COORDS;
   const selected  = [];
   const remaining = [...pool];
   let curLat = originLat, curLon = originLon;
@@ -218,3 +218,4 @@ export function exportPlanAsText(plan) {
 export function exportPlanAsJson(plan) {
   return JSON.stringify(plan, null, 2);
 }
+
