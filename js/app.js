@@ -9,8 +9,8 @@ import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, ge
 import { enrichSitesWithEcoScore, getBestDeals } from './economy-engine.js';
 import { loadVehicleProfile } from './vehicle-profile.js';
 import { initGlobalSearch, interpretSearchQuery } from './global-search.js';
-import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js';
-import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=25';
+import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
+import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
 import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=23';
 import { initNetworkManager, getNetworkStatus } from './network-manager.js';
 import { initNetworkUI } from './network-ui.js';
@@ -25,7 +25,7 @@ import { exportAllData, importData } from './import-export.js';
 import { addGoogleSearchToHistory } from './google-search.js';
 import { initWelcomeScreen, showWelcomeScreen } from './welcome.js';
 import { initAuthScreen, logout, getCurrentUser } from './auth.js';
-import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=25';
+import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=26';
 import { getVisitedIds } from './visited.js?v=25';
 // Imports lazy — chargés à la demande pour ne pas bloquer le démarrage
 let _fetchWeather = null;
