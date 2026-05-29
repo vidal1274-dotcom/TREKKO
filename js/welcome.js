@@ -109,10 +109,13 @@ export function initWelcomeScreen(onModeSelect) {
 }
 
 export function showWelcomeScreen() {
+  // Masquer tous les panneaux pour que rien n'apparaisse derrière l'écran d'accueil
+  document.querySelectorAll('.panel').forEach(p => { p.style.display = 'none'; });
+
   const el = document.getElementById('welcome-screen');
   if (el) {
     el.classList.remove('hidden');
-    el.style.display = 'flex'; // force — contourne toute règle CSS concurrente
+    el.style.display = 'flex';
     el.classList.add('welcome-animate-in');
     setTimeout(() => el.classList.remove('welcome-animate-in'), 400);
   }
