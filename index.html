@@ -12,7 +12,7 @@
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=17" />
+  <link rel="stylesheet" href="styles.css?v=18" />
 
   <!-- Leaflet CSS (local) -->
   <link rel="stylesheet" href="assets/vendor/leaflet.css" />
@@ -311,28 +311,39 @@
   <section id="panel-prog" class="panel">
     <!-- Barre d'outils -->
     <div class="prog-toolbar">
-      <input type="text" id="prog-search" placeholder="Ajouter un site au parcours…" autocomplete="off" />
-      <div id="prog-suggestions" class="prog-suggestions hidden"></div>
-      <button id="btn-prog-clear" class="btn-secondary">&#x1F5D1;&#xFE0F; Vider</button>
-      <button id="btn-prog-save" class="btn-secondary">&#x1F4BE; Sauver</button>
+      <div class="prog-search-wrap">
+        <input type="text" id="prog-search" placeholder="&#x1F50D; Rechercher un site&#x2026;" autocomplete="off" />
+        <div id="prog-suggestions" class="prog-suggestions hidden"></div>
+      </div>
+      <div class="prog-chips-row">
+        <button class="prog-chip active" data-pfilter="all">Tous</button>
+        <button class="prog-chip" data-pfilter="gratuit">Gratuit</button>
+        <button class="prog-chip" data-pfilter="sans_peage">Sans p&#xE9;age</button>
+        <button class="prog-chip" data-pfilter="nature">Nature</button>
+        <button class="prog-chip" data-pfilter="famille">Famille</button>
+        <button class="prog-chip" data-pfilter="patrimoine">Patrimoine</button>
+      </div>
+      <div class="prog-actions-row">
+        <button id="btn-prog-generate" class="prog-gen-btn">&#x1F4C5; G&#xE9;n&#xE9;rer ma journ&#xE9;e</button>
+        <button id="btn-prog-clear" class="prog-action-btn">&#x1F5D1; Vider</button>
+        <button id="btn-prog-save" class="prog-action-btn">&#x1F4BE; Sauver</button>
+      </div>
     </div>
     <!-- Stats du parcours -->
     <div id="prog-stats" class="prog-stats hidden">
-      <span id="prog-stat-stops">0 étapes</span>
-      <span class="prog-sep">·</span>
+      <span id="prog-stat-stops">0 &#xE9;tapes</span>
+      <span class="prog-sep">&#xB7;</span>
       <span id="prog-stat-dist">0 km</span>
-      <span class="prog-sep">·</span>
+      <span class="prog-sep">&#xB7;</span>
       <span id="prog-stat-time">0h00</span>
     </div>
-    <!-- Contenu principal : liste gauche + carte droite -->
+    <!-- Corps : liste gauche + carte droite -->
     <div class="prog-body">
-      <!-- Liste des étapes (scrollable) -->
       <div class="prog-list-col">
         <div id="prog-waypoints" class="prog-waypoints">
-          <div class="prog-empty">Aucune étape — recherchez un site ci-dessus</div>
+          <div class="prog-empty">Aucune &#xE9;tape &#x2014; recherchez ou g&#xE9;n&#xE9;rez un programme</div>
         </div>
       </div>
-      <!-- Carte Leaflet -->
       <div id="prog-map" class="prog-map"></div>
     </div>
   </section>
@@ -500,7 +511,7 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 <button id="btn-scroll-top" aria-label="Retour en haut">↑</button>
 
 <!-- Modules JS (ESM) -->
-<script type="module" src="js/app.js?v=29"></script>
+<script type="module" src="js/app.js?v=30"></script>
 
 </body>
 </html>
