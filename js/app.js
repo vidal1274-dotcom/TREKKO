@@ -23,7 +23,7 @@ import { showToast } from './utils.js';
 import { buildVerificationLinks } from './energy-rules.js';
 import { exportAllData, importData } from './import-export.js';
 import { addGoogleSearchToHistory } from './google-search.js';
-import { initWelcomeScreen, showWelcomeScreen } from './welcome.js';
+import { initWelcomeScreen, showWelcomeScreen, getLastMode } from './welcome.js';
 import { initAuthScreen, logout, getCurrentUser } from './auth.js';
 import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=26';
 import { getVisitedIds } from './visited.js?v=25';
@@ -114,7 +114,12 @@ async function startApp() {
   initLocationBar();
 
   initWelcomeScreen(onWelcomeModeSelect);
-  showWelcomeScreen();
+  const _savedMode = getLastMode();
+  if (_savedMode) {
+    onWelcomeModeSelect(_savedMode);
+  } else {
+    showWelcomeScreen();
+  }
 
   // Enregistrement de parcours GPS
   initTrackingUI();
@@ -386,9 +391,11 @@ async function onPanelChange(panelId) {
   // Masquer filtres/rayon sur la carte pour un affichage plein écran
   const filtersBar  = document.getElementById('filters-bar');
   const locationBar = document.getElementById('location-bar');
+  const appMain     = document.getElementById('app-main');
   const isMap = panelId === 'panel-map';
   if (filtersBar)  filtersBar.classList.toggle('hidden-for-map', isMap);
   if (locationBar) locationBar.classList.toggle('hidden-for-map', isMap);
+  if (appMain)     appMain.classList.toggle('map-fullscreen', isMap);
 
   if (isMap) {
     setTimeout(() => { invalidateMapSize(); fitBoundsToSites(_filteredSites); }, 80);
@@ -932,6 +939,7 @@ function onWelcomeModeSelect(mode) {
   if (!mode) return;
   if (mode.id === 'running') { showRunningScreen(); return; }
   switchToPanel(mode.panel);
+  onPanelChange(mode.panel);
 
   if (mode.trackMode) {
     document.querySelectorAll('.activity-btn').forEach(btn => {

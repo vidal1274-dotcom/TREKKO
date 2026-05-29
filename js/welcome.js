@@ -67,15 +67,6 @@ const MODES = [
     panel: 'panel-photos',
     trackMode: null
   },
-  {
-    id:    'settings',
-    emoji: '⚙️',
-    title: 'Mon véhicule',
-    desc:  'Profil énergie · Carburant · Électrique',
-    color: '#95a5a6',
-    panel: 'panel-settings',
-    trackMode: null
-  }
 ];
 
 /* =========================================================
@@ -138,3 +129,8 @@ export function hideWelcomeScreen() {
 }
 
 export function getModes() { return MODES; }
+
+export function getLastMode() {
+  const id = localStorage.getItem(LS_KEY_LAST_MODE);
+  return id ? MODES.find(m => m.id === id) || null : null;
+}
