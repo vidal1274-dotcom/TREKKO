@@ -32,6 +32,7 @@ let _fetchWeather = null;
 let _renderCarnet = null;
 let _saveJournalToSession = null;
 let _initProg = null;
+let _invalidateProgMap = null;
 async function _loadWeather() {
   if (!_fetchWeather) { try { const m = await import('./weather.js'); _fetchWeather = m.fetchWeather; } catch(e) {} }
   return _fetchWeather;
@@ -403,9 +404,12 @@ async function onPanelChange(panelId) {
   if (panelId === 'panel-photos') updatePhotoPanel();
   if (panelId === 'panel-prog') {
     if (!_initProg) {
-      const m = await import('./programme.js?v=1');
+      const m = await import('./programme.js?v=2');
       _initProg = m.initProgramme;
+      _invalidateProgMap = m.invalidateProgMap;
       _initProg(_sites);
+    } else if (_invalidateProgMap) {
+      setTimeout(_invalidateProgMap, 150);
     }
   }
   if (panelId === 'panel-carnet') {

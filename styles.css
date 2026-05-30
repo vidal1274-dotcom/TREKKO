@@ -2852,7 +2852,7 @@ body.welcome-open #welcome-screen { display: flex !important; }
 /* =========================================================
    BLOC PROGRAMME — AJOUT DE LIEUX
    ========================================================= */
-#panel-prog { overflow: hidden; }
+#panel-prog { overflow-y: auto; }
 
 .prog2-search-bar {
   position: relative;
@@ -2911,9 +2911,10 @@ body.welcome-open #welcome-screen { display: flex !important; }
 .prog2-result-meta { font-size: 12px; color: var(--color-text-dim); white-space: nowrap; }
 
 .prog2-list {
-  flex: 1;
+  max-height: 200px;
   overflow-y: auto;
-  padding: 10px 14px 24px;
+  padding: 10px 14px 8px;
+  flex-shrink: 0;
 }
 .prog2-empty {
   text-align: center;
@@ -2951,3 +2952,96 @@ body.welcome-open #welcome-screen { display: flex !important; }
   flex-shrink: 0;
 }
 .prog2-item-del:hover { color: var(--color-danger); }
+
+/* =========================================================
+   BLOC PROGRAMME — CARTE + PHOTOS
+   ========================================================= */
+.prog-section-hdr {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 8px 14px 6px;
+}
+
+/* Carte Leaflet intégrée */
+.prog-map-section {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+}
+.prog-map {
+  height: 220px;
+  width: 100%;
+  background: #1a1f3a;
+}
+.prog-marker-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #e94560;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* Photos horizontales */
+.prog-photo-section {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+}
+.prog-photos-bar {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 0 14px 14px;
+  scrollbar-width: none;
+}
+.prog-photos-bar::-webkit-scrollbar { display: none; }
+.prog-photos-empty {
+  color: var(--color-text-dim);
+  font-size: 13px;
+  padding: 16px 0;
+}
+.prog-photo-card {
+  flex-shrink: 0;
+  width: 110px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.prog-photo-img {
+  width: 110px;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+}
+.prog-photo-placeholder,
+.prog-photo-spin {
+  width: 110px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: var(--color-text-dim);
+  background: rgba(255,255,255,0.03);
+}
+.prog-photo-label {
+  font-size: 10px;
+  color: var(--color-text-dim);
+  padding: 4px 6px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}

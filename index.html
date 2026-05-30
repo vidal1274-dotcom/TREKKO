@@ -12,7 +12,7 @@
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=22" />
+  <link rel="stylesheet" href="styles.css?v=23" />
 
   <!-- Leaflet CSS (local) -->
   <link rel="stylesheet" href="assets/vendor/leaflet.css" />
@@ -326,6 +326,20 @@
       <div class="prog2-empty">Aucun lieu &#x2014; utilisez la recherche ci-dessus</div>
     </div>
 
+    <!-- Carte itinéraire -->
+    <div class="prog-map-section">
+      <div class="prog-section-hdr">&#x1F5FA;&#xFE0F; Itin&#xe9;raire</div>
+      <div id="prog-map" class="prog-map"></div>
+    </div>
+
+    <!-- Photos des sites -->
+    <div class="prog-photo-section">
+      <div class="prog-section-hdr">&#x1F4F8; Photos</div>
+      <div id="prog-photos-bar" class="prog-photos-bar">
+        <div class="prog-photos-empty">Ajoutez des lieux pour voir leurs photos</div>
+      </div>
+    </div>
+
   </section>
 
 </main>
@@ -491,7 +505,7 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 <button id="btn-scroll-top" aria-label="Retour en haut">↑</button>
 
 <!-- Modules JS (ESM) -->
-<script type="module" src="js/app.js?v=38"></script>
+<script type="module" src="js/app.js?v=39"></script>
 
 </body>
 </html>
