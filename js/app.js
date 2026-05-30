@@ -404,7 +404,7 @@ async function onPanelChange(panelId) {
   if (panelId === 'panel-photos') updatePhotoPanel();
   if (panelId === 'panel-prog') {
     if (!_initProg) {
-      const m = await import('./programme.js?v=2');
+      const m = await import('./programme.js?v=3');
       _initProg = m.initProgramme;
       _invalidateProgMap = m.invalidateProgMap;
       _initProg(_sites);

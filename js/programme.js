@@ -29,45 +29,165 @@ export function invalidateProgMap() {
 }
 
 /* =========================================================
-   RECHERCHE
+   RECHERCHE — helpers
+   ========================================================= */
+
+// Normalise une chaîne : minuscules + suppression accents
+function _norm(str) {
+  return (str || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// Emoji selon le type de site
+const _TYPE_EMOJI = {
+  mer:'🏖️', plage:'🏖️', nature:'🌿', rando:'🥾',
+  gorge:'🏔️', canyon:'🏔️', grotte:'🪨', cave:'🍷',
+  patrimoine:'🏛️', chateau:'🏰', village:'🏘️',
+  marche:'🛒', marché:'🛒', balade:'🚶', riviere:'💧', foret:'🌲',
+};
+function _emoji(site) {
+  const raw = _norm((site.type_sortie || '') + ' ' + (site.secteur || ''));
+  for (const [k, e] of Object.entries(_TYPE_EMOJI)) { if (raw.includes(k)) return e; }
+  return '📍';
+}
+
+// Score de pertinence : -1 = hors résultat, >0 = meilleur = plus haut
+function _score(site, words) {
+  const nameN = _norm(site.destination);
+  const allN  = [nameN, _norm(site.secteur), _norm(site.type_sortie),
+                 _norm(site.points_forts), _norm(site.programme_court)].join(' ');
+  let sc = 0;
+  for (const w of words) {
+    if (!allN.includes(w)) return -1;        // mot absent → écarté
+    if (nameN === w)              sc += 10;  // nom exact
+    else if (nameN.startsWith(w)) sc += 6;  // début du nom
+    else if (nameN.includes(w))   sc += 4;  // dans le nom
+    else                          sc += 1;  // dans un autre champ
+  }
+  return sc;
+}
+
+// Met en gras les mots trouvés dans le texte d'origine
+function _hl(text, words) {
+  let out = text;
+  for (const w of words) {
+    out = out.replace(
+      new RegExp(`(${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+      '<b>$1</b>'
+    );
+  }
+  return out;
+}
+
+/* =========================================================
+   RECHERCHE — setup
    ========================================================= */
 function _setupSearch() {
   const input   = document.getElementById('prog2-input');
   const results = document.getElementById('prog2-results');
   if (!input || !results) return;
 
-  input.addEventListener('input', () => {
-    const q = input.value.trim().toLowerCase();
-    if (q.length < 2) { results.classList.add('hidden'); return; }
+  let _focusIdx = -1;
 
-    const found = _sites
-      .filter(s => s.destination.toLowerCase().includes(q) && !_liste.find(l => l.id === s.id))
-      .slice(0, 10);
+  function _addSite(id) {
+    const site = _sites.find(s => s.id === id);
+    if (!site || _liste.find(l => l.id === id)) return;
+    _liste.push(site);
+    _saveToStorage();
+    _renderListe();
+    _updateMapAndPhotos();
+    input.value = '';
+    results.classList.add('hidden');
+    _focusIdx = -1;
+  }
 
-    if (!found.length) { results.classList.add('hidden'); return; }
+  function _renderResults(words) {
+    const inList = new Set(_liste.map(l => l.id));
+    const scored = _sites
+      .filter(s => !inList.has(s.id))
+      .map(s => ({ s, sc: _score(s, words) }))
+      .filter(x => x.sc > 0)
+      .sort((a, b) => b.sc - a.sc)
+      .slice(0, 12);
 
-    results.innerHTML = found.map(s => {
-      const dist = s.distance_km != null ? ` · ${Math.round(s.distance_km)} km` : '';
-      return `<div class="prog2-result-item" data-id="${s.id}">
-        <span class="prog2-result-name">${s.destination}</span>
-        <span class="prog2-result-meta">${s.secteur || ''}${dist}</span>
+    if (!scored.length) { results.classList.add('hidden'); return; }
+
+    results.innerHTML = scored.map(({ s }) => {
+      const isFerme  = (s.statut || '').toLowerCase().includes('ferm');
+      const budgetTxt = (s.budget_indicatif || '').toLowerCase();
+      const isGratuit = s.budget_min === 0 || s.gratuit || budgetTxt.includes('gratuit');
+      const isStar    = s.priorite == 1 || s.selection_perso;
+
+      const badges = [
+        isFerme  ? `<span class="p2r-badge p2r-red">Fermé</span>` : '',
+        isGratuit ? `<span class="p2r-badge p2r-green">Gratuit</span>` : '',
+        isStar    ? `<span class="p2r-badge p2r-star">⭐</span>` : '',
+        s.sans_peage ? `<span class="p2r-badge p2r-blue">Sans péage</span>` : '',
+      ].join('');
+
+      const dist  = s.distance_km != null ? `${Math.round(s.distance_km)} km` : '';
+      const meta  = [s.secteur, dist].filter(Boolean).join(' · ');
+
+      return `<div class="prog2-result-item" data-id="${s.id}" tabindex="-1">
+        <span class="p2r-emoji">${_emoji(s)}</span>
+        <div class="p2r-body">
+          <div class="p2r-name">${_hl(s.destination, words)}</div>
+          <div class="p2r-meta">${meta}${badges}</div>
+        </div>
       </div>`;
     }).join('');
     results.classList.remove('hidden');
+    _focusIdx = -1;
 
     results.querySelectorAll('.prog2-result-item').forEach(el => {
-      el.addEventListener('mousedown', e => {
-        e.preventDefault();
-        const site = _sites.find(s => s.id === el.dataset.id);
-        if (!site) return;
-        _liste.push(site);
-        _saveToStorage();
-        _renderListe();
-        _updateMapAndPhotos();
-        input.value = '';
-        results.classList.add('hidden');
-      });
+      el.addEventListener('mousedown', e => { e.preventDefault(); _addSite(el.dataset.id); });
     });
+  }
+
+  input.addEventListener('input', () => {
+    const raw = input.value.trim();
+    if (raw.length < 1) { results.classList.add('hidden'); return; }
+    const words = _norm(raw).split(/\s+/).filter(Boolean);
+    _renderResults(words);
+  });
+
+  // Navigation clavier ↑ ↓ Entrée Échap
+  input.addEventListener('keydown', e => {
+    const items = [...results.querySelectorAll('.prog2-result-item')];
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      _focusIdx = Math.min(_focusIdx + 1, items.length - 1);
+      items[_focusIdx]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      _focusIdx = Math.max(_focusIdx - 1, -1);
+      if (_focusIdx === -1) input.focus(); else items[_focusIdx]?.focus();
+    } else if (e.key === 'Escape') {
+      results.classList.add('hidden');
+    } else if (e.key === 'Enter' && _focusIdx >= 0) {
+      e.preventDefault();
+      _addSite(items[_focusIdx]?.dataset.id);
+    }
+  });
+
+  results.addEventListener('keydown', e => {
+    const items = [...results.querySelectorAll('.prog2-result-item')];
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      _focusIdx = Math.min(_focusIdx + 1, items.length - 1);
+      items[_focusIdx]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      _focusIdx = Math.max(_focusIdx - 1, -1);
+      if (_focusIdx === -1) input.focus(); else items[_focusIdx]?.focus();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const focused = results.querySelector('.prog2-result-item:focus');
+      if (focused) _addSite(focused.dataset.id);
+    } else if (e.key === 'Escape') {
+      results.classList.add('hidden'); input.focus();
+    }
   });
 
   document.addEventListener('click', e => {
