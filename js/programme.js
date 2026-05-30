@@ -7,8 +7,12 @@ const ORIGIN = { lat: 43.7169, lon: 4.3789 }; // Nages-et-Solorgues
 let _sites = [];
 let _liste = [];
 let _map   = null;
-let _routeLayer = null;
-let _markers    = [];
+let _routeLayer  = null;
+let _markers     = [];
+let _streetLayer = null;
+let _satLayer    = null;
+let _isSatellite = false;
+let _originMarker = null;
 
 /* =========================================================
    EXPORT PRINCIPAL
@@ -239,8 +243,40 @@ function _initMap() {
   if (!container || !window.L) return;
 
   _map = window.L.map(container, { zoomControl: true, attributionControl: false });
-  window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_map);
+
+  _streetLayer = window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(_map);
+  _satLayer    = window.L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 18 }
+  );
+
   _map.setView([ORIGIN.lat, ORIGIN.lon], 11);
+
+  // Marqueur "départ" (Nages-et-Solorgues)
+  const homeIcon = window.L.divIcon({
+    html: `<div class="prog-origin-pin">🏠</div>`,
+    className: '', iconSize: [32, 32], iconAnchor: [16, 32]
+  });
+  _originMarker = window.L.marker([ORIGIN.lat, ORIGIN.lon], { icon: homeIcon, zIndexOffset: -100 })
+    .bindPopup('<b>🏠 Départ — Nages-et-Solorgues</b>')
+    .addTo(_map);
+
+  // Bouton satellite
+  document.getElementById('btn-prog-satellite')?.addEventListener('click', _toggleSatellite);
+}
+
+function _toggleSatellite() {
+  if (!_map) return;
+  if (_isSatellite) {
+    _map.removeLayer(_satLayer);
+    _streetLayer.addTo(_map);
+  } else {
+    _map.removeLayer(_streetLayer);
+    _satLayer.addTo(_map);
+  }
+  _isSatellite = !_isSatellite;
+  const btn = document.getElementById('btn-prog-satellite');
+  if (btn) btn.textContent = _isSatellite ? '🗺️ Carte' : '🛰️ Satellite';
 }
 
 async function _updateMapAndPhotos() {

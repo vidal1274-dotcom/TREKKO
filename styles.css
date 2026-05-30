@@ -2829,13 +2829,11 @@ body.welcome-open #welcome-screen { display: flex !important; }
 .prog-wp-btn:hover:not([disabled]) { color: #eaeaf0; }
 .prog-wp-btn[disabled] { opacity: 0.2; cursor: default; }
 
-/* Carte */
-.prog-map { flex: 1; min-height: 0; }
+/* (prog-map sizing handled in Carte Leaflet section below) */
 
 @media (max-width: 600px) {
   .prog-body { flex-direction: column; }
   .prog-list-col { width: 100%; max-height: 45%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
-  .prog-map { min-height: 55%; }
 }
 
 /* =========================================================
@@ -2997,13 +2995,54 @@ body.welcome-open #welcome-screen { display: flex !important; }
 
 /* Carte Leaflet intégrée */
 .prog-map-section {
-  flex-shrink: 0;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   border-top: 1px solid var(--color-border);
 }
 .prog-map {
-  height: 220px;
+  flex: 1 1 0;
+  min-height: 180px;
+  height: auto;
   width: 100%;
   background: #1a1f3a;
+}
+
+/* En-tête section carte avec bouton satellite */
+.prog-map-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 6px;
+  flex-shrink: 0;
+}
+.prog-map-hdr-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.prog-satellite-btn {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--color-border2);
+  border-radius: 8px;
+  color: var(--color-text-mid);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.prog-satellite-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+/* Marqueur de départ (Nages) */
+.prog-origin-pin {
+  width: 32px; height: 32px;
+  font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
 }
 /* Ancien style (non utilisé) */
 .prog-marker-dot { display: none; }

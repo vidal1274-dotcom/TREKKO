@@ -393,10 +393,12 @@ async function onPanelChange(panelId) {
   const filtersBar  = document.getElementById('filters-bar');
   const locationBar = document.getElementById('location-bar');
   const appMain     = document.getElementById('app-main');
-  const isMap = panelId === 'panel-map';
-  if (filtersBar)  filtersBar.classList.toggle('hidden-for-map', isMap);
-  if (locationBar) locationBar.classList.toggle('hidden-for-map', isMap);
-  if (appMain)     appMain.classList.toggle('map-fullscreen', isMap);
+  const isMap  = panelId === 'panel-map';
+  const isProg = panelId === 'panel-prog';
+  const hideChrome = isMap || isProg;
+  if (filtersBar)  filtersBar.classList.toggle('hidden-for-map', hideChrome);
+  if (locationBar) locationBar.classList.toggle('hidden-for-map', hideChrome);
+  if (appMain)     appMain.classList.toggle('map-fullscreen', hideChrome);
 
   if (isMap) {
     setTimeout(() => { invalidateMapSize(); fitBoundsToSites(_filteredSites); }, 80);
@@ -404,7 +406,7 @@ async function onPanelChange(panelId) {
   if (panelId === 'panel-photos') updatePhotoPanel();
   if (panelId === 'panel-prog') {
     if (!_initProg) {
-      const m = await import('./programme.js?v=3');
+      const m = await import('./programme.js?v=4');
       _initProg = m.initProgramme;
       _invalidateProgMap = m.invalidateProgMap;
       _initProg(_sites);
