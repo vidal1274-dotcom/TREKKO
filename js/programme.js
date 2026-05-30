@@ -260,18 +260,30 @@ async function _updateMapAndPhotos() {
   const withGps = _liste.filter(s => s.has_gps && s.lat && s.lon);
   const bounds  = [];
 
+  // Marqueurs avec miniature photo
   withGps.forEach((site, i) => {
+    const mid  = `pmk-${site.id}`;
     const icon = window.L.divIcon({
-      html: `<div class="prog-marker-dot">${i + 1}</div>`,
+      html: `<div class="prog-pm" id="${mid}">
+               <div class="prog-pm-num">${i + 1}</div>
+             </div>`,
       className: '',
-      iconSize: [28, 28],
-      iconAnchor: [14, 14]
+      iconSize:  [46, 46],
+      iconAnchor:[23, 23]
     });
     const m = window.L.marker([site.lat, site.lon], { icon })
       .bindPopup(`<b>${i + 1}. ${site.destination}</b>`)
       .addTo(_map);
     _markers.push(m);
     bounds.push([site.lat, site.lon]);
+
+    // Charge la photo et l'injecte dans le marqueur
+    _fetchSitePhoto(site).then(url => {
+      const el = document.getElementById(mid);
+      if (!el || !url) return;
+      el.style.backgroundImage = `url('${url}')`;
+      el.classList.add('prog-pm-photo');
+    });
   });
 
   // Tracé OSRM si ≥ 2 points

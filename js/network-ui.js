@@ -20,24 +20,21 @@ export function initNetworkUI() {
 
 function updateNetworkBanner(status) {
   const banner = document.getElementById('network-banner');
-  const btn = document.getElementById('btn-network-status');
+  const btn    = document.getElementById('btn-network-status');
   if (!banner) return;
 
-  const label = getNetworkLabel(status);
-  const colorClass = getNetworkColor(status);
-
-  banner.textContent = label;
-  banner.className = `network-banner ${colorClass}`;
-
   if (status === 'offline') {
-    banner.classList.remove('hidden');
+    banner.textContent = getNetworkLabel(status);
+    banner.className   = `network-banner ${getNetworkColor(status)}`;
     if (btn) btn.style.color = '#e74c3c';
   } else if (['weak_2g', 'medium_3g'].includes(status)) {
-    banner.classList.remove('hidden');
+    banner.textContent = getNetworkLabel(status);
+    banner.className   = `network-banner ${getNetworkColor(status)}`;
     if (btn) btn.style.color = '#f39c12';
-    setTimeout(() => banner.classList.add('hidden'), 5000);
+    setTimeout(() => banner.classList.add('hidden'), 4000);
   } else {
-    setTimeout(() => banner.classList.add('hidden'), 3000);
+    // Bonne connexion — bannière invisible, juste l'icône header
+    banner.classList.add('hidden');
     if (btn) btn.style.color = '';
   }
 }
