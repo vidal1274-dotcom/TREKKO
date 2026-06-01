@@ -143,6 +143,23 @@ export function clearUserLocationMarker() {
   if (_radiusCircle) { _map.removeLayer(_radiusCircle); _radiusCircle = null; }
 }
 
+let _addressMarker = null;
+export function showAddressMarker(lat, lon, label) {
+  if (!_map) return;
+  if (_addressMarker) { _map.removeLayer(_addressMarker); _addressMarker = null; }
+  const icon = L.divIcon({
+    html: `<div style="background:#e94560;border-radius:50% 50% 50% 0;width:28px;height:28px;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 8px rgba(233,69,96,0.5);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:14px">📍</span></div>`,
+    iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -32], className: ''
+  });
+  _addressMarker = L.marker([lat, lon], { icon, zIndexOffset: 2000 })
+    .bindPopup(`<strong>📍 ${label}</strong>`)
+    .addTo(_map)
+    .openPopup();
+}
+export function clearAddressMarker() {
+  if (_addressMarker) { _map.removeLayer(_addressMarker); _addressMarker = null; }
+}
+
 /* =========================================================
    BLOC 06 — TRACÉ GPS (recording)
    ========================================================= */

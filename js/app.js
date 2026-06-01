@@ -2,7 +2,7 @@
    BLOC 01 — IMPORTS PRINCIPAUX
    ========================================================= */
 import { loadSites, cacheSitesLocally, getDataStats, applyManualGpsCorrection, recalcDistances } from './data-loader.js';
-import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize, renderDayPlanRoute, clearDayPlanRoute } from './map.js';
+import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, showAddressMarker, clearAddressMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize, renderDayPlanRoute, clearDayPlanRoute } from './map.js';
 import { renderSiteMarkers, buildSiteBadges, focusOnSite } from './markers.js';
 import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilterChips, setProcheThreshold } from './filters.js';
 import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT } from './geolocation.js';
@@ -264,6 +264,7 @@ function onFilterChange(filterKey) {
 
 function onSearch(query) {
   _searchQuery = query;
+  if (!query) clearAddressMarker();
   applyFiltersAndRender();
 }
 
@@ -279,12 +280,15 @@ function onSuggestion(suggestion) {
     return;
   }
 
-  // Adresse géocodée → voler vers les coords sur la carte
+  // Adresse géocodée → voler vers les coords + afficher le point sur la carte
   if (suggestion.type === 'address') {
     if (input) input.value = suggestion.label;
     switchToPanel('panel-map');
     onPanelChange('panel-map');
-    setTimeout(() => flyToSite(suggestion.lat, suggestion.lon, 15), 120);
+    setTimeout(() => {
+      flyToSite(suggestion.lat, suggestion.lon, 15);
+      showAddressMarker(suggestion.lat, suggestion.lon, suggestion.label);
+    }, 120);
     return;
   }
 
