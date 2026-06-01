@@ -115,12 +115,13 @@ async function startApp() {
   // Barre localisation + slider distance
   initLocationBar();
 
-  // Démarrage direct sur la carte, sans welcome screen
+  // Panneau de fond par défaut (initialise la carte Leaflet en arrière-plan)
   switchToPanel('panel-map');
   onPanelChange('panel-map');
-  // Bouton maison → écran de choix d'activité
+  // Écran de choix d'activité — affiché au démarrage
   initWelcomeScreen(onWelcomeModeSelect);
-  window._showWelcome = showWelcomeScreen; // accessible depuis onclick HTML
+  window._showWelcome = showWelcomeScreen;
+  showWelcomeScreen();
 
   // Enregistrement de parcours GPS
   initTrackingUI();
