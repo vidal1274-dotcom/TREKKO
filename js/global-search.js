@@ -32,6 +32,7 @@ const SMART_SUGGESTIONS = [
 let _getSites     = () => [];
 let _geocodeTimer = null;
 let _searchTimer  = null;
+let _inputEl      = null;  // référence à l'input pour vérifier la requête courante
 
 /* =========================================================
    BLOC 04 — GÉOCODAGE NOMINATIM
@@ -72,6 +73,7 @@ function searchSites(query) {
    ========================================================= */
 export function initGlobalSearch({ input, clearBtn, suggestionsEl, onSearch, onSuggestion, getSites }) {
   if (!input) return;
+  _inputEl = input;
   if (getSites) _getSites = getSites;
 
   input.addEventListener('input', () => {
@@ -206,14 +208,17 @@ function showSearchSuggestions(el, query, onSuggestion) {
   // Affichage immédiat (état "chargement adresses")
   render(null);
 
-  // Géocodage debounced 400 ms
+  // Géocodage debounced 500 ms — rouvre le panel si la requête est encore active
   if (query.length >= 3) {
     clearTimeout(_geocodeTimer);
     _geocodeTimer = setTimeout(async () => {
       const addresses = await geocodeAddress(query);
-      lastAddresses = addresses;
-      if (!el.classList.contains('hidden')) render(addresses);
-    }, 400);
+      const stillCurrent = _inputEl && _inputEl.value.trim() === query;
+      if (stillCurrent) {
+        el.classList.remove('hidden'); // rouvrir si fermé entre-temps
+        render(addresses);
+      }
+    }, 500);
   } else {
     render([]);
   }
