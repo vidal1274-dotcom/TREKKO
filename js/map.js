@@ -20,19 +20,28 @@ export function initMap(containerId = 'map') {
     center: [43.7437, 4.4096],
     zoom: 10,
     zoomControl: true,
-    attributionControl: true
+    attributionControl: true,
+    maxZoom: 20
   });
   _streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 18
+    maxZoom: 19,
+    maxNativeZoom: 19
   }).addTo(_map);
-  _satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '© Esri, USGS, NOAA',
-    maxZoom: 18
-  });
-  _satelliteLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '', maxZoom: 18
-  });
+  const retina = L.Browser.retina;
+  _satelliteLayer = L.tileLayer(
+    'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
+    {
+      attribution: '© IGN Géoportail',
+      maxZoom: 20, maxNativeZoom: 19,
+      tileSize: retina ? 512 : 256,
+      zoomOffset: retina ? -1 : 0
+    }
+  );
+  _satelliteLabelsLayer = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
+    { attribution: '© CartoDB', subdomains: 'abcd', maxZoom: 20, maxNativeZoom: 19, detectRetina: true, opacity: 0.9 }
+  );
   _markersLayer = L.layerGroup().addTo(_map);
   _photoMarkersLayer = L.layerGroup().addTo(_map);
   return _map;

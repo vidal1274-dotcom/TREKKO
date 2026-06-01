@@ -1,5 +1,5 @@
-/* SERVICE WORKER v9 — supprime tous les caches, aucune interception réseau */
-const CACHE_NAME = 'trekko-v9';
+/* SERVICE WORKER v10 — supprime tous les caches, aucune interception réseau */
+const CACHE_NAME = 'trekko-v10';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
