@@ -8,7 +8,7 @@ import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilte
 import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT } from './geolocation.js';
 import { enrichSitesWithEcoScore, getBestDeals } from './economy-engine.js';
 import { loadVehicleProfile } from './vehicle-profile.js';
-import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=4';
+import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=5';
 import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
 import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
 import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=24';
@@ -265,40 +265,57 @@ function onFilterChange(filterKey) {
 function onSearch(query) {
   _searchQuery = query;
   applyFiltersAndRender();
-  // Afficher les résultats dans la liste
-  if (query) {
-    switchToPanel('panel-list');
-    onPanelChange('panel-list');
-  }
 }
 
 function onSuggestion(suggestion) {
   const input = document.getElementById('global-search-input');
-  if (input) input.value = suggestion.label || '';
+  hideSuggestionsPanel();
 
   // Site trouvé directement → ouvrir la fiche
   if (suggestion.type === 'site') {
+    if (input) input.value = suggestion.site.destination;
+    onSearch(suggestion.site.destination);
     openSiteDetail(suggestion.site, _vehicleProfile);
-    hideSuggestionsPanel();
     return;
   }
 
   // Adresse géocodée → voler vers les coords sur la carte
   if (suggestion.type === 'address') {
+    if (input) input.value = suggestion.label;
     switchToPanel('panel-map');
     onPanelChange('panel-map');
     setTimeout(() => flyToSite(suggestion.lat, suggestion.lon, 15), 120);
-    hideSuggestionsPanel();
     return;
   }
 
-  if (suggestion.filter) onFilterChange(suggestion.filter);
+  // Filtre rapide (gratuit, sans_peage…) — pas de recherche texte
+  if (suggestion.filter) {
+    if (input) input.value = '';
+    onSearch('');
+    onFilterChange(suggestion.filter);
+    return;
+  }
+
+  // Tri eco
   if (suggestion.sortBy === 'eco_score') {
+    if (input) input.value = '';
     _filteredSites = sortSites(_filteredSites, 'eco_score');
     renderAll();
+    return;
   }
-  if (suggestion.intent === 'surprise') onSurpriseClick();
-  if (suggestion.label) onSearch(suggestion.label);
+
+  // Surprenez-moi
+  if (suggestion.intent === 'surprise') {
+    if (input) input.value = '';
+    onSurpriseClick();
+    return;
+  }
+
+  // Historique / texte libre
+  if (suggestion.label) {
+    if (input) input.value = suggestion.label;
+    onSearch(suggestion.label);
+  }
 }
 
 function hideSuggestionsPanel() {

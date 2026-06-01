@@ -29,8 +29,9 @@ const SMART_SUGGESTIONS = [
 /* =========================================================
    BLOC 03 — ÉTAT INTERNE
    ========================================================= */
-let _getSites = () => [];
+let _getSites     = () => [];
 let _geocodeTimer = null;
+let _searchTimer  = null;
 
 /* =========================================================
    BLOC 04 — GÉOCODAGE NOMINATIM
@@ -76,10 +77,15 @@ export function initGlobalSearch({ input, clearBtn, suggestionsEl, onSearch, onS
   input.addEventListener('input', () => {
     const q = input.value.trim();
     if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
     if (q.length === 0) {
       showDefaultSuggestions(suggestionsEl, onSuggestion);
+      onSearch(''); // effacer filtre texte
     } else if (q.length >= 2) {
       showSearchSuggestions(suggestionsEl, q, onSuggestion);
+      // Filtrage en temps réel (debounce 300 ms)
+      clearTimeout(_searchTimer);
+      _searchTimer = setTimeout(() => onSearch(q), 300);
     } else {
       hideSuggestions(suggestionsEl);
     }
