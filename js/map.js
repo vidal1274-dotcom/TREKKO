@@ -10,6 +10,7 @@ let _trackPolyline = null;
 let _trackMarkers = [];
 let _streetLayer = null;
 let _satelliteLayer = null;
+let _satelliteLabelsLayer = null;
 let _isSatellite = false;
 
 export function initMap(containerId = 'map') {
@@ -27,6 +28,9 @@ export function initMap(containerId = 'map') {
   _satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: '© Esri, USGS, NOAA',
     maxZoom: 18
+  });
+  _satelliteLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '', maxZoom: 18
   });
   _markersLayer = L.layerGroup().addTo(_map);
   _photoMarkersLayer = L.layerGroup().addTo(_map);
@@ -58,10 +62,12 @@ export function toggleMapLayer() {
   if (!_map) return _isSatellite;
   if (_isSatellite) {
     _map.removeLayer(_satelliteLayer);
+    _map.removeLayer(_satelliteLabelsLayer);
     _streetLayer.addTo(_map);
   } else {
     _map.removeLayer(_streetLayer);
     _satelliteLayer.addTo(_map);
+    _satelliteLabelsLayer.addTo(_map);
   }
   _isSatellite = !_isSatellite;
   return _isSatellite;
