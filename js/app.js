@@ -8,7 +8,7 @@ import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilte
 import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT } from './geolocation.js';
 import { enrichSitesWithEcoScore, getBestDeals } from './economy-engine.js';
 import { loadVehicleProfile } from './vehicle-profile.js';
-import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=7';
+import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=8';
 import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
 import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
 import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=24';

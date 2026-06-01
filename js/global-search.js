@@ -29,10 +29,9 @@ const SMART_SUGGESTIONS = [
 /* =========================================================
    BLOC 03 — ÉTAT INTERNE
    ========================================================= */
-let _getSites     = () => [];
-let _geocodeTimer = null;
-let _searchTimer  = null;
-let _inputEl      = null;  // référence à l'input pour vérifier la requête courante
+let _getSites    = () => [];
+let _searchTimer = null;
+let _inputEl     = null;
 
 /* =========================================================
    BLOC 04 — GÉOCODAGE (Photon + Nominatim en parallèle)
@@ -179,101 +178,85 @@ function showDefaultSuggestions(el, onSuggestion) {
 
   el.innerHTML = (histHtml ? header('Récent') + histHtml + header('Suggestions') : '') + smartHtml;
   el.classList.remove('hidden');
-  bindSuggestionClicks(el, onSuggestion, [], []);
+  bindSuggestionClicks(el, onSuggestion, []);
 }
 
 function showSearchSuggestions(el, query, onSuggestion) {
   if (!el) return;
 
-  const q             = normalizeSearchText(query);
-  const smartMatches  = SMART_SUGGESTIONS.filter(s => normalizeSearchText(s.label).includes(q));
-  const siteMatches   = searchSites(query);
-  let   lastAddresses = null; // null = loading, [] = no result
+  const q            = normalizeSearchText(query);
+  const smartMatches = SMART_SUGGESTIONS.filter(s => normalizeSearchText(s.label).includes(q));
+  const siteMatches  = searchSites(query);
 
-  const render = (addresses) => {
-    const smartHtml = smartMatches.map(s =>
-      `<div class="suggestion-item" data-index="${SMART_SUGGESTIONS.indexOf(s)}">
-        <span class="suggestion-icon">${s.icon}</span>
-        <span class="suggestion-label">${s.label}</span>
+  const smartHtml = smartMatches.map(s =>
+    `<div class="suggestion-item" data-index="${SMART_SUGGESTIONS.indexOf(s)}">
+      <span class="suggestion-icon">${s.icon}</span>
+      <span class="suggestion-label">${s.label}</span>
+    </div>`
+  ).join('');
+
+  const sitesHtml = siteMatches.map(site =>
+    `<div class="suggestion-item" data-site-id="${site.id}">
+      <span class="suggestion-icon">🗺️</span>
+      <span class="suggestion-label">${site.destination}<span style="color:#888;font-size:12px"> — ${site.secteur || ''}</span></span>
+    </div>`
+  ).join('');
+
+  // Bouton explicite de géocodage (query >= 3 chars) — pas d'async auto
+  const locateBtn = query.length >= 3
+    ? `<div class="suggestion-item" data-locate="${encodeURIComponent(query)}"
+          style="border-top:1px solid var(--color-border2);color:var(--color-accent)">
+        <span class="suggestion-icon">📍</span>
+        <span class="suggestion-label">Localiser <strong>"${query}"</strong> sur la carte</span>
       </div>`
-    ).join('');
+    : '';
 
-    const sitesHtml = siteMatches.map(site =>
-      `<div class="suggestion-item" data-site-id="${site.id}">
-        <span class="suggestion-icon">🗺️</span>
-        <span class="suggestion-label">${site.destination}<span style="color:#888;font-size:12px"> — ${site.secteur || ''}</span></span>
-      </div>`
-    ).join('');
+  const sections =
+    (smartMatches.length ? header('Suggestions') + smartHtml : '') +
+    (siteMatches.length  ? header('Sites')       + sitesHtml  : '') +
+    locateBtn;
 
-    let addrHtml = '';
-    if (query.length >= 3) {
-      if (addresses === null) {
-        addrHtml = `<div style="padding:6px 14px;font-size:12px;color:#888">📍 Recherche adresses…</div>`;
-      } else if (addresses.length > 0) {
-        addrHtml = header('📍 Adresses') +
-          addresses.map((a, i) =>
-            `<div class="suggestion-item" data-addr-index="${i}">
-              <span class="suggestion-icon">📍</span>
-              <span class="suggestion-label">${a.label}</span>
-            </div>`
-          ).join('');
-      } else {
-        addrHtml = `<div style="padding:6px 14px;font-size:12px;color:#888">📍 Aucune adresse trouvée</div>`;
-      }
-    }
-
-    const sections =
-      (smartMatches.length ? header('Suggestions') + smartHtml : '') +
-      (siteMatches.length  ? header('Sites')       + sitesHtml  : '') +
-      addrHtml;
-
-    if (!sections) { hideSuggestions(el); return; }
-    el.innerHTML = sections;
-    el.classList.remove('hidden');
-    bindSuggestionClicks(el, onSuggestion, addresses || [], siteMatches);
-  };
-
-  // Affichage immédiat (état "chargement adresses")
-  render(null);
-
-  // Géocodage debounced 500 ms — rouvre le panel si la requête est encore active
-  if (query.length >= 3) {
-    clearTimeout(_geocodeTimer);
-    _geocodeTimer = setTimeout(async () => {
-      const addresses = await geocodeAddress(query);
-      const cur = _inputEl ? _inputEl.value.trim().toLowerCase() : '';
-      if (cur === query.toLowerCase()) {
-        el.classList.remove('hidden');
-        render(addresses);
-      }
-    }, 500);
-  } else {
-    render([]);
-  }
+  if (!sections) { hideSuggestions(el); return; }
+  el.innerHTML = sections;
+  el.classList.remove('hidden');
+  bindSuggestionClicks(el, onSuggestion, siteMatches);
 }
 
 function hideSuggestions(el) {
   if (el) el.classList.add('hidden');
 }
 
-function bindSuggestionClicks(el, onSuggestion, addresses, sites) {
+function bindSuggestionClicks(el, onSuggestion, sites) {
   el.querySelectorAll('.suggestion-item').forEach(item => {
     const handle = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const siteId  = item.dataset.siteId;
-      const addrIdx = item.dataset.addrIndex;
-      const idx     = item.dataset.index;
-      const query   = item.dataset.query ? decodeURIComponent(item.dataset.query) : null;
+
+      const siteId   = item.dataset.siteId;
+      const idx      = item.dataset.index;
+      const histQ    = item.dataset.query ? decodeURIComponent(item.dataset.query) : null;
+      const locateQ  = item.dataset.locate ? decodeURIComponent(item.dataset.locate) : null;
+
+      if (locateQ) {
+        // Géocodage explicite au tap — feedback immédiat dans le bouton
+        item.innerHTML = '<span class="suggestion-icon">⏳</span><span class="suggestion-label">Recherche en cours…</span>';
+        geocodeAddress(locateQ).then(results => {
+          if (results.length > 0) {
+            hideSuggestions(el);
+            onSuggestion(results[0]);
+          } else {
+            item.innerHTML = '<span class="suggestion-icon">❌</span><span class="suggestion-label">Adresse non trouvée</span>';
+            setTimeout(() => hideSuggestions(el), 2000);
+          }
+        });
+        return; // ne pas fermer le panel avant la réponse
+      }
 
       if (siteId) {
         const site = sites.find(s => s.id === siteId);
         if (site) onSuggestion({ type: 'site', site, label: site.destination });
-      } else if (addrIdx != null) {
-        const addr = addresses[parseInt(addrIdx)];
-        if (addr) onSuggestion(addr);
-      } else if (query) {
-        onSuggestion({ label: query, query });
+      } else if (histQ) {
+        onSuggestion({ label: histQ, query: histQ });
       } else if (idx != null) {
         onSuggestion(SMART_SUGGESTIONS[parseInt(idx)]);
       }
