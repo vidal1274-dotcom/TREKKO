@@ -27,6 +27,7 @@ import { initWelcomeScreen, showWelcomeScreen } from './welcome.js?v=4';
 import { initAuthScreen, logout, getCurrentUser } from './auth.js';
 import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=26';
 import { getVisitedIds } from './visited.js?v=25';
+import { initHikingScreen, showHikingScreen } from './hiking-screen.js';
 // Imports lazy — chargés à la demande pour ne pas bloquer le démarrage
 let _fetchWeather = null;
 let _renderCarnet = null;
@@ -121,6 +122,7 @@ async function startApp() {
   onPanelChange('panel-map');
   // Écran de choix d'activité — affiché au démarrage
   initWelcomeScreen(onWelcomeModeSelect);
+  initHikingScreen();
   window._showWelcome = showWelcomeScreen;
   showWelcomeScreen();
 
@@ -1001,6 +1003,12 @@ function openPhotoFullscreen(photo) {
 function onWelcomeModeSelect(mode) {
   if (!mode) return;
   if (mode.id === 'running') { showRunningScreen(); return; }
+  if (mode.id === 'hiking' || mode.id === 'walking') {
+    switchToPanel('panel-map');
+    onPanelChange('panel-map');
+    setTimeout(() => showHikingScreen(mode.id), 100);
+    return;
+  }
   switchToPanel(mode.panel);
   onPanelChange(mode.panel);
 

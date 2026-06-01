@@ -509,8 +509,203 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 <div id="scroll-progress-bar"></div>
 <button id="btn-scroll-top" aria-label="Retour en haut">↑</button>
 
+<!-- ═══════════════════════════════════════════════
+     HIKING SCREEN — Randonnée / Balade
+     (AllTrails setup · Komoot HUD · Strava summary)
+═══════════════════════════════════════════════ -->
+<div id="hiking-screen" class="hiking-screen hidden">
+
+  <!-- ══ SECTION A : SETUP ══════════════════════════════ -->
+  <div id="hs-setup" class="hs-section">
+    <div class="hs-setup-header">
+      <button id="hs-back-btn" class="hs-icon-btn">←</button>
+      <span id="hs-mode-label" class="hs-setup-title">🥾 Randonnée</span>
+    </div>
+
+    <div class="hs-setup-body">
+
+      <!-- Difficulté -->
+      <div class="hs-form-group">
+        <label class="hs-form-label">Difficulté</label>
+        <div class="hs-diff-row">
+          <button class="hs-diff-btn" data-diff="facile">🟢 Facile</button>
+          <button class="hs-diff-btn hs-diff-active" data-diff="moyen">🟡 Moyen</button>
+          <button class="hs-diff-btn" data-diff="difficile">🔴 Difficile</button>
+        </div>
+      </div>
+
+      <!-- Nom du parcours -->
+      <div class="hs-form-group">
+        <label class="hs-form-label" for="hs-label-input">Nom du parcours</label>
+        <input id="hs-label-input" class="hs-text-input" type="text" placeholder="Mon parcours…" />
+      </div>
+
+      <!-- Poids + Température sur la même ligne -->
+      <div class="hs-form-row">
+        <div class="hs-form-group hs-form-half">
+          <label class="hs-form-label">Poids (kg)</label>
+          <div class="hs-stepper">
+            <button id="hs-weight-minus" class="hs-step-btn">−</button>
+            <span id="hs-weight-val" class="hs-step-val">70</span>
+            <button id="hs-weight-plus" class="hs-step-btn">+</button>
+          </div>
+        </div>
+        <div class="hs-form-group hs-form-half">
+          <label class="hs-form-label">Température (°C)</label>
+          <div class="hs-stepper">
+            <button id="hs-temp-minus" class="hs-step-btn">−</button>
+            <span id="hs-temp-val" class="hs-step-val">20</span>
+            <button id="hs-temp-plus" class="hs-step-btn">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Objectif distance -->
+      <div class="hs-form-group">
+        <label class="hs-form-label">Objectif distance</label>
+        <div class="hs-goal-row">
+          <button class="hs-goal-btn hs-goal-active" data-goal="0">Libre</button>
+          <button class="hs-goal-btn" data-goal="5">5 km</button>
+          <button class="hs-goal-btn" data-goal="10">10 km</button>
+          <button class="hs-goal-btn" data-goal="20">20 km</button>
+        </div>
+      </div>
+
+    </div><!-- /.hs-setup-body -->
+
+    <div class="hs-setup-footer">
+      <button id="hs-btn-start" class="hs-btn-start">▶ DÉMARRER</button>
+    </div>
+  </div><!-- /#hs-setup -->
+
+  <!-- ══ SECTION B : HUD LIVE ═══════════════════════════ -->
+  <div id="hs-live" class="hs-section hidden">
+
+    <!-- Overlay verrouillage -->
+    <div id="hs-lock-overlay" class="hs-lock-overlay hidden">
+      <div class="hs-lock-content">
+        <div class="hs-lock-icon">🔒</div>
+        <div class="hs-lock-stats">
+          <span id="hs-lock-dist">0.00 km</span>
+          <span id="hs-lock-timer">00:00:00</span>
+        </div>
+        <button id="btn-hs-unlock" class="hs-unlock-btn">Maintenir pour déverrouiller</button>
+      </div>
+    </div>
+
+    <!-- Barre haute fixe -->
+    <div class="hs-top-bar">
+      <span id="hs-live-mode-label" class="hs-live-mode">🥾 Randonnée</span>
+      <span id="hs-timer" class="hs-live-timer">00:00:00</span>
+      <div class="hs-top-btns">
+        <button id="btn-hs-pause" class="hs-icon-btn" title="Pause">⏸</button>
+        <button id="btn-hs-lock"  class="hs-icon-btn" title="Verrouiller">🔓</button>
+      </div>
+    </div>
+
+    <!-- Zone transparente → carte visible en dessous -->
+    <div class="hs-map-gap"></div>
+
+    <!-- Panneau stats bas -->
+    <div class="hs-stats-panel">
+
+      <!-- Alerte hydratation -->
+      <div id="hs-water-alert" class="hs-water-bar hidden">💧 Boire ~250ml maintenant</div>
+
+      <!-- Ligne héro -->
+      <div class="hs-stat-hero">
+        <div class="hs-stat-main">
+          <span id="hs-stat-dist" class="hs-hero-val">0.00</span>
+          <span class="hs-hero-unit">km</span>
+        </div>
+        <div class="hs-stat-elev-wrap">
+          <span id="hs-stat-elev" class="hs-elev-val">+0</span>
+          <span class="hs-elev-unit">m D+</span>
+        </div>
+      </div>
+
+      <!-- Grille stats secondaires -->
+      <div class="hs-stat-grid">
+        <div class="hs-stat-cell">
+          <span id="hs-stat-pace" class="hs-stat-val">—</span>
+          <span class="hs-stat-lbl">min/km</span>
+        </div>
+        <div class="hs-stat-cell">
+          <span id="hs-stat-cals" class="hs-stat-val">0</span>
+          <span class="hs-stat-lbl">kcal</span>
+        </div>
+      </div>
+
+      <!-- Barre progression objectif -->
+      <div id="hs-progress-wrap" class="hs-progress-wrap hidden">
+        <div class="hs-progress-track">
+          <div id="hs-progress-bar" class="hs-progress-bar" style="width:0%"></div>
+        </div>
+        <span id="hs-progress-label" class="hs-progress-label">0 / 0 km</span>
+      </div>
+
+      <!-- Actions bas -->
+      <div class="hs-live-actions">
+        <button id="btn-hs-sound" class="hs-action-btn" title="Son">🔊</button>
+        <button id="btn-hs-stop"  class="hs-action-btn hs-btn-stop" title="Arrêter">⏹ ARRÊTER</button>
+      </div>
+
+    </div><!-- /.hs-stats-panel -->
+  </div><!-- /#hs-live -->
+
+  <!-- ══ SECTION C : RÉSUMÉ ══════════════════════════════ -->
+  <div id="hs-summary" class="hs-section hidden">
+    <div class="hs-summary-header">
+      <span id="hs-summary-header-text" class="hs-sum-title">🥾 Randonnée terminée</span>
+      <span id="hs-summary-date" class="hs-sum-date"></span>
+    </div>
+
+    <div class="hs-summary-body">
+      <!-- Stat héros distance -->
+      <div class="hs-sum-hero">
+        <span id="hs-sum-dist" class="hs-sum-dist-val">0.00</span>
+        <span class="hs-sum-dist-unit">km</span>
+      </div>
+
+      <!-- Badge difficulté -->
+      <div id="hs-sum-badge" class="hs-sum-badge">🟡 Moyen</div>
+
+      <!-- 3 stats secondaires -->
+      <div class="hs-sum-grid">
+        <div class="hs-sum-cell">
+          <span class="hs-sum-cell-icon">⏱</span>
+          <span id="hs-sum-duration" class="hs-sum-cell-val">00:00:00</span>
+          <span class="hs-sum-cell-lbl">Durée</span>
+        </div>
+        <div class="hs-sum-cell">
+          <span class="hs-sum-cell-icon">⛰</span>
+          <span id="hs-sum-elev" class="hs-sum-cell-val">+0 m</span>
+          <span class="hs-sum-cell-lbl">Dénivelé+</span>
+        </div>
+        <div class="hs-sum-cell">
+          <span class="hs-sum-cell-icon">🔥</span>
+          <span id="hs-sum-cals" class="hs-sum-cell-val">0 kcal</span>
+          <span class="hs-sum-cell-lbl">Calories</span>
+        </div>
+      </div>
+
+      <!-- Splits -->
+      <div class="hs-sum-splits-wrap">
+        <div class="hs-sum-splits-title">Splits par km</div>
+        <div id="hs-sum-splits" class="hs-sum-splits"></div>
+      </div>
+    </div><!-- /.hs-summary-body -->
+
+    <div class="hs-summary-footer">
+      <button id="btn-hs-gpx" class="hs-sum-btn hs-sum-btn-secondary">⬇ GPX</button>
+      <button id="btn-hs-new" class="hs-sum-btn hs-sum-btn-primary">Nouvelle sortie</button>
+    </div>
+  </div><!-- /#hs-summary -->
+
+</div><!-- /#hiking-screen -->
+
 <!-- Modules JS (ESM) -->
-<script type="module" src="js/app.js?v=58"></script>
+<script type="module" src="js/app.js?v=59"></script>
 
 </body>
 </html>
