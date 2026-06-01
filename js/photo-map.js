@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS
    ========================================================= */
-import { getPhotoMarkersLayer, createPhotoIcon } from './map.js?v=2';
+import { getPhotoMarkersLayer, createPhotoIcon } from './map.js?v=3';
 import { loadAllPhotos } from './photos.js';
 
 /* =========================================================

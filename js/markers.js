@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS
    ========================================================= */
-import { getMarkersLayer, createSiteIcon, getSiteStatusColor, flyToSite } from './map.js?v=2';
+import { getMarkersLayer, createSiteIcon, getSiteStatusColor, flyToSite } from './map.js?v=3';
 import { formatCurrency, formatDistance, buildWazeLink, buildGoogleMapsLink } from './utils.js';
 import { setState } from './state.js';
 
