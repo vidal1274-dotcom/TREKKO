@@ -3199,6 +3199,12 @@ body.hiking-active #location-bar {
   display: none !important;
 }
 
+/* Carte plein écran derrière le hiking screen */
+body.hiking-active #app-main {
+  top: 0 !important;
+  bottom: 0 !important;
+}
+
 /* ── Sections ─────────────────────────────────────────────── */
 .hs-section {
   display: flex;

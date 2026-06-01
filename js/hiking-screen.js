@@ -1,7 +1,7 @@
 /* =========================================================
    hiking-screen.js — Écran Randonnée / Balade (AllTrails + Komoot + Strava)
    ========================================================= */
-import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX } from './tracker.js';
+import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints } from './tracker.js';
 import { invalidateMapSize } from './map.js?v=2';
 import { showToast } from './utils.js';
 
@@ -396,7 +396,10 @@ function _wireSummary() {
   _el('btn-hs-gpx')?.addEventListener('click', async () => {
     if (!_sessionId) { showToast('Pas de session à exporter.', 'warning'); return; }
     try {
-      const gpx = await exportAsGPX(_sessionId);
+      const points = await loadTrackPoints(_sessionId);
+      if (!points || points.length === 0) { showToast('Aucun point GPS enregistré.', 'warning'); return; }
+      const cfg = MODE_CONFIG[_mode];
+      const gpx = exportAsGPX(points, `${cfg.title} — ${_fmtDateShort()}`);
       const blob = new Blob([gpx], { type: 'application/gpx+xml' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
