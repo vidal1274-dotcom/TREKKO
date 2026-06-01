@@ -5,6 +5,7 @@ let _map = null;
 let _markersLayer = null;
 let _photoMarkersLayer = null;
 let _userLocationMarker = null;
+let _accuracyCircle = null;
 let _radiusCircle = null;
 let _trackPolyline = null;
 let _trackMarkers = [];
@@ -122,30 +123,42 @@ function getSiteEmoji(site) {
 /* =========================================================
    BLOC 05 — POSITION UTILISATEUR
    ========================================================= */
-export function showUserLocationMarker(lat, lon, label = 'Ma position', radiusKm = null) {
+export function showUserLocationMarker(lat, lon, label = 'Ma position', radiusKm = null, accuracyMeters = null) {
   if (!_map) return;
   if (_userLocationMarker) { _map.removeLayer(_userLocationMarker); _userLocationMarker = null; }
+  if (_accuracyCircle) { _map.removeLayer(_accuracyCircle); _accuracyCircle = null; }
   if (_radiusCircle) { _map.removeLayer(_radiusCircle); _radiusCircle = null; }
 
+  // Cercle de précision GPS (comme Google Maps) — affiché en dessous du dot
+  if (accuracyMeters && accuracyMeters > 0 && accuracyMeters < 5000) {
+    _accuracyCircle = L.circle([lat, lon], {
+      radius: accuracyMeters,
+      color: '#4285F4', fillColor: '#4285F4',
+      fillOpacity: 0.15, weight: 1.5, opacity: 0.5
+    }).addTo(_map);
+  }
+
   const icon = L.divIcon({
-    html: `<div style="background:#3498db;border-radius:50%;width:18px;height:18px;border:3px solid #fff;box-shadow:0 0 0 3px rgba(52,152,219,0.4);"></div>`,
+    html: `<div style="background:#4285F4;border-radius:50%;width:18px;height:18px;border:3px solid #fff;box-shadow:0 0 0 4px rgba(66,133,244,0.35);"></div>`,
     iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -12], className: ''
   });
+  const accuracyLabel = accuracyMeters ? ` <span style="color:#888;font-size:11px">(±${Math.round(accuracyMeters)} m)</span>` : '';
   _userLocationMarker = L.marker([lat, lon], { icon, zIndexOffset: 1000 })
-    .bindPopup(`<strong>📍 ${label}</strong>`)
+    .bindPopup(`<strong>📍 ${label}</strong>${accuracyLabel}`)
     .addTo(_map);
 
   if (radiusKm && radiusKm < 150) {
     _radiusCircle = L.circle([lat, lon], {
       radius: radiusKm * 1000,
-      color: '#3498db', fillColor: '#3498db',
-      fillOpacity: 0.06, weight: 2, dashArray: '6 4'
+      color: '#4285F4', fillColor: '#4285F4',
+      fillOpacity: 0.05, weight: 2, dashArray: '6 4'
     }).addTo(_map);
   }
 }
 
 export function clearUserLocationMarker() {
   if (_userLocationMarker) { _map.removeLayer(_userLocationMarker); _userLocationMarker = null; }
+  if (_accuracyCircle) { _map.removeLayer(_accuracyCircle); _accuracyCircle = null; }
   if (_radiusCircle) { _map.removeLayer(_radiusCircle); _radiusCircle = null; }
 }
 

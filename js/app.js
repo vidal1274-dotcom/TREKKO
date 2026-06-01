@@ -421,7 +421,7 @@ function initLocationBar() {
       _originCoords = pos;
       _sites = recalcDistances(_sites, pos.lat, pos.lon);
       _sites = enrichSitesWithEcoScore(_sites, _vehicleProfile);
-      showUserLocationMarker(pos.lat, pos.lon, 'Ma position', _maxDistanceKm < 150 ? _maxDistanceKm : null);
+      showUserLocationMarker(pos.lat, pos.lon, 'Ma position', _maxDistanceKm < 150 ? _maxDistanceKm : null, pos.accuracy);
       updateLocationUI();
       applyFiltersAndRender();
       flyToSite(pos.lat, pos.lon, 11);
@@ -822,7 +822,7 @@ function _rsUpdateMap() {
       else _rsMapLine = L.polyline(_rsMapPoints, { color: '#e94560', weight: 4, opacity: 0.9 }).addTo(_rsMap);
     }
     _rsMap.panTo([lat, lon]);
-  }, null, { maximumAge: 5000, timeout: 3000 });
+  }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
 }
 
 function _rsFormatTimer(ms) {
@@ -856,9 +856,9 @@ function _rsCheckGPS() {
   if (!el || !navigator.geolocation) return;
   el.textContent = '🟡 GPS…';
   navigator.geolocation.getCurrentPosition(
-    pos => { el.textContent = pos.coords.accuracy < 20 ? '🟢 GPS OK' : '🟡 GPS faible'; },
+    pos => { el.textContent = pos.coords.accuracy < 20 ? '🟢 GPS OK' : pos.coords.accuracy < 50 ? '🟡 GPS moyen' : '🟠 GPS faible'; },
     ()  => { el.textContent = '🔴 GPS absent'; },
-    { timeout: 8000, maximumAge: 10000 }
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
   );
 }
 

@@ -51,7 +51,11 @@ export function requestUserLocation() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      pos => resolve({
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+        accuracy: pos.coords.accuracy  // en mètres
+      }),
       err => {
         const messages = {
           1: 'Permission refusée — autorisez la localisation dans les réglages.',
@@ -60,7 +64,7 @@ export function requestUserLocation() {
         };
         reject(new Error(messages[err.code] || 'Erreur géolocalisation'));
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   });
 }
