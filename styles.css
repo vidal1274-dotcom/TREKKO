@@ -3166,10 +3166,29 @@ body.welcome-open #welcome-screen { display: flex !important; }
   z-index: 8500;
   display: flex;
   flex-direction: column;
-  background: var(--hs-bg);
+  background: transparent; /* la carte est visible derrière en mode live */
   color: var(--hs-text);
   font-family: inherit;
   overflow: hidden;
+}
+
+/* Setup : bottom-sheet — la carte avec sites est visible au-dessus */
+#hs-setup {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  max-height: 75vh;
+  height: auto;
+  flex: none;
+  background: var(--hs-bg);
+  border-radius: 20px 20px 0 0;
+  overflow-y: auto;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.6);
+}
+
+/* Summary : plein écran opaque */
+#hs-summary {
+  background: var(--hs-bg);
+  overflow-y: auto;
 }
 
 /* Body class quand l'écran est actif */
