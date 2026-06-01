@@ -35,20 +35,46 @@ let _searchTimer  = null;
 let _inputEl      = null;  // référence à l'input pour vérifier la requête courante
 
 /* =========================================================
-   BLOC 04 — GÉOCODAGE NOMINATIM
+   BLOC 04 — GÉOCODAGE (Photon + Nominatim en parallèle)
    ========================================================= */
+function fetchWithTimeout(url, ms = 6000) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(tid));
+}
+
+async function _photon(query) {
+  // Photon (Komoot) — rapide, résultats OSM, bbox sud de la France
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lang=fr&limit=5&bbox=2.0,42.0,6.0,45.5`;
+  const res  = await fetchWithTimeout(url);
+  if (!res.ok) throw new Error('photon fail');
+  const data = await res.json();
+  return (data.features || []).map(f => ({
+    type:  'address',
+    label: [f.properties.name, f.properties.city || f.properties.county, f.properties.state]
+             .filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', '),
+    lat: f.geometry.coordinates[1],
+    lon: f.geometry.coordinates[0]
+  })).filter(r => r.label);
+}
+
+async function _nominatim(query) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=4&countrycodes=fr&accept-language=fr`;
+  const res  = await fetchWithTimeout(url);
+  if (!res.ok) throw new Error('nominatim fail');
+  const data = await res.json();
+  return data.map(r => ({
+    type:  'address',
+    label: r.display_name.split(',').slice(0, 3).join(', '),
+    lat:   parseFloat(r.lat),
+    lon:   parseFloat(r.lon)
+  }));
+}
+
 async function geocodeAddress(query) {
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=4&countrycodes=fr&accept-language=fr`;
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.map(r => ({
-      type: 'address',
-      label: r.display_name.split(',').slice(0, 3).join(', '),
-      lat: parseFloat(r.lat),
-      lon: parseFloat(r.lon)
-    }));
+    // Prendre le premier qui répond
+    return await Promise.any([_photon(query), _nominatim(query)]);
   } catch { return []; }
 }
 
@@ -191,6 +217,8 @@ function showSearchSuggestions(el, query, onSuggestion) {
               <span class="suggestion-label">${a.label}</span>
             </div>`
           ).join('');
+      } else {
+        addrHtml = `<div style="padding:6px 14px;font-size:12px;color:#888">📍 Aucune adresse trouvée</div>`;
       }
     }
 
@@ -213,9 +241,9 @@ function showSearchSuggestions(el, query, onSuggestion) {
     clearTimeout(_geocodeTimer);
     _geocodeTimer = setTimeout(async () => {
       const addresses = await geocodeAddress(query);
-      const stillCurrent = _inputEl && _inputEl.value.trim() === query;
-      if (stillCurrent) {
-        el.classList.remove('hidden'); // rouvrir si fermé entre-temps
+      const cur = _inputEl ? _inputEl.value.trim().toLowerCase() : '';
+      if (cur === query.toLowerCase()) {
+        el.classList.remove('hidden');
         render(addresses);
       }
     }, 500);
