@@ -8,7 +8,7 @@ import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilte
 import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT } from './geolocation.js';
 import { enrichSitesWithEcoScore, getBestDeals } from './economy-engine.js';
 import { loadVehicleProfile } from './vehicle-profile.js';
-import { initGlobalSearch, interpretSearchQuery } from './global-search.js';
+import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=2';
 import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
 import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
 import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=24';
@@ -269,6 +269,15 @@ function onSearch(query) {
 function onSuggestion(suggestion) {
   const input = document.getElementById('global-search-input');
   if (input) input.value = suggestion.label || '';
+
+  // Adresse géocodée → voler vers les coords sur la carte
+  if (suggestion.type === 'address') {
+    switchToPanel('panel-map');
+    onPanelChange('panel-map');
+    setTimeout(() => flyToSite(suggestion.lat, suggestion.lon, 15), 120);
+    return;
+  }
+
   if (suggestion.filter) onFilterChange(suggestion.filter);
   if (suggestion.sortBy === 'eco_score') {
     _filteredSites = sortSites(_filteredSites, 'eco_score');

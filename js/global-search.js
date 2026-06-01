@@ -9,6 +9,26 @@ const HISTORY_KEY = 'search_history';
 const MAX_HISTORY = 10;
 
 /* =========================================================
+   BLOC 01b — GÉOCODAGE ADRESSES (Nominatim / OpenStreetMap)
+   ========================================================= */
+let _geocodeTimer = null;
+
+async function geocodeAddress(query) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=4&countrycodes=fr&accept-language=fr`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'fr' } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.map(r => ({
+      type: 'address',
+      label: r.display_name.split(',').slice(0, 3).join(', '),
+      lat: parseFloat(r.lat),
+      lon: parseFloat(r.lon)
+    }));
+  } catch { return []; }
+}
+
+/* =========================================================
    BLOC 02 — SUGGESTIONS PRÉDÉFINIES
    ========================================================= */
 const SMART_SUGGESTIONS = [
@@ -102,28 +122,65 @@ function showSearchSuggestions(el, query, onSuggestion) {
   if (!el) return;
   const q = normalizeSearchText(query);
   const matching = SMART_SUGGESTIONS.filter(s => normalizeSearchText(s.label).includes(q));
-  if (matching.length === 0) { hideSuggestions(el); return; }
-  el.innerHTML = matching.map((s, i) =>
-    `<div class="suggestion-item" data-index="${SMART_SUGGESTIONS.indexOf(s)}">
-      <span class="suggestion-icon">${s.icon}</span>
-      <span class="suggestion-label">${s.label}</span>
-    </div>`
-  ).join('');
-  el.classList.remove('hidden');
-  bindSuggestionClicks(el, onSuggestion);
+
+  const renderAll = (addresses = []) => {
+    const smartHtml = matching.map(s =>
+      `<div class="suggestion-item" data-index="${SMART_SUGGESTIONS.indexOf(s)}">
+        <span class="suggestion-icon">${s.icon}</span>
+        <span class="suggestion-label">${s.label}</span>
+      </div>`
+    ).join('');
+
+    const addrHtml = addresses.length
+      ? `<div style="padding:6px 14px;font-size:11px;color:#888">📍 Adresses</div>` +
+        addresses.map((a, i) =>
+          `<div class="suggestion-item" data-addr-index="${i}">
+            <span class="suggestion-icon">📍</span>
+            <span class="suggestion-label">${a.label}</span>
+          </div>`
+        ).join('')
+      : '';
+
+    const combined = smartHtml + addrHtml;
+    if (!combined) { hideSuggestions(el); return; }
+    el.innerHTML = combined;
+    el.classList.remove('hidden');
+    bindSuggestionClicks(el, onSuggestion, addresses);
+  };
+
+  // Affichage immédiat avec les suggestions smart
+  renderAll();
+
+  // Géocodage en parallèle (debounced 400 ms)
+  if (query.length >= 3) {
+    clearTimeout(_geocodeTimer);
+    _geocodeTimer = setTimeout(async () => {
+      const addresses = await geocodeAddress(query);
+      if (addresses.length && el.classList.contains('hidden') === false) {
+        renderAll(addresses);
+      }
+    }, 400);
+  }
 }
 
 function hideSuggestions(el) {
   if (el) el.classList.add('hidden');
 }
 
-function bindSuggestionClicks(el, onSuggestion) {
+function bindSuggestionClicks(el, onSuggestion, addresses = []) {
   el.querySelectorAll('.suggestion-item').forEach(item => {
     item.addEventListener('click', () => {
-      const idx = item.dataset.index;
-      const query = item.dataset.query ? decodeURIComponent(item.dataset.query) : null;
-      if (query) { onSuggestion({ label: query, query }); }
-      else if (idx != null) { onSuggestion(SMART_SUGGESTIONS[parseInt(idx)]); }
+      const idx      = item.dataset.index;
+      const addrIdx  = item.dataset.addrIndex;
+      const query    = item.dataset.query ? decodeURIComponent(item.dataset.query) : null;
+      if (addrIdx != null) {
+        const addr = addresses[parseInt(addrIdx)];
+        if (addr) onSuggestion(addr);
+      } else if (query) {
+        onSuggestion({ label: query, query });
+      } else if (idx != null) {
+        onSuggestion(SMART_SUGGESTIONS[parseInt(idx)]);
+      }
       hideSuggestions(el);
     });
   });
