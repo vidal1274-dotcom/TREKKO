@@ -133,15 +133,16 @@ html, body {
 }
 
 .search-suggestions {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0; right: 0;
+  position: fixed;
+  top: calc(var(--header-height) + 6px);
+  left: 10px; right: 10px;
   background: var(--color-card2);
   border: 1.5px solid var(--color-border2);
   border-radius: var(--radius);
-  z-index: 2000;
-  max-height: 320px;
+  z-index: 9000;
+  max-height: 60vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow);
 }
 .search-suggestions.hidden { display: none; }

@@ -85,14 +85,19 @@ export function initGlobalSearch({ input, clearBtn, suggestionsEl, onSearch, onS
     }
   });
 
+  const doSearch = () => {
+    const q = input.value.trim();
+    hideSuggestions(suggestionsEl);
+    if (q) { addToHistory(q); onSearch(q); }
+  };
+
+  // Enter clavier desktop
   input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      hideSuggestions(suggestionsEl);
-      const q = input.value.trim();
-      if (q) { addToHistory(q); onSearch(q); }
-    }
+    if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
     if (e.key === 'Escape') { hideSuggestions(suggestionsEl); input.blur(); }
   });
+  // Bouton "Rechercher" / "Go" clavier mobile iOS/Android
+  input.addEventListener('search', doSearch);
 
   input.addEventListener('focus', () => {
     if (!input.value.trim()) showDefaultSuggestions(suggestionsEl, onSuggestion);
@@ -214,7 +219,9 @@ function hideSuggestions(el) {
 
 function bindSuggestionClicks(el, onSuggestion, addresses, sites) {
   el.querySelectorAll('.suggestion-item').forEach(item => {
-    item.addEventListener('click', () => {
+    const handle = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const siteId  = item.dataset.siteId;
       const addrIdx = item.dataset.addrIndex;
       const idx     = item.dataset.index;
@@ -232,7 +239,10 @@ function bindSuggestionClicks(el, onSuggestion, addresses, sites) {
         onSuggestion(SMART_SUGGESTIONS[parseInt(idx)]);
       }
       hideSuggestions(el);
-    });
+    };
+
+    item.addEventListener('touchend', handle, { passive: false });
+    item.addEventListener('click', handle);
   });
 }
 
