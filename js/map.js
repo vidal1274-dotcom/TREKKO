@@ -94,6 +94,49 @@ export function clearPhotoMarkers() {
   if (_photoMarkersLayer) _photoMarkersLayer.clearLayers();
 }
 
+export function hidePoiLayers() {
+  if (!_map) return;
+  if (_markersLayer && _map.hasLayer(_markersLayer)) _map.removeLayer(_markersLayer);
+  if (_photoMarkersLayer && _map.hasLayer(_photoMarkersLayer)) _map.removeLayer(_photoMarkersLayer);
+}
+
+export function showPoiLayers() {
+  if (!_map) return;
+  if (_markersLayer && !_map.hasLayer(_markersLayer)) _markersLayer.addTo(_map);
+  if (_photoMarkersLayer && !_map.hasLayer(_photoMarkersLayer)) _photoMarkersLayer.addTo(_map);
+}
+
+export function centerMap(lat, lon, zoom = 13) {
+  if (!_map) return;
+  _map.setView([lat, lon], zoom, { animate: false });
+}
+
+let _hikingTrailsLayer = null;
+
+export function clearHikingTrails() {
+  if (_hikingTrailsLayer && _map) { _map.removeLayer(_hikingTrailsLayer); _hikingTrailsLayer = null; }
+}
+
+export function drawHikingTrails(ways, nodes) {
+  if (!_map) return;
+  clearHikingTrails();
+  _hikingTrailsLayer = L.layerGroup();
+  const nodeMap = {};
+  nodes.forEach(n => { nodeMap[n.id] = [n.lat, n.lon]; });
+  ways.forEach(way => {
+    const coords = (way.nodes || []).map(nid => nodeMap[nid]).filter(Boolean);
+    if (coords.length < 2) return;
+    const hw = way.tags?.highway || '';
+    L.polyline(coords, {
+      color: '#27ae60',
+      weight: hw === 'path' ? 2.5 : 3.5,
+      opacity: 0.85,
+      dashArray: hw === 'path' ? '6 4' : null
+    }).bindPopup(way.tags?.name ? `<b>🥾 ${way.tags.name}</b>` : '🥾 Sentier').addTo(_hikingTrailsLayer);
+  });
+  _hikingTrailsLayer.addTo(_map);
+}
+
 /* =========================================================
    BLOC 04 — ICÔNES PERSONNALISÉES
    ========================================================= */

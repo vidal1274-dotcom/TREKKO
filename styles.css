@@ -3240,6 +3240,16 @@ body.hiking-active #app-main {
   -webkit-overflow-scrolling: touch;
 }
 
+.hs-trails-info {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--hs-color);
+  background: rgba(39,174,96,0.1);
+  border-bottom: 1px solid rgba(39,174,96,0.2);
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
 .hs-setup-header {
   display: flex;
   align-items: center;

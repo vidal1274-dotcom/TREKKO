@@ -2,7 +2,9 @@
    hiking-screen.js — Écran Randonnée / Balade (AllTrails + Komoot + Strava)
    ========================================================= */
 import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints } from './tracker.js';
-import { invalidateMapSize } from './map.js?v=2';
+import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails } from './map.js?v=2';
+import { getStoredOrigin } from './geolocation.js';
+import { OVERPASS_ENDPOINT } from './config.js';
 import { showToast } from './utils.js';
 
 /* ─── Configuration par mode ───────────────────────────────── */
@@ -120,8 +122,18 @@ export function showHikingScreen(activityMode) {
   // Reset to setup section
   _showSection('setup');
 
-  // Map already active behind — give it a moment
-  setTimeout(() => invalidateMapSize(), 150);
+  // Cacher les marqueurs POI de l'app principale
+  hidePoiLayers();
+
+  // Centrer la carte sur la position utilisateur + charger les sentiers
+  const origin = getStoredOrigin();
+  setTimeout(() => {
+    invalidateMapSize();
+    if (origin?.lat && origin?.lon) {
+      centerMap(origin.lat, origin.lon, 13);
+      _loadHikingTrails(origin.lat, origin.lon, activityMode);
+    }
+  }, 200);
 }
 
 /* ─── Navigation entre sections ────────────────────────────── */
@@ -478,10 +490,44 @@ function _showSummary() {
   _showSection('summary');
 }
 
+/* ─── Sentiers depuis Overpass ──────────────────────────────── */
+async function _loadHikingTrails(lat, lon, mode) {
+  const radius = mode === 'hiking' ? 10000 : 6000;
+  const infoEl = _el('hs-trails-info');
+  if (infoEl) infoEl.textContent = '🔍 Recherche des sentiers…';
+
+  const query = `[out:json][timeout:25];
+(
+  way["highway"~"path|footway|track"]["access"!="private"](around:${radius},${lat},${lon});
+  way["route"~"hiking|foot"](around:${radius},${lat},${lon});
+);
+out body;
+>;
+out skel qt;`;
+
+  try {
+    const resp = await fetch(OVERPASS_ENDPOINT, {
+      method: 'POST',
+      body: 'data=' + encodeURIComponent(query)
+    });
+    const data = await resp.json();
+    const ways = data.elements.filter(e => e.type === 'way');
+    const nodes = data.elements.filter(e => e.type === 'node');
+    drawHikingTrails(ways, nodes);
+    if (infoEl) infoEl.textContent = `🥾 ${ways.length} sentier${ways.length > 1 ? 's' : ''} trouvé${ways.length > 1 ? 's' : ''} dans un rayon de ${radius / 1000} km`;
+  } catch (e) {
+    if (infoEl) infoEl.textContent = '⚠️ Sentiers non disponibles (hors connexion)';
+  }
+}
+
 /* ─── Fermeture ─────────────────────────────────────────────── */
 function _closeHikingScreen() {
   // Arrêter les timers si encore actifs
   _stopTimers();
+
+  // Nettoyer la carte (sentiers) et restaurer les POI
+  clearHikingTrails();
+  showPoiLayers();
 
   document.body.classList.remove('hiking-active');
   const screen = _el('hiking-screen');
