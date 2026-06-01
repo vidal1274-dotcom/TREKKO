@@ -8,7 +8,7 @@ import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilte
 import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT } from './geolocation.js';
 import { enrichSitesWithEcoScore, getBestDeals } from './economy-engine.js';
 import { loadVehicleProfile } from './vehicle-profile.js';
-import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=2';
+import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=3';
 import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
 import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
 import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=24';
@@ -106,7 +106,8 @@ async function startApp() {
     clearBtn: document.getElementById('search-clear-btn'),
     suggestionsEl: document.getElementById('search-suggestions'),
     onSearch: onSearch,
-    onSuggestion: onSuggestion
+    onSuggestion: onSuggestion,
+    getSites: () => _sites
   });
 
   // Filtres rapides
@@ -264,17 +265,30 @@ function onFilterChange(filterKey) {
 function onSearch(query) {
   _searchQuery = query;
   applyFiltersAndRender();
+  // Afficher les résultats dans la liste
+  if (query) {
+    switchToPanel('panel-list');
+    onPanelChange('panel-list');
+  }
 }
 
 function onSuggestion(suggestion) {
   const input = document.getElementById('global-search-input');
   if (input) input.value = suggestion.label || '';
 
+  // Site trouvé directement → ouvrir la fiche
+  if (suggestion.type === 'site') {
+    openSiteDetail(suggestion.site, _vehicleProfile);
+    hideSuggestionsPanel();
+    return;
+  }
+
   // Adresse géocodée → voler vers les coords sur la carte
   if (suggestion.type === 'address') {
     switchToPanel('panel-map');
     onPanelChange('panel-map');
     setTimeout(() => flyToSite(suggestion.lat, suggestion.lon, 15), 120);
+    hideSuggestionsPanel();
     return;
   }
 
@@ -285,6 +299,11 @@ function onSuggestion(suggestion) {
   }
   if (suggestion.intent === 'surprise') onSurpriseClick();
   if (suggestion.label) onSearch(suggestion.label);
+}
+
+function hideSuggestionsPanel() {
+  const el = document.getElementById('search-suggestions');
+  if (el) el.classList.add('hidden');
 }
 
 function applyFiltersAndRender() {
