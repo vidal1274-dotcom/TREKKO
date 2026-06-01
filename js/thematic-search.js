@@ -3,7 +3,7 @@
    ========================================================= */
 import { THEMATIC_CATEGORIES, OVERPASS_ENDPOINT } from './config.js';
 import { fetchNearbyPlaces, renderNearbyResults } from './nearby.js';
-import { getMap } from './map.js';
+import { getMap } from './map.js?v=2';
 
 /* =========================================================
    BLOC 02 — RECHERCHE THÉMATIQUE PAR CATÉGORIE
