@@ -34,47 +34,61 @@ let _searchTimer = null;
 let _inputEl     = null;
 
 /* =========================================================
-   BLOC 04 — GÉOCODAGE (Photon + Nominatim en parallèle)
+   BLOC 04 — GÉOCODAGE (XHR — compatibilité maximale)
    ========================================================= */
-function fetchWithTimeout(url, ms = 6000) {
-  const ctrl = new AbortController();
-  const tid  = setTimeout(() => ctrl.abort(), ms);
-  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(tid));
+function xhrGet(url, timeoutMs) {
+  return new Promise(function(resolve) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.timeout = timeoutMs || 8000;
+    xhr.onload  = function() {
+      if (xhr.status === 200) { resolve(xhr.responseText); }
+      else { resolve(null); }
+    };
+    xhr.onerror   = function() { resolve(null); };
+    xhr.ontimeout = function() { resolve(null); };
+    xhr.send();
+  });
 }
 
-async function _photon(query) {
-  // Photon (Komoot) — rapide, résultats OSM, bbox sud de la France
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lang=fr&limit=5&bbox=2.0,42.0,6.0,45.5`;
-  const res  = await fetchWithTimeout(url);
-  if (!res.ok) throw new Error('photon fail');
-  const data = await res.json();
-  return (data.features || []).map(f => ({
-    type:  'address',
-    label: [f.properties.name, f.properties.city || f.properties.county, f.properties.state]
-             .filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', '),
-    lat: f.geometry.coordinates[1],
-    lon: f.geometry.coordinates[0]
-  })).filter(r => r.label);
+function geocodeAddress(query) {
+  // API Adresse (gouv.fr) — officielle France, CORS OK, rapide
+  var url = 'https://api-adresse.data.gouv.fr/search/?q=' + encodeURIComponent(query) + '&limit=5';
+  return xhrGet(url, 8000).then(function(text) {
+    if (!text) return geocodeNominatim(query);
+    try {
+      var data = JSON.parse(text);
+      var results = (data.features || []).map(function(f) {
+        return {
+          type:  'address',
+          label: f.properties.label,
+          lat:   f.geometry.coordinates[1],
+          lon:   f.geometry.coordinates[0]
+        };
+      });
+      if (results.length > 0) return results;
+    } catch(e) {}
+    return geocodeNominatim(query);
+  });
 }
 
-async function _nominatim(query) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=4&countrycodes=fr&accept-language=fr`;
-  const res  = await fetchWithTimeout(url);
-  if (!res.ok) throw new Error('nominatim fail');
-  const data = await res.json();
-  return data.map(r => ({
-    type:  'address',
-    label: r.display_name.split(',').slice(0, 3).join(', '),
-    lat:   parseFloat(r.lat),
-    lon:   parseFloat(r.lon)
-  }));
-}
-
-async function geocodeAddress(query) {
-  try {
-    // Prendre le premier qui répond
-    return await Promise.any([_photon(query), _nominatim(query)]);
-  } catch { return []; }
+function geocodeNominatim(query) {
+  var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' +
+            encodeURIComponent(query) + '&limit=4&countrycodes=fr&accept-language=fr';
+  return xhrGet(url, 8000).then(function(text) {
+    if (!text) return [];
+    try {
+      var data = JSON.parse(text);
+      return data.map(function(r) {
+        return {
+          type:  'address',
+          label: r.display_name.split(',').slice(0, 3).join(', '),
+          lat:   parseFloat(r.lat),
+          lon:   parseFloat(r.lon)
+        };
+      });
+    } catch(e) { return []; }
+  });
 }
 
 /* =========================================================
