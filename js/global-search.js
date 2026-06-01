@@ -192,6 +192,7 @@ function showDefaultSuggestions(el, onSuggestion) {
   ).join('');
 
   el.innerHTML = (histHtml ? header('Récent') + histHtml + header('Suggestions') : '') + smartHtml;
+  el.style.display = 'block';
   el.classList.remove('hidden');
   bindSuggestionClicks(el, onSuggestion, [], []);
 }
@@ -225,8 +226,12 @@ function _renderSuggestions(el, query, onSuggestion, siteMatches, smartMatches, 
                  (siteMatches.length  ? header('Sites')       + sitesHtml  : '') +
                  addrHtml;
 
-  if (!sections) { hideSuggestions(el); return; }
+  if (!sections) {
+    hideSuggestions(el);
+    return;
+  }
   el.innerHTML = sections;
+  el.style.display = 'block';
   el.classList.remove('hidden');
   bindSuggestionClicks(el, onSuggestion, siteMatches, addresses || []);
 }
@@ -246,14 +251,12 @@ function showSearchSuggestions(el, query, onSuggestion) {
   if (query.length >= 3) {
     _geocodeTimer = setTimeout(function() {
       geocodeAddress(query).then(function(addresses) {
-        // Afficher si l'input n'est pas vide (pas de vérification stricte)
         var cur = _inputEl ? _inputEl.value.trim() : '';
         if (cur.length >= 2) {
           _renderSuggestions(el, query, onSuggestion, siteMatches, smartMatches, addresses);
-          el.classList.remove('hidden');
         }
       });
-    }, 600);
+    }, 400);
   }
 }
 

@@ -1840,6 +1840,7 @@ body.welcome-open #main-nav,
 body.welcome-open #filters-bar,
 body.welcome-open #location-bar,
 body.welcome-open #network-banner,
+body.welcome-open #search-suggestions,
 body.welcome-open #app-main { display: none !important; }
 
 body.welcome-open #welcome-screen { display: flex !important; }

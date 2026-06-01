@@ -12,7 +12,7 @@
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=30" />
 
   <!-- Leaflet CSS (local) -->
   <link rel="stylesheet" href="assets/vendor/leaflet.css" />
@@ -69,7 +69,6 @@
              placeholder="Chercher : lieu, activité, budget, sans péage…"
              autocomplete="off" autocorrect="off" spellcheck="false" />
       <button id="search-clear-btn" class="btn-icon" aria-label="Effacer" style="display:none">✕</button>
-      <div id="search-suggestions" class="search-suggestions hidden"></div>
     </div>
   </div>
   <div class="header-right">
@@ -79,6 +78,9 @@
     <button id="btn-surprise" class="btn-icon" title="Surprenez-moi !" aria-label="Idée surprise">🎲</button>
   </div>
 </header>
+
+<!-- Suggestions de recherche — en dehors du header pour éviter le clipping iOS fixed-in-fixed -->
+<div id="search-suggestions" class="search-suggestions hidden"></div>
 
 <!-- ═══════════════════════════════════════════════
      BANDEAU RÉSEAU
@@ -508,7 +510,7 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 <button id="btn-scroll-top" aria-label="Retour en haut">↑</button>
 
 <!-- Modules JS (ESM) -->
-<script type="module" src="js/app.js?v=52"></script>
+<script type="module" src="js/app.js?v=53"></script>
 
 </body>
 </html>
