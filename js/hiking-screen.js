@@ -1,7 +1,7 @@
 /* =========================================================
    hiking-screen.js — Écran Randonnée / Balade (AllTrails + Komoot + Strava)
    ========================================================= */
-import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints } from './tracker.js';
+import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints, getElapsedSec, pauseElapsedTimer, resumeElapsedTimer } from './tracker.js';
 import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails } from './map.js?v=3';
 import { getStoredOrigin } from './geolocation.js';
 import { OVERPASS_ENDPOINT } from './config.js';
@@ -34,10 +34,9 @@ let _difficulty = 'moyen';
 let _goalKm = 0;
 let _voiceEnabled = true;
 
-// Live
+// Live — timer basé sur tracker.getElapsedSec() (résistant à la veille iOS)
 let _timerInterval = null;
 let _statsInterval = null;
-let _elapsedSec = 0;
 let _paused = false;
 let _locked = false;
 let _lastVoiceKm = 0;
@@ -204,7 +203,6 @@ async function _onStartHike() {
     _sessionId = await startTracking(label, false, _mode, _temp, _weight);
 
     // Initialiser live
-    _elapsedSec = 0;
     _paused = false;
     _locked = false;
     _lastVoiceKm = 0;
@@ -271,6 +269,7 @@ function _wireLive() {
 
 function _onTogglePause() {
   _paused = !_paused;
+  if (_paused) pauseElapsedTimer(); else resumeElapsedTimer();
   const btn = _el('btn-hs-pause');
   if (btn) btn.textContent = _paused ? '▶' : '⏸';
   const timerEl = _el('hs-timer');
@@ -290,30 +289,40 @@ function _onUnlock() {
 }
 
 function _startTimers() {
-  // Timer 1s
+  // Timer 1s — utilise getElapsedSec() (Date.now based, résistant veille iOS)
   _timerInterval = setInterval(() => {
-    if (!_paused) {
-      _elapsedSec++;
-    }
-    // Mise à jour timer (toujours, même en pause)
+    const elapsed = getElapsedSec();
     const stats = getLiveStats();
-    const autoPauseTxt = stats.autoPaused ? ' (Auto-pause)' : '';
+    const autoPauseTxt = stats?.autoPaused ? ' (Auto-pause)' : '';
     const pauseTxt = _paused ? ' ⏸' : '';
     const timerEl = _el('hs-timer');
-    if (timerEl) timerEl.textContent = _fmtTimerFull(_elapsedSec) + autoPauseTxt + pauseTxt;
+    if (timerEl) timerEl.textContent = _fmtTimerFull(elapsed) + autoPauseTxt + pauseTxt;
 
-    // Alerte hydratation
-    const cfg = MODE_CONFIG[_mode];
-    const elapsedMin = Math.floor(_elapsedSec / 60);
-    if (elapsedMin > 0 && elapsedMin - _lastWaterMin >= cfg.waterIntervalMin) {
-      _lastWaterMin = elapsedMin;
-      _triggerWaterAlert();
+    // Alerte hydratation basée sur le temps réel tracker
+    if (!_paused) {
+      const cfg = MODE_CONFIG[_mode];
+      const elapsedMin = Math.floor(elapsed / 60);
+      if (elapsedMin > 0 && elapsedMin - _lastWaterMin >= cfg.waterIntervalMin) {
+        _lastWaterMin = elapsedMin;
+        _triggerWaterAlert();
+      }
     }
   }, 1000);
 
   // Stats 5s
   _statsInterval = setInterval(_updateLiveStats, 5000);
-  _updateLiveStats(); // première update immédiate
+  _updateLiveStats();
+
+  // Page Visibility : recalcul immédiat au retour d'arrière-plan
+  document.addEventListener('visibilitychange', _onHikingVisibility);
+}
+
+function _onHikingVisibility() {
+  if (document.visibilityState === 'visible' && !_paused) {
+    const timerEl = _el('hs-timer');
+    if (timerEl) timerEl.textContent = _fmtTimerFull(getElapsedSec());
+    _updateLiveStats();
+  }
 }
 
 function _stopTimers() {
@@ -321,6 +330,7 @@ function _stopTimers() {
   clearInterval(_statsInterval);
   _timerInterval = null;
   _statsInterval = null;
+  document.removeEventListener('visibilitychange', _onHikingVisibility);
 }
 
 function _updateLiveStats() {
@@ -371,7 +381,7 @@ function _updateProgressBar(distKm) {
 }
 
 function _triggerWaterAlert() {
-  const elapsedMin = Math.floor(_elapsedSec / 60);
+  const elapsedMin = Math.floor(getElapsedSec() / 60);
   const water = calculateWaterNeeds(_mode, elapsedMin, _temp);
   const totalMl = water?.totalMl ?? 0;
   const intervals = Math.max(1, Math.floor(elapsedMin / MODE_CONFIG[_mode].waterIntervalMin));
@@ -392,7 +402,7 @@ async function _onStopHike() {
 
   _stopTimers();
   const stats = getLiveStats();
-  _finalStats = { ...stats, elapsedSec: _elapsedSec };
+  _finalStats = { ...stats, elapsedSec: getElapsedSec() };
 
   let stopped = false;
   try {
@@ -536,7 +546,6 @@ function _closeHikingScreen() {
   _goalKm = 0;
   _finalStats = null;
   _sessionId = null;
-  _elapsedSec = 0;
   _paused = false;
   _locked = false;
   _lastVoiceKm = 0;
