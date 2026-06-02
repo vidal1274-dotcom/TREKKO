@@ -37,7 +37,6 @@ let _voiceEnabled = true;
 // Live
 let _timerInterval = null;
 let _statsInterval = null;
-let _waterInterval = null;
 let _elapsedSec = 0;
 let _paused = false;
 let _locked = false;
@@ -47,6 +46,7 @@ let _lastWaterMin = 0;
 // Summary
 let _finalStats = null;
 let _sessionId = null;
+let _screenActive = false;  // garde contre race condition Overpass après fermeture
 
 /* ─── Helpers ───────────────────────────────────────────────── */
 function _fmtDateShort() {
@@ -121,6 +121,7 @@ export function showHikingScreen(activityMode) {
 
   // Reset to setup section
   _showSection('setup');
+  _screenActive = true;
 
   // Cacher les marqueurs POI de l'app principale
   hidePoiLayers();
@@ -318,10 +319,8 @@ function _startTimers() {
 function _stopTimers() {
   clearInterval(_timerInterval);
   clearInterval(_statsInterval);
-  clearInterval(_waterInterval);
   _timerInterval = null;
   _statsInterval = null;
-  _waterInterval = null;
 }
 
 function _updateLiveStats() {
@@ -373,8 +372,10 @@ function _updateProgressBar(distKm) {
 
 function _triggerWaterAlert() {
   const elapsedMin = Math.floor(_elapsedSec / 60);
-  const ml = calculateWaterNeeds(_mode, elapsedMin, _temp);
-  const needed = Math.round(ml / Math.max(1, Math.floor(elapsedMin / (MODE_CONFIG[_mode].waterIntervalMin))));
+  const water = calculateWaterNeeds(_mode, elapsedMin, _temp);
+  const totalMl = water?.totalMl ?? 0;
+  const intervals = Math.max(1, Math.floor(elapsedMin / MODE_CONFIG[_mode].waterIntervalMin));
+  const needed = Math.round(totalMl / intervals);
   const alertEl = _el('hs-water-alert');
   if (alertEl) {
     alertEl.textContent = `💧 Boire ~${Math.min(needed, 350)}ml maintenant`;
@@ -393,32 +394,28 @@ async function _onStopHike() {
   const stats = getLiveStats();
   _finalStats = { ...stats, elapsedSec: _elapsedSec };
 
+  let stopped = false;
   try {
-    _sessionId = await stopTracking();
+    const sid = await stopTracking();
+    if (sid) _sessionId = sid;  // préserve l'id de startTracking si stopTracking retourne null
+    stopped = true;
   } catch (e) {
     showToast('Erreur à l\'arrêt : ' + e.message, 'error');
   }
 
-  _showSummary();
+  if (stopped) _showSummary();
 }
 
 /* ─── SECTION C : RÉSUMÉ ────────────────────────────────────── */
 function _wireSummary() {
-  // Export GPX
+  // Export GPX — exportAsGPX() gère lui-même le Blob + téléchargement
   _el('btn-hs-gpx')?.addEventListener('click', async () => {
     if (!_sessionId) { showToast('Pas de session à exporter.', 'warning'); return; }
     try {
       const points = await loadTrackPoints(_sessionId);
       if (!points || points.length === 0) { showToast('Aucun point GPS enregistré.', 'warning'); return; }
       const cfg = MODE_CONFIG[_mode];
-      const gpx = exportAsGPX(points, `${cfg.title} — ${_fmtDateShort()}`);
-      const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `trekko_${_mode}_${Date.now()}.gpx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      exportAsGPX(points, `${cfg.title} — ${_fmtDateShort()}`);
       showToast('GPX exporté.', 'success');
     } catch (e) {
       showToast('Erreur export GPX.', 'error');
@@ -510,24 +507,46 @@ out skel qt;`;
       method: 'POST',
       body: 'data=' + encodeURIComponent(query)
     });
+    if (!resp.ok) throw new Error(`Overpass HTTP ${resp.status}`);
     const data = await resp.json();
-    const ways = data.elements.filter(e => e.type === 'way');
+    if (!_screenActive) return;  // fermeture pendant le fetch
+    const ways = data.elements.filter(e => e.type === 'way').slice(0, 300);
     const nodes = data.elements.filter(e => e.type === 'node');
     drawHikingTrails(ways, nodes);
     if (infoEl) infoEl.textContent = `🥾 ${ways.length} sentier${ways.length > 1 ? 's' : ''} trouvé${ways.length > 1 ? 's' : ''} dans un rayon de ${radius / 1000} km`;
   } catch (e) {
-    if (infoEl) infoEl.textContent = '⚠️ Sentiers non disponibles (hors connexion)';
+    if (!_screenActive) return;
+    if (infoEl) infoEl.textContent = '⚠️ Sentiers non disponibles';
   }
 }
 
 /* ─── Fermeture ─────────────────────────────────────────────── */
 function _closeHikingScreen() {
-  // Arrêter les timers si encore actifs
+  _screenActive = false;
   _stopTimers();
 
   // Nettoyer la carte (sentiers) et restaurer les POI
   clearHikingTrails();
   showPoiLayers();
+
+  // Réinitialiser l'état interne pour la prochaine session
+  _weight = 70;
+  _temp = 20;
+  _difficulty = 'moyen';
+  _goalKm = 0;
+  _finalStats = null;
+  _sessionId = null;
+  _elapsedSec = 0;
+  _paused = false;
+  _locked = false;
+  _lastVoiceKm = 0;
+  _lastWaterMin = 0;
+
+  // Remettre le DOM des steppers aux valeurs par défaut
+  if (_el('hs-weight-val')) _el('hs-weight-val').textContent = 70;
+  if (_el('hs-temp-val')) _el('hs-temp-val').textContent = 20;
+  document.querySelectorAll('.hs-diff-btn').forEach(b => b.classList.toggle('hs-diff-active', b.dataset.diff === 'moyen'));
+  document.querySelectorAll('.hs-goal-btn').forEach(b => b.classList.toggle('hs-goal-active', b.dataset.goal === '0'));
 
   document.body.classList.remove('hiking-active');
   const screen = _el('hiking-screen');

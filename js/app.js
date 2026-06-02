@@ -27,7 +27,7 @@ import { initWelcomeScreen, showWelcomeScreen } from './welcome.js?v=4';
 import { initAuthScreen, logout, getCurrentUser } from './auth.js';
 import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=26';
 import { getVisitedIds } from './visited.js?v=25';
-import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=2';
+import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=3';
 // Imports lazy — chargés à la demande pour ne pas bloquer le démarrage
 let _fetchWeather = null;
 let _renderCarnet = null;
