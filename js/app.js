@@ -5,7 +5,7 @@ import { loadSites, cacheSitesLocally, getDataStats, applyManualGpsCorrection, r
 import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, showAddressMarker, clearAddressMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize, renderDayPlanRoute, clearDayPlanRoute } from './map.js?v=3';
 import { renderSiteMarkers, buildSiteBadges, focusOnSite } from './markers.js';
 import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilterChips, setProcheThreshold } from './filters.js';
-import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT } from './geolocation.js';
+import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT, startWatchingPosition } from './geolocation.js';
 import { enrichSitesWithEcoScore, getBestDeals } from './economy-engine.js';
 import { loadVehicleProfile } from './vehicle-profile.js';
 import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=11';
@@ -116,6 +116,9 @@ async function startApp() {
 
   // Barre localisation + slider distance
   initLocationBar();
+
+  // GPS automatique — point bleu visible sur toutes les cartes dès le démarrage
+  _startAutoGpsWatch();
 
   // Panneau de fond par défaut (initialise la carte Leaflet en arrière-plan)
   switchToPanel('panel-map');
@@ -433,6 +436,43 @@ function initLocationBar() {
       if (label) label.textContent = getStoredOrigin().label;
     } finally {
       btn.classList.remove('gps-loading');
+    }
+  });
+}
+
+/* =========================================================
+   BLOC 05c — SUIVI GPS AUTOMATIQUE
+   ========================================================= */
+let _autoGpsFirstFix = true;
+
+function _startAutoGpsWatch() {
+  startWatchingPosition(pos => {
+    // Toujours mettre à jour le marqueur bleu sur la carte
+    showUserLocationMarker(
+      pos.lat, pos.lon, 'Ma position',
+      _maxDistanceKm < 150 ? _maxDistanceKm : null,
+      pos.accuracy
+    );
+
+    if (_autoGpsFirstFix) {
+      _autoGpsFirstFix = false;
+      // Premier fix : sauvegarder, recalculer les distances, centrer la carte
+      saveOrigin(pos.lat, pos.lon, 'Ma position');
+      _originCoords = { lat: pos.lat, lon: pos.lon, accuracy: pos.accuracy };
+      if (_sites?.length) {
+        _sites = recalcDistances(_sites, pos.lat, pos.lon);
+        _sites = enrichSitesWithEcoScore(_sites, _vehicleProfile);
+        applyFiltersAndRender();
+      }
+      // Mettre à jour l'UI bouton GPS
+      const gpsBtnEl = document.getElementById('btn-gps-location');
+      const locLabelEl = document.getElementById('location-label');
+      if (gpsBtnEl) gpsBtnEl.classList.add('gps-active');
+      if (locLabelEl) locLabelEl.textContent = 'Ma position';
+      flyToSite(pos.lat, pos.lon, 13);
+    } else {
+      // Fixes suivants : juste mettre à jour les coordonnées internes
+      _originCoords = { lat: pos.lat, lon: pos.lon, accuracy: pos.accuracy };
     }
   });
 }

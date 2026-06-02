@@ -72,3 +72,28 @@ export function requestUserLocation() {
 export function isUsingGps() {
   return lsGet(LS_KEY_ORIGIN) !== null;
 }
+
+/* =========================================================
+   BLOC 03 — SUIVI CONTINU DE POSITION (watchPosition)
+   ========================================================= */
+let _watchId = null;
+
+export function startWatchingPosition(onUpdate) {
+  if (!navigator.geolocation || _watchId !== null) return;
+  _watchId = navigator.geolocation.watchPosition(
+    pos => onUpdate({
+      lat: pos.coords.latitude,
+      lon: pos.coords.longitude,
+      accuracy: pos.coords.accuracy
+    }),
+    () => { /* refus ou indisponible — silencieux */ },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 }
+  );
+}
+
+export function stopWatchingPosition() {
+  if (_watchId !== null) {
+    navigator.geolocation.clearWatch(_watchId);
+    _watchId = null;
+  }
+}
