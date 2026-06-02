@@ -454,9 +454,11 @@ function _startAutoGpsWatch() {
       pos.accuracy
     );
 
+    // Toujours exposer la position GPS temps réel pour day-plan.getBestOriginCoords()
+    window._currentGpsCoords = { lat: pos.lat, lon: pos.lon, accuracy: pos.accuracy };
+
     if (_autoGpsFirstFix) {
       _autoGpsFirstFix = false;
-      // Premier fix : sauvegarder, recalculer les distances, centrer la carte
       saveOrigin(pos.lat, pos.lon, 'Ma position');
       _originCoords = { lat: pos.lat, lon: pos.lon, accuracy: pos.accuracy };
       if (_sites?.length) {
@@ -464,14 +466,12 @@ function _startAutoGpsWatch() {
         _sites = enrichSitesWithEcoScore(_sites, _vehicleProfile);
         applyFiltersAndRender();
       }
-      // Mettre à jour l'UI bouton GPS
       const gpsBtnEl = document.getElementById('btn-gps-location');
       const locLabelEl = document.getElementById('location-label');
       if (gpsBtnEl) gpsBtnEl.classList.add('gps-active');
       if (locLabelEl) locLabelEl.textContent = 'Ma position';
       flyToSite(pos.lat, pos.lon, 13);
     } else {
-      // Fixes suivants : juste mettre à jour les coordonnées internes
       _originCoords = { lat: pos.lat, lon: pos.lon, accuracy: pos.accuracy };
     }
   });

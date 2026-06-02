@@ -5,40 +5,58 @@ import { formatCurrency, haversineDistance } from './utils.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
 import { lsGet, lsSet, lsDel } from './storage.js';
 import { UCHAUD_COORDS } from './config.js';
-import { filterUnvisited } from './visited.js';
+import { getStoredOrigin } from './geolocation.js';
+import { filterUnvisited } from './visited.js?v=25';
 
 const LS_KEY          = 'day_plan';
-const VISIT_MIN       = 90;   // durée visite par défaut
-const MEAL_MIN        = 60;   // pause repas
-const AVG_SPEED_KMH   = 70;   // vitesse moyenne route
-const DEPART_HOUR_MIN = 9 * 60; // 09h00
+const VISIT_MIN       = 90;
+const MEAL_MIN        = 60;
+const DEPART_HOUR_MIN = 9 * 60;
+
+/** Profils de vitesse selon le type de route. */
+export const TRAVEL_SPEEDS = {
+  city:     { label: 'Ville / local',     kmh: 35 },
+  road:     { label: 'Route mixte',        kmh: 60 },
+  mixed:    { label: 'Route + nationale',  kmh: 70 },
+  highway:  { label: 'Autoroute',          kmh: 95 },
+  mountain: { label: 'Montagne / lente',   kmh: 40 }
+};
 
 /* =========================================================
-   BLOC 02 — GÉNÉRATION AUTOMATIQUE (nearest-neighbor)
+   BLOC 02 — ORIGINE GPS INTELLIGENTE
    ========================================================= */
-export function generateDayPlan(sites, vehicleProfile, options = {}) {
-  const {
-    maxKm     = 80,
-    minStops  = 3,
-    maxStops  = 5,
-    avoidTolls = vehicleProfile?.avoid_tolls ?? true
-  } = options;
+/**
+ * Retourne les meilleures coordonnées de départ disponibles :
+ * 1. GPS temps réel (window._currentGpsCoords si disponible)
+ * 2. Dernière position connue (localStorage via geolocation.js)
+ * 3. Fallback Uchaud / Nages
+ */
+export function getBestOriginCoords() {
+  // 1. GPS temps réel exposé par app.js
+  if (window._currentGpsCoords?.lat && window._currentGpsCoords?.lon) {
+    return { ...window._currentGpsCoords, label: 'position actuelle GPS', source: 'gps' };
+  }
+  // 2. Dernière position connue
+  const stored = getStoredOrigin();
+  if (stored && stored.lat !== UCHAUD_COORDS[0]) {
+    return { lat: stored.lat, lon: stored.lon, label: stored.label || 'position enregistrée', source: 'stored' };
+  }
+  // 3. Fallback
+  return { lat: UCHAUD_COORDS[0], lon: UCHAUD_COORDS[1], label: 'position par défaut (Nages)', source: 'default' };
+}
 
-  // 1. Candidats : GPS requis + dans le rayon + non visités
-  let candidates = filterUnvisited(sites).filter(s =>
-    s.has_gps && s.lat && s.lon &&
-    (s.distance_km == null || s.distance_km <= maxKm)
-  );
-
-  if (candidates.length === 0) return null;
-
-  // 2. Top 20 par eco_score
-  const pool = [...candidates]
-    .sort((a, b) => (b.eco_score || 0) - (a.eco_score || 0))
-    .slice(0, 20);
-
-  // 3. Nearest-neighbor depuis Nages
-  const [originLat, originLon] = UCHAUD_COORDS;
+/* =========================================================
+   BLOC 03 — GÉNÉRATION AUTOMATIQUE (nearest-neighbor)
+   ========================================================= */
+/**
+ * Algorithme nearest-neighbor isolé — permettra un vrai routage plus tard.
+ * @param {Array} pool — sites candidats avec lat/lon
+ * @param {number} originLat
+ * @param {number} originLon
+ * @param {number} maxStops
+ * @returns {Array} sites ordonnés
+ */
+function _nearestNeighbor(pool, originLat, originLon, maxStops) {
   const selected  = [];
   const remaining = [...pool];
   let curLat = originLat, curLon = originLon;
@@ -54,21 +72,58 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
     selected.push(picked);
     curLat = picked.lat; curLon = picked.lon;
   }
+  return selected;
+}
 
+export function generateDayPlan(sites, vehicleProfile, options = {}) {
+  const {
+    maxKm       = 80,
+    minStops    = 3,
+    maxStops    = 5,
+    speedProfile = 'mixed'
+  } = options;
+
+  const speedKmh = TRAVEL_SPEEDS[speedProfile]?.kmh ?? TRAVEL_SPEEDS.mixed.kmh;
+  const speedLabel = TRAVEL_SPEEDS[speedProfile]?.label ?? 'Route mixte';
+
+  // Origine GPS intelligente
+  const origin = getBestOriginCoords();
+  const originLat = origin.lat;
+  const originLon = origin.lon;
+
+  // 1. Candidats : GPS requis + dans le rayon + non visités
+  const candidates = filterUnvisited(sites).filter(s =>
+    s.has_gps && s.lat && s.lon &&
+    (s.distance_km == null || s.distance_km <= maxKm)
+  );
+
+  if (candidates.length === 0) return null;
+
+  // 2. Top 20 par eco_score
+  const pool = [...candidates]
+    .sort((a, b) => (b.eco_score || 0) - (a.eco_score || 0))
+    .slice(0, 20);
+
+  // 3. Nearest-neighbor depuis l'origine
+  const selected = _nearestNeighbor(pool, originLat, originLon, maxStops);
   if (selected.length < minStops) return null;
 
   // 4. Itinéraire chronologique
   const steps = [];
   let cur = DEPART_HOUR_MIN;
-  steps.push({ time: _fmt(cur), icon: '🚗', label: 'Départ depuis Nages', type: 'depart' });
+  steps.push({
+    time: _fmt(cur), icon: '🚗',
+    label: `Départ depuis ${origin.label}`,
+    type: 'depart'
+  });
 
   let totalKm = 0;
   let prevLat = originLat, prevLon = originLon;
   let mealInserted = false;
 
   selected.forEach((site, idx) => {
-    const segKm    = haversineDistance(prevLat, prevLon, site.lat, site.lon) * 1.2;
-    const travMin  = Math.round((segKm / AVG_SPEED_KMH) * 60);
+    const segKm   = haversineDistance(prevLat, prevLon, site.lat, site.lon) * 1.2;
+    const travMin = Math.round((segKm / speedKmh) * 60);
     totalKm += segKm;
     cur += travMin;
 
@@ -89,7 +144,6 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
     }
     cur += VISIT_MIN;
 
-    // Repas entre 12h et 14h, une seule fois
     if (!mealInserted && cur >= 12 * 60 && cur < 14 * 60 && idx < selected.length - 1) {
       steps.push({ time: _fmt(cur), icon: '🍽️', label: 'Pause repas (restaurant ou pique-nique)', type: 'meal' });
       cur += MEAL_MIN;
@@ -101,10 +155,10 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
 
   // Retour
   const retKm  = haversineDistance(prevLat, prevLon, originLat, originLon) * 1.2;
-  const retMin = Math.round((retKm / AVG_SPEED_KMH) * 60);
+  const retMin = Math.round((retKm / speedKmh) * 60);
   totalKm += retKm;
   cur += retMin;
-  steps.push({ time: _fmt(cur), icon: '🏠', label: `Retour vers Nages (~${Math.round(retKm)} km)`, type: 'return' });
+  steps.push({ time: _fmt(cur), icon: '🏠', label: `Retour vers ${origin.label} (~${Math.round(retKm)} km)`, type: 'return' });
 
   // 5. Coût énergie
   let energyCost = null;
@@ -119,6 +173,9 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
     totalDistanceKm: Math.round(totalKm),
     totalDurationMin: cur - DEPART_HOUR_MIN,
     energyCost,
+    originLabel: origin.label,
+    originSource: origin.source,
+    speedLabel,
     generatedAt: new Date().toISOString()
   };
 }
@@ -135,7 +192,7 @@ function _fmtDuration(min) {
 }
 
 /* =========================================================
-   BLOC 03 — PERSISTANCE LOCALSTORAGE
+   BLOC 04 — PERSISTANCE LOCALSTORAGE
    ========================================================= */
 export function saveDayPlan(plan) {
   lsSet(LS_KEY, {
@@ -150,22 +207,16 @@ export function saveDayPlan(plan) {
   });
 }
 
-export function loadSavedDayPlan() {
-  return lsGet(LS_KEY, null);
-}
-
-export function deleteSavedDayPlan() {
-  lsDel(LS_KEY);
-}
+export function loadSavedDayPlan() { return lsGet(LS_KEY, null); }
+export function deleteSavedDayPlan() { lsDel(LS_KEY); }
 
 /* =========================================================
-   BLOC 04 — RENDU HTML
+   BLOC 05 — RENDU HTML
    ========================================================= */
 export function renderDayPlan(plan) {
   if (!plan || !plan.steps) return '<p class="dp-disclaimer">Aucun programme disponible.</p>';
 
   const stepsHtml = plan.steps.map(s => {
-    // Connecteur de trajet visuel AVANT les étapes d'arrivée
     let legHtml = '';
     if (s.travelKm && s.type === 'arrival') {
       const wazeUrl = s.site?.lat ? `https://waze.com/ul?ll=${s.site.lat},${s.site.lon}&navigate=yes` : null;
@@ -184,7 +235,6 @@ export function renderDayPlan(plan) {
 
     const click = s.site?.id ? `onclick="window.__openSiteDetail('${s.site.id}')"` : '';
 
-    // Infos enrichies par type d'étape
     let extras = '';
     if (s.type === 'arrival' && s.site) {
       if (s.site.budget_indicatif) extras += `<span class="dp-tag dp-tag-budget">💰 ${s.site.budget_indicatif}</span>`;
@@ -210,6 +260,12 @@ export function renderDayPlan(plan) {
   const dH = Math.floor(plan.totalDurationMin / 60);
   const dM = plan.totalDurationMin % 60;
 
+  const originBadge = plan.originSource === 'gps'
+    ? `<span class="dp-badge dp-badge-gps">📍 Depuis position GPS</span>`
+    : plan.originSource === 'stored'
+      ? `<span class="dp-badge">📍 Depuis ${plan.originLabel}</span>`
+      : `<span class="dp-badge dp-badge-warn">📍 Position par défaut — activez le GPS</span>`;
+
   return `
     <div class="day-plan-wrapper">
       <div class="dp-header">
@@ -217,10 +273,12 @@ export function renderDayPlan(plan) {
         <div class="dp-meta-row">
           <span class="dp-badge">🗺️ ${plan.sites.length} étape${plan.sites.length > 1 ? 's' : ''}</span>
           <span class="dp-badge">📍 ~${plan.totalDistanceKm} km</span>
-          <span class="dp-badge">⏱ ${dH}h${String(dM).padStart(2,'0')}</span>
+          <span class="dp-badge">⏱ ${dH}h${String(dM).padStart(2,'00')}</span>
+          ${originBadge}
         </div>
         <div class="dp-cost-line">${costStr}</div>
-        <div class="dp-disclaimer">⚠️ Horaires indicatifs — vérifiez les horaires d'ouverture réels.</div>
+        <div class="dp-speed-line">🚗 Temps estimés selon : <strong>${plan.speedLabel || 'Route mixte'}</strong></div>
+        <div class="dp-disclaimer">⚠️ Distances estimées à vol d'oiseau (×1.2). Vérifiez dans Waze ou Google Maps.</div>
       </div>
       <div class="dp-steps">${stepsHtml}</div>
       <div class="dp-actions">
@@ -234,16 +292,18 @@ export function renderDayPlan(plan) {
 }
 
 /* =========================================================
-   BLOC 05 — EXPORT TEXTE
+   BLOC 06 — EXPORT TEXTE
    ========================================================= */
 export function exportPlanAsText(plan) {
   const lines = [
-    `Programme TREKKO — ${new Date(plan.generatedAt).toLocaleDateString('fr-FR')}`, ''
+    `Programme TREKKO — ${new Date(plan.generatedAt).toLocaleDateString('fr-FR')}`,
+    `Départ : ${plan.originLabel || 'inconnu'}`,
+    `Profil route : ${plan.speedLabel || 'mixte'}`, ''
   ];
   plan.steps.forEach(s => lines.push(`${s.time}  ${s.icon}  ${s.label}`));
   lines.push('', `Distance totale : ~${plan.totalDistanceKm} km`);
   if (plan.energyCost != null) lines.push(`Coût énergie estimé : ${plan.energyCost.toFixed(2)} €`);
-  lines.push('⚠️ Horaires indicatifs.');
+  lines.push('⚠️ Horaires indicatifs — distances à vol d\'oiseau.');
   return lines.join('\n');
 }
 
