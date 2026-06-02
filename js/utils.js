@@ -141,3 +141,39 @@ export function isValidCoord(lat, lon) {
 export function clamp(val, min, max) {
   return Math.min(Math.max(val, min), max);
 }
+
+/* =========================================================
+   BLOC 08 — SÉCURITÉ HTML
+   ========================================================= */
+/** Échappe les caractères HTML pour éviter l'injection via innerHTML. */
+export function escapeHTML(value) {
+  if (value == null) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Valide lat/lon avant génération de liens maps. */
+export function isValidLatLon(lat, lon) {
+  return (
+    typeof lat === 'number' && typeof lon === 'number' &&
+    isFinite(lat) && isFinite(lon) &&
+    lat >= -90 && lat <= 90 &&
+    lon >= -180 && lon <= 180
+  );
+}
+
+/** Autorise uniquement les URLs https ou les schémas connus. */
+export function safeUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const u = new URL(url);
+    if (u.protocol === 'https:' || u.protocol === 'http:') return url;
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
