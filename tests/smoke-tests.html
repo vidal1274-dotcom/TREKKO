@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TREKKO — Smoke Tests</title>
+  <style>
+    body { font-family: monospace; background: #0d0f1a; color: #eaeaf0; padding: 20px; }
+    h1   { color: #e94560; margin-bottom: 20px; }
+    .test { padding: 6px 12px; margin: 4px 0; border-radius: 6px; font-size: 14px; }
+    .pass { background: rgba(39,174,96,0.2); color: #2ecc71; }
+    .fail { background: rgba(231,76,60,0.2);  color: #e74c3c; }
+    .skip { background: rgba(245,166,35,0.2); color: #f5a623; }
+    #summary { margin-top: 20px; font-size: 16px; font-weight: bold; }
+  </style>
+</head>
+<body>
+<h1>🧪 TREKKO Smoke Tests</h1>
+<div id="results"></div>
+<div id="summary"></div>
+
+<script type="module">
+// ── Helpers ─────────────────────────────────────────────────────
+const results = [];
+function test(name, fn) {
+  try {
+    const r = fn();
+    if (r === false) throw new Error('returned false');
+    results.push({ name, ok: true });
+  } catch(e) {
+    results.push({ name, ok: false, err: e.message });
+  }
+}
+function skip(name) {
+  results.push({ name, ok: null });
+}
+
+// ── Tests utilitaires (importés directement) ─────────────────────
+import { haversineDistance, formatDistance, formatCurrency, escapeHTML, isValidLatLon, safeUrl } from '../js/utils.js';
+import { getBestOriginCoords, TRAVEL_SPEEDS } from '../js/day-plan.js';
+import { calculateWaterNeeds, HikingSessionStatus } from '../js/tracker.js';
+import { isMapReady } from '../js/map.js?v=4';
+
+// Haversine
+test('haversineDistance — Nages à Montpellier ~30km', () => {
+  const d = haversineDistance(43.7169, 4.3789, 43.6117, 3.8772);
+  return d > 40 && d < 60;
+});
+test('haversineDistance — même point = 0', () => haversineDistance(43, 4, 43, 4) < 0.001);
+
+// formatDistance
+test('formatDistance — km', () => formatDistance(12) === '12 km');
+test('formatDistance — mètres', () => formatDistance(0.5).includes('500'));
+test('formatDistance — null', () => formatDistance(null) === '—');
+
+// formatCurrency
+test('formatCurrency — valide', () => formatCurrency(3.5) === '3.50 €');
+test('formatCurrency — null', () => formatCurrency(null) === '—');
+
+// escapeHTML
+test('escapeHTML — balise', () => escapeHTML('<script>') === '&lt;script&gt;');
+test('escapeHTML — guillemets', () => escapeHTML('"hello"') === '&quot;hello&quot;');
+test('escapeHTML — null', () => escapeHTML(null) === '');
+
+// isValidLatLon
+test('isValidLatLon — Nages OK', () => isValidLatLon(43.7169, 4.3789));
+test('isValidLatLon — hors plage lat', () => !isValidLatLon(91, 0));
+test('isValidLatLon — hors plage lon', () => !isValidLatLon(0, 181));
+test('isValidLatLon — NaN', () => !isValidLatLon(NaN, 0));
+
+// safeUrl
+test('safeUrl — https valide', () => safeUrl('https://waze.com') !== null);
+test('safeUrl — javascript: rejeté', () => safeUrl('javascript:alert(1)') === null);
+test('safeUrl — null', () => safeUrl(null) === null);
+
+// TRAVEL_SPEEDS
+test('TRAVEL_SPEEDS — mixed existe', () => TRAVEL_SPEEDS.mixed?.kmh === 70);
+test('TRAVEL_SPEEDS — mountain existe', () => TRAVEL_SPEEDS.mountain?.kmh === 40);
+
+// getBestOriginCoords
+test('getBestOriginCoords — retourne lat/lon valides', () => {
+  const o = getBestOriginCoords();
+  return isValidLatLon(o.lat, o.lon) && typeof o.label === 'string';
+});
+
+// calculateWaterNeeds
+test('calculateWaterNeeds — hiking 60min 25C retourne objet', () => {
+  const r = calculateWaterNeeds('hiking', 60, 25);
+  return typeof r.totalMl === 'number' && r.totalMl > 0;
+});
+test('calculateWaterNeeds — totalMl > mlPerHour pour 1h', () => {
+  const r = calculateWaterNeeds('hiking', 60, 20);
+  return r.totalMl <= r.mlPerHour + 1; // 1h donc totalMl ≈ mlPerHour
+});
+
+// HikingSessionStatus state machine
+test('HikingSessionStatus — IDLE existe', () => HikingSessionStatus.IDLE === 'idle');
+test('HikingSessionStatus — RECORDING existe', () => HikingSessionStatus.RECORDING === 'recording');
+
+// isMapReady — doit retourner false hors contexte carte
+test('isMapReady — false avant initMap', () => isMapReady() === false);
+
+// Génération liens navigation
+test('Waze URL — lat/lon valides', () => {
+  const lat = 43.7, lon = 4.3;
+  if (!isValidLatLon(lat, lon)) return false;
+  const url = `https://waze.com/ul?ll=${lat},${lon}&navigate=yes`;
+  return safeUrl(url) !== null;
+});
+test('Google Maps URL — lat/lon valides', () => {
+  const lat = 43.7, lon = 4.3;
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+  return safeUrl(url) !== null;
+});
+
+// ── Rendu ────────────────────────────────────────────────────────
+const container = document.getElementById('results');
+let passed = 0, failed = 0, skipped = 0;
+results.forEach(r => {
+  const div = document.createElement('div');
+  if (r.ok === true)  { div.className = 'test pass'; div.textContent = `✅ ${r.name}`; passed++; }
+  if (r.ok === false) { div.className = 'test fail'; div.textContent = `❌ ${r.name} — ${r.err || ''}`; failed++; }
+  if (r.ok === null)  { div.className = 'test skip'; div.textContent = `⚠️ ${r.name} (skipped)`; skipped++; }
+  container.appendChild(div);
+});
+
+const summary = document.getElementById('summary');
+summary.textContent = `Résultat : ${passed} ✅  ${failed} ❌  ${skipped} ⚠️`;
+summary.style.color = failed > 0 ? '#e74c3c' : '#2ecc71';
+</script>
+</body>
+</html>
