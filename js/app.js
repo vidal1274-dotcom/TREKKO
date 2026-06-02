@@ -2,8 +2,9 @@
    BLOC 01 — IMPORTS PRINCIPAUX
    ========================================================= */
 import { loadSites, cacheSitesLocally, getDataStats, applyManualGpsCorrection, recalcDistances } from './data-loader.js';
-import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, showAddressMarker, clearAddressMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize, renderDayPlanRoute, clearDayPlanRoute } from './map.js?v=3';
-import { renderSiteMarkers, buildSiteBadges, focusOnSite } from './markers.js';
+import { loadSites, cacheSitesLocally, getDataStats, applyManualGpsCorrection, recalcDistances } from './data-loader.js';
+import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, showAddressMarker, clearAddressMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize, renderDayPlanRoute, clearDayPlanRoute } from './map.js?v=4';
+import { renderSiteMarkers, buildSiteBadges, focusOnSite } from './markers.js?v=4';
 import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilterChips, setProcheThreshold } from './filters.js';
 import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT, startWatchingPosition } from './geolocation.js';
 import { enrichSitesWithEcoScore, getBestDeals } from './economy-engine.js';
@@ -11,23 +12,23 @@ import { loadVehicleProfile } from './vehicle-profile.js';
 import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=11';
 import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
 import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
-import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=24';
+import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=25';
 import { initNetworkManager, getNetworkStatus } from './network-manager.js';
 import { initNetworkUI } from './network-ui.js';
 import { loadAllPhotos, importPhotos } from './photos.js';
-import { renderPhotoMarkers } from './photo-map.js';
+import { renderPhotoMarkers } from './photo-map.js?v=4';
 import { syncPendingPhotos, getSyncStatus, setupAutoSync, schedulePhotoForSync } from './photo-sync.js';
 import { lsGet, lsSet } from './storage.js';
-import { startTracking, stopTracking, isTracking, loadTrackPoints, getAllSessions, updateSessionVisibility, exportAsGPX, getActiveSessionId, getLiveStats, calculateWaterNeeds, getActivityConfig, getActivityModes } from './tracker.js';
+import { startTracking, stopTracking, isTracking, loadTrackPoints, getAllSessions, updateSessionVisibility, exportAsGPX, getActiveSessionId, getLiveStats, calculateWaterNeeds, getActivityConfig, getActivityModes } from './tracker.js?v=2';
 import { showToast } from './utils.js';
 import { buildVerificationLinks } from './energy-rules.js';
 import { exportAllData, importData } from './import-export.js';
 import { addGoogleSearchToHistory } from './google-search.js';
 import { initWelcomeScreen, showWelcomeScreen } from './welcome.js?v=4';
 import { initAuthScreen, logout, getCurrentUser } from './auth.js';
-import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=26';
+import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=27';
 import { getVisitedIds } from './visited.js?v=25';
-import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=3';
+import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=4';
 // Imports lazy — chargés à la demande pour ne pas bloquer le démarrage
 let _fetchWeather = null;
 let _renderCarnet = null;
