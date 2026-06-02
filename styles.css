@@ -2709,6 +2709,63 @@ body.welcome-open #welcome-screen { display: flex !important; }
 .dp-step-return .dp-step-time { color: var(--color-text-dim); }
 .dp-step-meal .dp-step-time { color: #5dade2; }
 
+/* Connecteur de trajet entre étapes */
+.dp-leg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  margin: 2px 0;
+}
+.dp-leg-bar {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border2);
+}
+.dp-leg-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border2);
+  border-radius: 50px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--color-text-mid);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.dp-leg-nav {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #fff;
+}
+.dp-nav-waze { background: #00bcd4; }
+.dp-nav-gm   { background: #4285F4; }
+
+/* Tags enrichis sous le label */
+.dp-step-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+.dp-tag {
+  display: inline-block;
+  font-size: 11px;
+  background: var(--color-card2);
+  border: 1px solid var(--color-border);
+  border-radius: 50px;
+  padding: 2px 8px;
+  color: var(--color-text-dim);
+}
+.dp-tag-budget { border-color: #f5a623; color: #f5a623; }
+.dp-tag-eco    { border-color: #2ecc71; color: #2ecc71; }
+
 .dp-actions {
   display: flex;
   flex-wrap: wrap;

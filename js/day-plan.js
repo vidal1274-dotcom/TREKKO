@@ -128,6 +128,12 @@ function _fmt(min) {
   return `${String(h).padStart(2,'0')}h${String(m).padStart(2,'0')}`;
 }
 
+function _fmtDuration(min) {
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return m > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${h}h`;
+}
+
 /* =========================================================
    BLOC 03 — PERSISTANCE LOCALSTORAGE
    ========================================================= */
@@ -159,14 +165,40 @@ export function renderDayPlan(plan) {
   if (!plan || !plan.steps) return '<p class="dp-disclaimer">Aucun programme disponible.</p>';
 
   const stepsHtml = plan.steps.map(s => {
+    // Connecteur de trajet visuel AVANT les étapes d'arrivée
+    let legHtml = '';
+    if (s.travelKm && s.type === 'arrival') {
+      const wazeUrl = s.site?.lat ? `https://waze.com/ul?ll=${s.site.lat},${s.site.lon}&navigate=yes` : null;
+      const gmUrl   = s.site?.lat ? `https://www.google.com/maps/dir/?api=1&destination=${s.site.lat},${s.site.lon}` : null;
+      legHtml = `
+        <div class="dp-leg">
+          <div class="dp-leg-bar"></div>
+          <div class="dp-leg-pill">
+            🚗 <strong>${s.travelKm} km</strong> &nbsp;·&nbsp; ~${_fmtDuration(s.travelMin)}
+            ${wazeUrl ? `<a href="${wazeUrl}" target="_blank" rel="noopener" class="dp-leg-nav dp-nav-waze">Waze</a>` : ''}
+            ${gmUrl   ? `<a href="${gmUrl}"   target="_blank" rel="noopener" class="dp-leg-nav dp-nav-gm">Maps</a>` : ''}
+          </div>
+          <div class="dp-leg-bar"></div>
+        </div>`;
+    }
+
     const click = s.site?.id ? `onclick="window.__openSiteDetail('${s.site.id}')"` : '';
-    return `
+
+    // Infos enrichies par type d'étape
+    let extras = '';
+    if (s.type === 'arrival' && s.site) {
+      if (s.site.budget_indicatif) extras += `<span class="dp-tag dp-tag-budget">💰 ${s.site.budget_indicatif}</span>`;
+      if (s.site.eco_score != null) extras += `<span class="dp-tag dp-tag-eco">🌿 ${s.site.eco_score}/10</span>`;
+      if (s.site.distance_km != null) extras += `<span class="dp-tag">📍 ${Math.round(s.site.distance_km)} km de chez vous</span>`;
+    }
+
+    return legHtml + `
       <div class="dp-step dp-step-${s.type}" ${click}>
         <div class="dp-step-time">${s.time}</div>
         <div class="dp-step-icon">${s.icon}</div>
         <div class="dp-step-body">
           <div class="dp-step-label">${s.label}</div>
-          ${s.travelKm ? `<div class="dp-step-meta">${s.travelKm} km · ~${s.travelMin} min de trajet</div>` : ''}
+          ${extras ? `<div class="dp-step-tags">${extras}</div>` : ''}
         </div>
       </div>`;
   }).join('');
