@@ -14,6 +14,11 @@ let _satelliteLayer = null;
 let _satelliteLabelsLayer = null;
 let _isSatellite = false;
 
+/** Garde centralisée — toutes les fonctions de carte l'utilisent. */
+export function isMapReady() {
+  return !!_map && typeof _map.addLayer === 'function';
+}
+
 export function initMap(containerId = 'map') {
   if (_map) return _map;
   _map = L.map(containerId, {
@@ -47,21 +52,21 @@ export function initMap(containerId = 'map') {
   return _map;
 }
 
-export function getMap() { return _map; }
-export function getMarkersLayer() { return _markersLayer; }
-export function getPhotoMarkersLayer() { return _photoMarkersLayer; }
-export function invalidateMapSize() { if (_map) _map.invalidateSize(); }
+export function getMap()              { return _map; }
+export function getMarkersLayer()     { return _markersLayer; }
+export function getPhotoMarkersLayer(){ return _photoMarkersLayer; }
+export function invalidateMapSize()   { if (isMapReady()) _map.invalidateSize(); }
 
 /* =========================================================
    BLOC 02 — NAVIGATION CARTE
    ========================================================= */
 export function flyToSite(lat, lon, zoom = 14) {
-  if (!_map || !lat || !lon) return;
+  if (!isMapReady() || !lat || !lon) return;
   _map.flyTo([lat, lon], zoom, { duration: 0.8 });
 }
 
 export function fitBoundsToSites(sites) {
-  if (!_map) return;
+  if (!isMapReady()) return;
   const validSites = sites.filter(s => s.has_gps);
   if (validSites.length === 0) return;
   const bounds = validSites.map(s => [s.lat, s.lon]);
@@ -69,15 +74,15 @@ export function fitBoundsToSites(sites) {
 }
 
 export function toggleMapLayer() {
-  if (!_map) return _isSatellite;
+  if (!isMapReady()) return _isSatellite;
   if (_isSatellite) {
-    _map.removeLayer(_satelliteLayer);
-    _map.removeLayer(_satelliteLabelsLayer);
-    _streetLayer.addTo(_map);
+    if (_map.hasLayer(_satelliteLayer))      _map.removeLayer(_satelliteLayer);
+    if (_map.hasLayer(_satelliteLabelsLayer)) _map.removeLayer(_satelliteLabelsLayer);
+    if (!_map.hasLayer(_streetLayer))        _streetLayer.addTo(_map);
   } else {
-    _map.removeLayer(_streetLayer);
-    _satelliteLayer.addTo(_map);
-    _satelliteLabelsLayer.addTo(_map);
+    if (_map.hasLayer(_streetLayer))         _map.removeLayer(_streetLayer);
+    if (!_map.hasLayer(_satelliteLayer))     _satelliteLayer.addTo(_map);
+    if (!_map.hasLayer(_satelliteLabelsLayer)) _satelliteLabelsLayer.addTo(_map);
   }
   _isSatellite = !_isSatellite;
   return _isSatellite;
@@ -95,30 +100,33 @@ export function clearPhotoMarkers() {
 }
 
 export function hidePoiLayers() {
-  if (!_map) return;
-  if (_markersLayer && _map.hasLayer(_markersLayer)) _map.removeLayer(_markersLayer);
+  if (!isMapReady()) return;
+  if (_markersLayer      && _map.hasLayer(_markersLayer))      _map.removeLayer(_markersLayer);
   if (_photoMarkersLayer && _map.hasLayer(_photoMarkersLayer)) _map.removeLayer(_photoMarkersLayer);
 }
 
 export function showPoiLayers() {
-  if (!_map) return;
-  if (_markersLayer && !_map.hasLayer(_markersLayer)) _markersLayer.addTo(_map);
+  if (!isMapReady()) return;
+  if (_markersLayer      && !_map.hasLayer(_markersLayer))      _markersLayer.addTo(_map);
   if (_photoMarkersLayer && !_map.hasLayer(_photoMarkersLayer)) _photoMarkersLayer.addTo(_map);
 }
 
 export function centerMap(lat, lon, zoom = 13) {
-  if (!_map) return;
+  if (!isMapReady()) return;
   _map.setView([lat, lon], zoom, { animate: false });
 }
 
 let _hikingTrailsLayer = null;
 
 export function clearHikingTrails() {
-  if (_hikingTrailsLayer && _map) { _map.removeLayer(_hikingTrailsLayer); _hikingTrailsLayer = null; }
+  if (_hikingTrailsLayer) {
+    if (isMapReady() && _map.hasLayer(_hikingTrailsLayer)) _map.removeLayer(_hikingTrailsLayer);
+    _hikingTrailsLayer = null;
+  }
 }
 
 export function drawHikingTrails(ways, nodes) {
-  if (!_map) return;
+  if (!isMapReady()) return;
   clearHikingTrails();
   _hikingTrailsLayer = L.layerGroup();
   const nodeMap = {};
@@ -176,12 +184,11 @@ function getSiteEmoji(site) {
    BLOC 05 — POSITION UTILISATEUR
    ========================================================= */
 export function showUserLocationMarker(lat, lon, label = 'Ma position', radiusKm = null, accuracyMeters = null) {
-  if (!_map) return;
+  if (!isMapReady()) return;
   if (_userLocationMarker) { _map.removeLayer(_userLocationMarker); _userLocationMarker = null; }
-  if (_accuracyCircle) { _map.removeLayer(_accuracyCircle); _accuracyCircle = null; }
-  if (_radiusCircle) { _map.removeLayer(_radiusCircle); _radiusCircle = null; }
+  if (_accuracyCircle)     { _map.removeLayer(_accuracyCircle);     _accuracyCircle = null; }
+  if (_radiusCircle)       { _map.removeLayer(_radiusCircle);       _radiusCircle = null; }
 
-  // Cercle de précision GPS (comme Google Maps) — affiché en dessous du dot
   if (accuracyMeters && accuracyMeters > 0 && accuracyMeters < 5000) {
     _accuracyCircle = L.circle([lat, lon], {
       radius: accuracyMeters,
@@ -209,14 +216,15 @@ export function showUserLocationMarker(lat, lon, label = 'Ma position', radiusKm
 }
 
 export function clearUserLocationMarker() {
+  if (!isMapReady()) return;
   if (_userLocationMarker) { _map.removeLayer(_userLocationMarker); _userLocationMarker = null; }
-  if (_accuracyCircle) { _map.removeLayer(_accuracyCircle); _accuracyCircle = null; }
-  if (_radiusCircle) { _map.removeLayer(_radiusCircle); _radiusCircle = null; }
+  if (_accuracyCircle)     { _map.removeLayer(_accuracyCircle);     _accuracyCircle = null; }
+  if (_radiusCircle)       { _map.removeLayer(_radiusCircle);       _radiusCircle = null; }
 }
 
 let _addressMarker = null;
 export function showAddressMarker(lat, lon, label) {
-  if (!_map) return;
+  if (!isMapReady()) return;
   if (_addressMarker) { _map.removeLayer(_addressMarker); _addressMarker = null; }
   const icon = L.divIcon({
     html: `<div style="background:#e94560;border-radius:50% 50% 50% 0;width:28px;height:28px;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 8px rgba(233,69,96,0.5);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:14px">📍</span></div>`,
@@ -228,6 +236,7 @@ export function showAddressMarker(lat, lon, label) {
     .openPopup();
 }
 export function clearAddressMarker() {
+  if (!isMapReady()) return;
   if (_addressMarker) { _map.removeLayer(_addressMarker); _addressMarker = null; }
 }
 
@@ -235,7 +244,7 @@ export function clearAddressMarker() {
    BLOC 06 — TRACÉ GPS (recording)
    ========================================================= */
 export function renderTrack(points) {
-  if (!_map) return;
+  if (!isMapReady()) return;
   clearTrack();
   if (!points || points.length === 0) return;
 
@@ -243,17 +252,12 @@ export function renderTrack(points) {
   const latlngs = sorted.map(p => [p.lat, p.lon]);
 
   _trackPolyline = L.polyline(latlngs, {
-    color: '#e94560',
-    weight: 4,
-    opacity: 0.85,
-    dashArray: null,
-    lineJoin: 'round'
+    color: '#e94560', weight: 4, opacity: 0.85, lineJoin: 'round'
   }).addTo(_map);
 
   sorted.forEach((p, i) => {
+    if (i !== 0 && i !== sorted.length - 1) return;
     const isFirst = i === 0;
-    const isLast = i === sorted.length - 1;
-    if (!isFirst && !isLast) return;
     const icon = L.divIcon({
       html: `<div style="background:${isFirst ? '#27ae60' : '#e94560'};border-radius:50%;width:14px;height:14px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>`,
       iconSize: [14, 14], iconAnchor: [7, 7], className: ''
@@ -268,12 +272,14 @@ export function renderTrack(points) {
 }
 
 export function clearTrack() {
+  if (!isMapReady()) return;
   if (_trackPolyline) { _map.removeLayer(_trackPolyline); _trackPolyline = null; }
   _trackMarkers.forEach(m => _map.removeLayer(m));
   _trackMarkers = [];
 }
 
 export function addTrackPoint(lat, lon) {
+  if (!isMapReady()) return;
   if (!_trackPolyline) {
     _trackPolyline = L.polyline([[lat, lon]], { color: '#e94560', weight: 4, opacity: 0.85, lineJoin: 'round' }).addTo(_map);
   } else {
@@ -289,16 +295,14 @@ export function createPhotoIcon() {
 }
 
 /* =========================================================
-   BLOC — TRACÉ PROGRAMME JOURNÉE
+   BLOC 07 — TRACÉ PROGRAMME JOURNÉE
    ========================================================= */
 let _dayPlanPolyline = null;
 let _dayPlanMarkers  = [];
 
 export function renderDayPlanRoute(orderedSites) {
-  if (_dayPlanPolyline) { _map.removeLayer(_dayPlanPolyline); _dayPlanPolyline = null; }
-  _dayPlanMarkers.forEach(m => _map.removeLayer(m));
-  _dayPlanMarkers = [];
-  if (!_map || !orderedSites || !orderedSites.length) return;
+  clearDayPlanRoute();
+  if (!isMapReady() || !orderedSites || !orderedSites.length) return;
 
   const latlngs = orderedSites.filter(s => s.has_gps && s.lat && s.lon).map(s => [s.lat, s.lon]);
   if (latlngs.length < 2) return;
@@ -323,6 +327,7 @@ export function renderDayPlanRoute(orderedSites) {
 }
 
 export function clearDayPlanRoute() {
+  if (!isMapReady()) return;
   if (_dayPlanPolyline) { _map.removeLayer(_dayPlanPolyline); _dayPlanPolyline = null; }
   _dayPlanMarkers.forEach(m => _map.removeLayer(m));
   _dayPlanMarkers = [];
