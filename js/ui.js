@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS
    ========================================================= */
-import { getSiteStatusColor } from './map.js?v=4';
+import { getSiteStatusColor } from './map.js?v=5';
 import { formatDistance, formatCurrency, createElement } from './utils.js';
 
 /* =========================================================

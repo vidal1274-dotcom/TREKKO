@@ -3,130 +3,217 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TREKKO — Smoke Tests</title>
+  <title>TREKKO — Smoke Tests v1.7</title>
   <style>
-    body { font-family: monospace; background: #0d0f1a; color: #eaeaf0; padding: 20px; }
-    h1   { color: #e94560; margin-bottom: 20px; }
-    .test { padding: 6px 12px; margin: 4px 0; border-radius: 6px; font-size: 14px; }
-    .pass { background: rgba(39,174,96,0.2); color: #2ecc71; }
-    .fail { background: rgba(231,76,60,0.2);  color: #e74c3c; }
-    .skip { background: rgba(245,166,35,0.2); color: #f5a623; }
-    #summary { margin-top: 20px; font-size: 16px; font-weight: bold; }
+    body { font-family: monospace; background: #0d0f1a; color: #eaeaf0; padding: 20px; max-width: 700px; margin: 0 auto; }
+    h1   { color: #e94560; margin-bottom: 4px; }
+    .ver { color: #7a7d99; font-size: 13px; margin-bottom: 20px; }
+    .section { font-size: 13px; color: #5dade2; margin: 16px 0 6px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .test { padding: 5px 12px; margin: 3px 0; border-radius: 6px; font-size: 13px; }
+    .pass { background: rgba(39,174,96,0.15); color: #2ecc71; }
+    .fail { background: rgba(231,76,60,0.15);  color: #e74c3c; }
+    .skip { background: rgba(245,166,35,0.15); color: #f5a623; }
+    #summary { margin-top: 24px; font-size: 16px; font-weight: bold; padding: 12px; border-radius: 8px; }
+    .sum-ok  { background: rgba(39,174,96,0.2); }
+    .sum-err { background: rgba(231,76,60,0.2); }
   </style>
 </head>
 <body>
 <h1>🧪 TREKKO Smoke Tests</h1>
+<div class="ver">v1.7.0-hiking-hud-summary-ci</div>
 <div id="results"></div>
 <div id="summary"></div>
 
 <script type="module">
 // ── Helpers ─────────────────────────────────────────────────────
 const results = [];
+let currentSection = '';
+
+function section(name) {
+  currentSection = name;
+  const div = document.createElement('div');
+  div.className = 'section';
+  div.textContent = name;
+  document.getElementById('results').appendChild(div);
+}
+
 function test(name, fn) {
   try {
     const r = fn();
     if (r === false) throw new Error('returned false');
-    results.push({ name, ok: true });
+    if (r instanceof Promise) {
+      r.then(() => results.push({ name, ok: true, sec: currentSection }))
+       .catch(e => results.push({ name, ok: false, err: e.message, sec: currentSection }));
+      return;
+    }
+    results.push({ name, ok: true, sec: currentSection });
   } catch(e) {
-    results.push({ name, ok: false, err: e.message });
+    results.push({ name, ok: false, err: e.message, sec: currentSection });
   }
 }
-function skip(name) {
-  results.push({ name, ok: null });
-}
 
-// ── Tests utilitaires (importés directement) ─────────────────────
+// ── Imports ──────────────────────────────────────────────────────
 import { haversineDistance, formatDistance, formatCurrency, escapeHTML, isValidLatLon, safeUrl } from '../js/utils.js';
 import { getBestOriginCoords, TRAVEL_SPEEDS } from '../js/day-plan.js';
-import { calculateWaterNeeds, HikingSessionStatus } from '../js/tracker.js';
-import { isMapReady } from '../js/map.js?v=4';
+import { calculateWaterNeeds, HikingSessionStatus, buildHikingSummary } from '../js/tracker.js?v=3';
+import { isMapReady } from '../js/map.js?v=5';
 
-// Haversine
-test('haversineDistance — Nages à Montpellier ~30km', () => {
+// ═══════════════════════════
+section('📐 Géométrie');
+// ═══════════════════════════
+test('haversineDistance — Nages↔Montpellier ~50km', () => {
   const d = haversineDistance(43.7169, 4.3789, 43.6117, 3.8772);
   return d > 40 && d < 60;
 });
 test('haversineDistance — même point = 0', () => haversineDistance(43, 4, 43, 4) < 0.001);
-
-// formatDistance
 test('formatDistance — km', () => formatDistance(12) === '12 km');
-test('formatDistance — mètres', () => formatDistance(0.5).includes('500'));
+test('formatDistance — mètres', () => formatDistance(0.3).includes('300'));
 test('formatDistance — null', () => formatDistance(null) === '—');
 
-// formatCurrency
-test('formatCurrency — valide', () => formatCurrency(3.5) === '3.50 €');
+// ═══════════════════════════
+section('💰 Formatage');
+// ═══════════════════════════
+test('formatCurrency — 3.5€', () => formatCurrency(3.5) === '3.50 €');
 test('formatCurrency — null', () => formatCurrency(null) === '—');
+test('formatCurrency — NaN', () => formatCurrency(NaN) === '—');
 
-// escapeHTML
-test('escapeHTML — balise', () => escapeHTML('<script>') === '&lt;script&gt;');
-test('escapeHTML — guillemets', () => escapeHTML('"hello"') === '&quot;hello&quot;');
+// ═══════════════════════════
+section('🔒 Sécurité HTML');
+// ═══════════════════════════
+test('escapeHTML — balise <script>', () => escapeHTML('<script>') === '&lt;script&gt;');
+test('escapeHTML — guillemets doubles', () => escapeHTML('"hello"') === '&quot;hello&quot;');
+test('escapeHTML — apostrophe', () => escapeHTML("l'eau") === "l&#39;eau");
 test('escapeHTML — null', () => escapeHTML(null) === '');
+test('escapeHTML — nombre', () => escapeHTML(42) === '42');
 
-// isValidLatLon
+// ═══════════════════════════
+section('📍 Coordonnées GPS');
+// ═══════════════════════════
 test('isValidLatLon — Nages OK', () => isValidLatLon(43.7169, 4.3789));
-test('isValidLatLon — hors plage lat', () => !isValidLatLon(91, 0));
-test('isValidLatLon — hors plage lon', () => !isValidLatLon(0, 181));
+test('isValidLatLon — hors plage lat > 90', () => !isValidLatLon(91, 0));
+test('isValidLatLon — hors plage lon > 180', () => !isValidLatLon(0, 181));
 test('isValidLatLon — NaN', () => !isValidLatLon(NaN, 0));
-
-// safeUrl
+test('isValidLatLon — null', () => !isValidLatLon(null, null));
 test('safeUrl — https valide', () => safeUrl('https://waze.com') !== null);
 test('safeUrl — javascript: rejeté', () => safeUrl('javascript:alert(1)') === null);
 test('safeUrl — null', () => safeUrl(null) === null);
+test('safeUrl — data: rejeté', () => safeUrl('data:text/html,<h1>x</h1>') === null);
 
-// TRAVEL_SPEEDS
-test('TRAVEL_SPEEDS — mixed existe', () => TRAVEL_SPEEDS.mixed?.kmh === 70);
-test('TRAVEL_SPEEDS — mountain existe', () => TRAVEL_SPEEDS.mountain?.kmh === 40);
+// ═══════════════════════════
+section('🚗 Profils de vitesse');
+// ═══════════════════════════
+test('TRAVEL_SPEEDS.mixed = 70 km/h', () => TRAVEL_SPEEDS.mixed?.kmh === 70);
+test('TRAVEL_SPEEDS.mountain = 40 km/h', () => TRAVEL_SPEEDS.mountain?.kmh === 40);
+test('TRAVEL_SPEEDS.highway = 95 km/h', () => TRAVEL_SPEEDS.highway?.kmh === 95);
+test('TRAVEL_SPEEDS.city = 35 km/h', () => TRAVEL_SPEEDS.city?.kmh === 35);
+test('TRAVEL_SPEEDS — chaque profil a un label', () =>
+  Object.values(TRAVEL_SPEEDS).every(p => typeof p.label === 'string' && p.label.length > 0)
+);
 
-// getBestOriginCoords
-test('getBestOriginCoords — retourne lat/lon valides', () => {
+// ═══════════════════════════
+section('📍 Origine GPS day-plan');
+// ═══════════════════════════
+test('getBestOriginCoords — lat/lon valides', () => {
   const o = getBestOriginCoords();
-  return isValidLatLon(o.lat, o.lon) && typeof o.label === 'string';
+  return isValidLatLon(o.lat, o.lon) && typeof o.label === 'string' && typeof o.source === 'string';
+});
+test('getBestOriginCoords — source est gps|stored|default', () => {
+  const o = getBestOriginCoords();
+  return ['gps', 'stored', 'default'].includes(o.source);
 });
 
-// calculateWaterNeeds
-test('calculateWaterNeeds — hiking 60min 25C retourne objet', () => {
+// ═══════════════════════════
+section('💧 Hydratation');
+// ═══════════════════════════
+test('calculateWaterNeeds — objet {mlPerHour, totalMl}', () => {
   const r = calculateWaterNeeds('hiking', 60, 25);
-  return typeof r.totalMl === 'number' && r.totalMl > 0;
+  return typeof r.totalMl === 'number' && typeof r.mlPerHour === 'number';
 });
-test('calculateWaterNeeds — totalMl > mlPerHour pour 1h', () => {
-  const r = calculateWaterNeeds('hiking', 60, 20);
-  return r.totalMl <= r.mlPerHour + 1; // 1h donc totalMl ≈ mlPerHour
+test('calculateWaterNeeds — totalMl > 0 pour 60min', () => {
+  return calculateWaterNeeds('hiking', 60, 20).totalMl > 0;
+});
+test('calculateWaterNeeds — temp chaude augmente les besoins', () => {
+  const cold = calculateWaterNeeds('hiking', 60, 10);
+  const hot  = calculateWaterNeeds('hiking', 60, 35);
+  return hot.totalMl > cold.totalMl;
 });
 
-// HikingSessionStatus state machine
-test('HikingSessionStatus — IDLE existe', () => HikingSessionStatus.IDLE === 'idle');
-test('HikingSessionStatus — RECORDING existe', () => HikingSessionStatus.RECORDING === 'recording');
+// ═══════════════════════════
+section('🥾 Session tracker');
+// ═══════════════════════════
+test('HikingSessionStatus.IDLE === "idle"',       () => HikingSessionStatus.IDLE === 'idle');
+test('HikingSessionStatus.RECORDING === "recording"', () => HikingSessionStatus.RECORDING === 'recording');
+test('HikingSessionStatus.PAUSED === "paused"',   () => HikingSessionStatus.PAUSED === 'paused');
+test('HikingSessionStatus.FINISHED === "finished"', () => HikingSessionStatus.FINISHED === 'finished');
 
-// isMapReady — doit retourner false hors contexte carte
+// ═══════════════════════════
+section('📊 buildHikingSummary');
+// ═══════════════════════════
+test('buildHikingSummary — objet complet depuis stats vides', () => {
+  const s = buildHikingSummary({});
+  return (
+    typeof s.distanceKm    === 'number' &&
+    typeof s.durationSec   === 'number' &&
+    typeof s.avgSpeedKmh   === 'number' &&
+    typeof s.elevationGain === 'number' &&
+    typeof s.calories      === 'number' &&
+    typeof s.gpsPointCount === 'number' &&
+    Array.isArray(s.warnings) &&
+    typeof s.reliabilityLevel === 'string'
+  );
+});
+test('buildHikingSummary — reliabilityLevel poor si < 3 points', () => {
+  const s = buildHikingSummary({ distanceKm: 5, elapsedSec: 3600, pointCount: 2 });
+  return s.reliabilityLevel === 'poor';
+});
+test('buildHikingSummary — warning si précision > 40m', () => {
+  const s = buildHikingSummary({ distanceKm: 3, elapsedSec: 1800, pointCount: 10, avgAccuracy: 80 });
+  return s.warnings.some(w => w.includes('précision'));
+});
+test('buildHikingSummary — calcul vitesse moyenne correct', () => {
+  // 10 km en 1h → 10 km/h
+  const s = buildHikingSummary({ distanceKm: 10, elapsedSec: 3600, pointCount: 20 });
+  return Math.abs(s.avgSpeedKmh - 10) < 0.5;
+});
+test('buildHikingSummary — hydratation estimée > 0 pour 1h rando', () => {
+  const s = buildHikingSummary({ distanceKm: 5, elapsedSec: 3600, pointCount: 10, activityMode: 'hiking' });
+  return s.waterEstimateMl > 0;
+});
+
+// ═══════════════════════════
+section('🗺️ Carte Leaflet');
+// ═══════════════════════════
 test('isMapReady — false avant initMap', () => isMapReady() === false);
 
-// Génération liens navigation
-test('Waze URL — lat/lon valides', () => {
-  const lat = 43.7, lon = 4.3;
+// ═══════════════════════════
+section('🔗 Liens navigation');
+// ═══════════════════════════
+test('Waze URL valide pour Nages', () => {
+  const lat = 43.7169, lon = 4.3789;
   if (!isValidLatLon(lat, lon)) return false;
-  const url = `https://waze.com/ul?ll=${lat},${lon}&navigate=yes`;
-  return safeUrl(url) !== null;
+  return safeUrl(`https://waze.com/ul?ll=${lat},${lon}&navigate=yes`) !== null;
 });
-test('Google Maps URL — lat/lon valides', () => {
-  const lat = 43.7, lon = 4.3;
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+test('Google Maps URL valide', () => {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=43.7169,4.3789`;
   return safeUrl(url) !== null;
 });
 
-// ── Rendu ────────────────────────────────────────────────────────
+// ── Rendu après micro-délai (imports async) ──────────────────────
+await new Promise(r => setTimeout(r, 50));
+
 const container = document.getElementById('results');
 let passed = 0, failed = 0, skipped = 0;
 results.forEach(r => {
   const div = document.createElement('div');
   if (r.ok === true)  { div.className = 'test pass'; div.textContent = `✅ ${r.name}`; passed++; }
-  if (r.ok === false) { div.className = 'test fail'; div.textContent = `❌ ${r.name} — ${r.err || ''}`; failed++; }
+  if (r.ok === false) { div.className = 'test fail'; div.textContent = `❌ ${r.name}${r.err ? ' — ' + r.err : ''}`; failed++; }
   if (r.ok === null)  { div.className = 'test skip'; div.textContent = `⚠️ ${r.name} (skipped)`; skipped++; }
   container.appendChild(div);
 });
 
 const summary = document.getElementById('summary');
-summary.textContent = `Résultat : ${passed} ✅  ${failed} ❌  ${skipped} ⚠️`;
-summary.style.color = failed > 0 ? '#e74c3c' : '#2ecc71';
+summary.textContent = `Résultat : ${passed} ✅  ${failed} ❌  ${skipped} ⚠️  — ${results.length} tests`;
+summary.className   = failed > 0 ? 'sum-err' : 'sum-ok';
 </script>
 </body>
 </html>

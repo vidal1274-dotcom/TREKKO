@@ -1,5 +1,5 @@
-/* SERVICE WORKER v12 — cache propre, notifie l'UI à la mise à jour */
-const CACHE_NAME = 'trekko-v12';
+/* SERVICE WORKER v13 — cache propre, notifie l'UI à la mise à jour */
+const CACHE_NAME = 'trekko-v13';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
