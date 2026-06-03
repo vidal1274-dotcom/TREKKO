@@ -35,11 +35,13 @@ function skip(name) {
   results.push({ name, ok: null });
 }
 
-// ── Tests utilitaires (importés directement) ─────────────────────
+// ── Imports des blocs testés ─────────────────────────────────────
 import { haversineDistance, formatDistance, formatCurrency, escapeHTML, isValidLatLon, safeUrl } from '../js/utils.js';
 import { getBestOriginCoords, TRAVEL_SPEEDS } from '../js/day-plan.js';
 import { calculateWaterNeeds, HikingSessionStatus } from '../js/tracker.js';
 import { isMapReady } from '../js/map.js?v=4';
+import { openWaze, openGoogleMaps, navigateTo } from '../js/navigation.js';
+import { initRunningScreen, showRunningScreen, setupRunningCallbacks } from '../js/running-screen.js';
 
 // Haversine
 test('haversineDistance — Nages à Montpellier ~30km', () => {
@@ -72,6 +74,23 @@ test('isValidLatLon — NaN', () => !isValidLatLon(NaN, 0));
 test('safeUrl — https valide', () => safeUrl('https://waze.com') !== null);
 test('safeUrl — javascript: rejeté', () => safeUrl('javascript:alert(1)') === null);
 test('safeUrl — null', () => safeUrl(null) === null);
+
+// ─── Architecture des blocs ──────────────────────────────────────
+
+// BLOC 11 — Navigation externe
+test('BLOC NAVIGATION — openWaze est une fonction', () => typeof openWaze === 'function');
+test('BLOC NAVIGATION — openGoogleMaps est une fonction', () => typeof openGoogleMaps === 'function');
+test('BLOC NAVIGATION — navigateTo est une fonction', () => typeof navigateTo === 'function');
+
+// BLOC 07 — Running
+test('BLOC RUNNING — initRunningScreen est une fonction', () => typeof initRunningScreen === 'function');
+test('BLOC RUNNING — showRunningScreen est une fonction', () => typeof showRunningScreen === 'function');
+test('BLOC RUNNING — setupRunningCallbacks est une fonction', () => typeof setupRunningCallbacks === 'function');
+
+// BLOC 03 — Carte
+test('BLOC CARTE — isMapReady() retourne false hors contexte', () => isMapReady() === false);
+
+// ─── Profils de vitesse ──────────────────────────────────────────
 
 // TRAVEL_SPEEDS
 test('TRAVEL_SPEEDS — mixed existe', () => TRAVEL_SPEEDS.mixed?.kmh === 70);

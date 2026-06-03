@@ -1,5 +1,38 @@
 # Changelog — TREKKO
 
+## v1.6.1-block-architecture — 2026-06-03
+
+### Architecture par blocs
+- Audit complet : 46 fichiers JS, 10 problèmes détectés et documentés
+- `_docs/ARCHITECTURE_BLOCKS_AUDIT.md` : rapport détaillé avec tableau problèmes/risques/corrections
+- `_docs/BLOCKS_MAP.md` : carte des 15 blocs fonctionnels avec API publique et interdictions
+- `_docs/ARCHITECTURE_BLOCKS.md` : règles d'or + guide modification et test par bloc
+
+### Extraction Bloc Running
+- `js/running-screen.js` — nouveau module : tout le code Running extrait de app.js (265 lignes)
+- Pattern de callbacks injectés (`setupRunningCallbacks`) pour éviter les imports circulaires
+- `window.dispatchEvent('trekko:switchPanel')` remplace la dépendance directe à `switchToPanel`
+- app.js réduit de ~265 lignes (de 1541 à ~1280)
+
+### Corrections architecture
+- `tracker.js` : suppression de `_haversine` (dupliquée) → import de `haversineDistance` depuis utils.js
+- `app.js` : suppression du doublon d'import `data-loader.js` (ligne 5 en double)
+- `app.js` : `setupRunningCallbacks` câblé dans `startApp()` avec pattern événement custom
+
+### Commentaires de blocs structurants
+- `tracker.js` : BLOC TRACKING × 9 sections (session, timer, GPS, stats, résumé…)
+- `map.js` : BLOC CARTE × 7 sections
+- `geolocation.js` : BLOC GPS × 3 sections
+- `day-plan.js` : BLOC PROGRAMME × 6 sections
+- `nearby.js` : BLOC POI × 2 sections
+- `navigation.js` : BLOC NAVIGATION × 3 sections
+
+### Tests smoke architecture
+- Tests de présence des blocs Running, Navigation, Carte
+- Tests des fonctions publiques exportées par bloc
+
+---
+
 ## v1.6.0-ui-code-hardening — 2026-06-01
 
 ### Stabilité carte
