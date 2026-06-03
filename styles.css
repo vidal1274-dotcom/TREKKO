@@ -3924,6 +3924,38 @@ body.hiking-active #app-main {
   border: 1px solid var(--hs-border);
   color: #fff;
 }
+/* Sélecteur profil vitesse — programme journée */
+.dp-speed-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--color-card2);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.dp-speed-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-mid);
+  white-space: nowrap;
+}
+.dp-speed-select {
+  background: var(--color-card);
+  border: 1px solid var(--color-border2);
+  border-radius: 8px;
+  color: var(--color-text);
+  font-size: 13px;
+  padding: 6px 10px;
+  flex: 1;
+  min-width: 0;
+}
+.dp-speed-note {
+  font-size: 11px;
+  color: var(--color-text-dim);
+  width: 100%;
+}
+
 .hs-sum-btn-primary {
   background: var(--hs-color);
   color: #fff;

@@ -944,16 +944,38 @@ function showRunningScreen() {
 /* =========================================================
    BLOC 10b — PROGRAMME JOURNÉE
    ========================================================= */
+const LS_SPEED_PROFILE = 'trekko_speed_profile';
+
+function _getSpeedProfile() {
+  return localStorage.getItem(LS_SPEED_PROFILE) || 'mixed';
+}
+
+function _initSpeedSelector() {
+  const sel = document.getElementById('dp-speed-profile');
+  if (!sel) return;
+  sel.value = _getSpeedProfile();
+  sel.addEventListener('change', () => {
+    localStorage.setItem(LS_SPEED_PROFILE, sel.value);
+    // Invalider le plan courant pour forcer recalcul au prochain affichage
+    _currentDayPlan = null;
+    clearDayPlanRoute();
+  });
+}
+
 function onDayPlanClick() {
   const modal   = document.getElementById('day-plan-modal');
   const content = document.getElementById('day-plan-content');
   if (!modal || !content) return;
 
+  // Initialiser le sélecteur de profil si pas encore fait
+  _initSpeedSelector();
+
   if (!_currentDayPlan) {
     const km = Math.min(_maxDistanceKm > 0 ? _maxDistanceKm : 80, 80);
     _currentDayPlan = generateDayPlan(_sites, _vehicleProfile, {
       maxKm: km, minStops: 3, maxStops: 5,
-      avoidTolls: _vehicleProfile?.avoid_tolls ?? true
+      avoidTolls: _vehicleProfile?.avoid_tolls ?? true,
+      speedProfile: _getSpeedProfile()
     });
     if (!_currentDayPlan) {
       showToast('Pas assez de sites avec GPS dans ce rayon. Augmentez la distance.', 'warning');
@@ -988,7 +1010,8 @@ function _bindDayPlanActions() {
     const km = Math.min(_maxDistanceKm > 0 ? _maxDistanceKm : 80, 80);
     _currentDayPlan = generateDayPlan(_sites, _vehicleProfile, {
       maxKm: km, minStops: 3, maxStops: 5,
-      avoidTolls: _vehicleProfile?.avoid_tolls ?? true
+      avoidTolls: _vehicleProfile?.avoid_tolls ?? true,
+      speedProfile: _getSpeedProfile()
     });
     const content = document.getElementById('day-plan-content');
     if (content && _currentDayPlan) {

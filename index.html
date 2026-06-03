@@ -458,6 +458,17 @@
   <div class="modal-overlay"></div>
   <div class="modal-content modal-wide">
     <button class="modal-close" id="day-plan-close-btn">✕</button>
+    <!-- Sélecteur profil de vitesse -->
+    <div class="dp-speed-selector">
+      <label class="dp-speed-label" for="dp-speed-profile">🚗 Profil de trajet :</label>
+      <select id="dp-speed-profile" class="dp-speed-select">
+        <option value="city">Ville / local — 35 km/h</option>
+        <option value="road">Route lente / montagne — 45 km/h</option>
+        <option value="mixed" selected>Route mixte — 70 km/h</option>
+        <option value="highway">Autoroute — 95 km/h</option>
+      </select>
+      <span class="dp-speed-note">⚠️ Hors trafic réel — vérifier dans Waze.</span>
+    </div>
     <div id="day-plan-content"></div>
   </div>
 </div>
