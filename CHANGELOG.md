@@ -1,5 +1,44 @@
 # Changelog — TREKKO
 
+## v1.7.0-hiking-hud-summary-ci — 2026-06-03
+
+### HUD Randonnée
+- Indicateur de précision GPS : vert < 15 m / orange 15-40 m / rouge > 40 m / gris = perdu
+- Stats live enrichies : vitesse courante, vitesse moyenne, en grille 4 cellules
+- Bouton recentrer carte sur position GPS (btn-hs-center)
+- Avertissement "Précision GPS faible" si accuracy > 40 m
+
+### Résumé Randonnée
+- `buildHikingSummary(finalStats)` — objet normalisé avec reliabilityLevel et warnings
+- `renderHikingSummary(summary)` — séparation calcul / rendu
+- `copyHikingSummaryText(summary)` — copie clipboard compatible iOS
+- Résumé enrichi : vitesse moy, allure, alt min/max, points GPS, précision moy, hydratation
+- Boutons : GPX, Copier résumé, Retour carte, Nouvelle sortie
+
+### Programme Journée
+- Sélecteur profil de vitesse visible : ville / montagne / mixte / autoroute
+- Persistance du choix dans localStorage
+- Recalcul automatique au clic "Régénérer" avec le profil sélectionné
+- Avertissement : "Hors trafic réel — vérifier dans Waze"
+
+### Tracker GPS
+- `maxSpeedKmh` tracké et exposé dans `getLiveStats()`
+- `avgAccuracy` (running average), `lastAccuracy` exposés
+- `minAltitude` / `maxAltitude` trackées
+- `avgSpeedKmh`, `avgPaceMinKm` calculés en temps réel
+
+### CI GitHub Actions
+- `.github/workflows/smoke.yml` : CI sur push/PR vers main et branches feat/refactor/fix
+- `scripts/check-files.mjs` : 17 fichiers critiques + node --check 14 modules JS + VERSION
+- `package.json` : `npm run smoke` et `npm run serve`
+
+### Cache & Service Worker
+- map.js v5, tracker.js v3, hiking-screen.js v5, app.js v65
+- Service Worker v13 / trekko-v13
+- smoke-tests.html : 35 tests (v1.7 inclus : buildHikingSummary, TRAVEL_SPEEDS, GPS indicator)
+
+---
+
 ## v1.6.0-ui-code-hardening — 2026-06-01
 
 ### Stabilité carte

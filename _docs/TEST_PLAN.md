@@ -1,6 +1,56 @@
 # TREKKO — Plan de test manuel
-**Version** : 1.6.0-ui-code-hardening  
+**Version** : 1.7.0-hiking-hud-summary-ci  
 **À exécuter avant tout merge sur main.**
+
+---
+
+## 14. Tests v1.7 — HUD GPS + Résumé + Programme + CI
+
+### HUD Randonnée
+- [ ] Indicateur GPS vert quand précision < 15 m
+- [ ] Indicateur GPS orange quand précision 15-40 m
+- [ ] Indicateur GPS rouge quand précision > 40 m
+- [ ] Indicateur GPS gris si GPS perdu / inaccessible
+- [ ] "GPS excellent / moyen / faible / perdu" texte lisible
+- [ ] Valeur `±X m` affichée à côté du statut
+- [ ] Avertissement "Précision GPS faible" si accuracy > 40m
+- [ ] Grille HUD : 4 cellules (allure, vitesse, vitesse moy, kcal)
+- [ ] Bouton 📍 recentre la carte sur la position GPS
+
+### Résumé Randonnée
+- [ ] buildHikingSummary produit un objet valide (non nul)
+- [ ] renderHikingSummary affiche distance, durée, dénivelé, vitesse moy, allure
+- [ ] Altitude min/max affichée si données dispo
+- [ ] Précision GPS moyenne affichée
+- [ ] Fiabilité "🟢 bonne" si pointCount ≥ 3 et accuracy < 40
+- [ ] Avertissement si peu de points ou précision faible
+- [ ] Bouton "Copier résumé" → texte dans presse-papier (format lisible)
+- [ ] Texte copié contient distance, durée, vitesse moyenne
+- [ ] Bouton "Retour carte" ferme l'écran randonnée
+- [ ] Export GPX inchangé (nom format trekko-xxx-AAAA-MM-JJ-HHMM.gpx)
+
+### Programme Journée
+- [ ] Sélecteur de profil visible dans la modale
+- [ ] 4 options disponibles (ville, montagne, mixte, autoroute)
+- [ ] Choix persisté après fermeture/réouverture de la modale
+- [ ] "Régénérer" utilise le profil sélectionné
+- [ ] Avertissement "Hors trafic réel" visible
+- [ ] Badge GPS vert si position réelle, orange si défaut
+
+### CI GitHub Actions
+- [ ] `npm run smoke` passe localement (node scripts/check-files.mjs)
+- [ ] Workflow `.github/workflows/smoke.yml` visible sur GitHub
+- [ ] CI passe au prochain push sur la branche
+
+### smoke-tests.html v1.7
+- [ ] Ouvrir tests/smoke-tests.html
+- [ ] Tous les tests ✅ (35 tests)
+- [ ] Aucun ❌
+- [ ] buildHikingSummary tests passent
+- [ ] TRAVEL_SPEEDS tests passent
+- [ ] GPS indicator states testées
+
+---
 
 ---
 
