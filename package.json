@@ -1,0 +1,11 @@
+{
+  "name": "trekko",
+  "version": "1.7.0",
+  "description": "Application de planification de sorties en famille — PWA vanilla JS",
+  "type": "module",
+  "scripts": {
+    "smoke": "node scripts/check-files.mjs",
+    "serve": "python -m http.server 8000"
+  },
+  "devDependencies": {}
+}

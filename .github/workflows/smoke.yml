@@ -1,0 +1,43 @@
+name: TREKKO Smoke CI
+
+on:
+  push:
+    branches: [ main, 'feat/**', 'refactor/**', 'fix/**' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  smoke:
+    name: Smoke checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Vérifier les fichiers critiques et la syntaxe JS
+        run: node scripts/check-files.mjs
+
+      - name: Vérifier que VERSION est défini
+        run: |
+          VERSION=$(cat VERSION)
+          echo "Version : $VERSION"
+          if [[ ! "$VERSION" == v* ]]; then
+            echo "❌ VERSION ne commence pas par 'v'"
+            exit 1
+          fi
+          echo "✅ VERSION OK : $VERSION"
+
+      - name: Vérifier que CHANGELOG.md contient la version courante
+        run: |
+          VERSION=$(cat VERSION)
+          if grep -q "$VERSION" CHANGELOG.md; then
+            echo "✅ CHANGELOG.md contient $VERSION"
+          else
+            echo "⚠️  CHANGELOG.md ne mentionne pas $VERSION (non bloquant)"
+          fi
