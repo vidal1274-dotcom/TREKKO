@@ -29,12 +29,22 @@ let _lastPoint     = null;
 let _totalDistKm   = 0;
 let _totalElevGain = 0;
 let _currentSpeed  = 0;
+let _maxSpeedKmh   = 0;
 let _activityMode  = 'casual';
 let _tempCelsius   = 20;
 let _weightKg      = 70;
 let _splits        = [];
 let _lastSplitDist = 0;
 let _autoPaused    = false;
+
+// Précision GPS — running average
+let _lastAccuracy    = null;
+let _totalAccuracy   = 0;
+let _accuracyCount   = 0;
+
+// Altitude
+let _minAltitude = null;
+let _maxAltitude = null;
 
 // Timer fiable basé sur Date.now() — résistant à la veille iOS
 let _sessionStartMs  = 0;
@@ -60,9 +70,15 @@ export async function startTracking(label = 'Parcours', isPublic = false, activi
   _totalDistKm   = 0;
   _totalElevGain = 0;
   _currentSpeed  = 0;
+  _maxSpeedKmh   = 0;
   _splits        = [];
   _lastSplitDist = 0;
   _autoPaused    = false;
+  _lastAccuracy  = null;
+  _totalAccuracy = 0;
+  _accuracyCount = 0;
+  _minAltitude   = null;
+  _maxAltitude   = null;
   _sessionStartMs  = Date.now();
   _pauseStartMs    = 0;
   _totalPausedMs   = 0;
@@ -125,6 +141,12 @@ export async function stopTracking() {
   _totalDistKm    = 0;
   _totalElevGain  = 0;
   _currentSpeed   = 0;
+  _maxSpeedKmh    = 0;
+  _lastAccuracy   = null;
+  _totalAccuracy  = 0;
+  _accuracyCount  = 0;
+  _minAltitude    = null;
+  _maxAltitude    = null;
   _sessionStartMs = 0;
   _pauseStartMs   = 0;
   _totalPausedMs  = 0;
@@ -184,6 +206,7 @@ export async function recordPoint() {
           const elapsedH = (Date.parse(now) - Date.parse(_lastPoint.recorded_at)) / 3600000;
           _totalDistKm  += distKm;
           _currentSpeed  = elapsedH > 0 ? distKm / elapsedH : 0;
+          if (_currentSpeed > _maxSpeedKmh) _maxSpeedKmh = _currentSpeed;
 
           if (_activityMode !== 'casual') {
             _autoPaused = _currentSpeed < 1.0 && _currentSpeed > 0;
@@ -203,6 +226,19 @@ export async function recordPoint() {
             const diff = point.altitude - _lastPoint.altitude;
             if (diff > 0) _totalElevGain += diff;
           }
+        }
+
+        // Précision GPS — running average
+        if (point.accuracy != null && point.accuracy > 0) {
+          _lastAccuracy  = point.accuracy;
+          _totalAccuracy += point.accuracy;
+          _accuracyCount++;
+        }
+
+        // Altitude min / max
+        if (point.altitude != null) {
+          if (_minAltitude === null || point.altitude < _minAltitude) _minAltitude = point.altitude;
+          if (_maxAltitude === null || point.altitude > _maxAltitude) _maxAltitude = point.altitude;
         }
 
         _lastPoint = point;
@@ -240,18 +276,28 @@ function _onVisibilityChange() {
    BLOC 05 — MÉTRIQUES TEMPS RÉEL
    ========================================================= */
 export function getLiveStats() {
+  const elapsed = getElapsedSec();
+  const elapsedH = elapsed / 3600;
+  const avgSpeedKmh = elapsedH > 0 && _totalDistKm > 0 ? _totalDistKm / elapsedH : 0;
   return {
-    distanceKm:   Math.round(_totalDistKm * 100) / 100,
-    speedKmh:     Math.round(_currentSpeed * 10) / 10,
-    paceMinKm:    _currentSpeed > 0.5 ? 60 / _currentSpeed : null,
-    elevGainM:    Math.round(_totalElevGain),
-    activityMode: _activityMode,
-    pointCount:   _pointCount,
-    calories:     _sessionStartMs > 0 ? _calcCalories() : 0,
-    splits:       [..._splits],
-    autoPaused:   _autoPaused,
-    elapsedSec:   getElapsedSec(),
-    status:       _status
+    distanceKm:    Math.round(_totalDistKm * 100) / 100,
+    speedKmh:      Math.round(_currentSpeed * 10) / 10,
+    maxSpeedKmh:   Math.round(_maxSpeedKmh * 10) / 10,
+    avgSpeedKmh:   Math.round(avgSpeedKmh * 10) / 10,
+    paceMinKm:     _currentSpeed > 0.5 ? 60 / _currentSpeed : null,
+    avgPaceMinKm:  avgSpeedKmh > 0.5 ? 60 / avgSpeedKmh : null,
+    elevGainM:     Math.round(_totalElevGain),
+    minAltitude:   _minAltitude != null ? Math.round(_minAltitude) : null,
+    maxAltitude:   _maxAltitude != null ? Math.round(_maxAltitude) : null,
+    activityMode:  _activityMode,
+    pointCount:    _pointCount,
+    calories:      _sessionStartMs > 0 ? _calcCalories() : 0,
+    splits:        [..._splits],
+    autoPaused:    _autoPaused,
+    elapsedSec:    elapsed,
+    status:        _status,
+    lastAccuracy:  _lastAccuracy,
+    avgAccuracy:   _accuracyCount > 0 ? Math.round(_totalAccuracy / _accuracyCount) : null
   };
 }
 
@@ -349,4 +395,73 @@ function _haversine(lat1, lon1, lat2, lon2) {
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a    = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/* =========================================================
+   BLOC 09 — RÉSUMÉ DE SESSION
+   ========================================================= */
+/**
+ * Construit un objet résumé normalisé à partir des stats finales.
+ * Source unique de vérité pour le rendu du résumé randonnée.
+ * @param {object} finalStats — objet getLiveStats() capturé au moment du stop
+ * @returns {object} summary
+ */
+export function buildHikingSummary(finalStats) {
+  const s = finalStats || {};
+  const distKm      = s.distanceKm || 0;
+  const elapsed     = s.elapsedSec || 0;
+  const elevGain    = s.elevGainM  || 0;
+  const calories    = s.calories   || 0;
+  const pointCount  = s.pointCount || 0;
+  const maxSpeedKmh = s.maxSpeedKmh || 0;
+  const avgAccuracy = s.avgAccuracy ?? null;
+  const minAlt      = s.minAltitude ?? null;
+  const maxAlt      = s.maxAltitude ?? null;
+  const mode        = s.activityMode || 'hiking';
+  const splits      = s.splits || [];
+
+  const elapsedH   = elapsed / 3600;
+  const avgSpeedKmh = elapsedH > 0 && distKm > 0
+    ? Math.round((distKm / elapsedH) * 10) / 10
+    : 0;
+  const avgPaceMinKm = avgSpeedKmh > 0.5 ? 60 / avgSpeedKmh : null;
+
+  // Hydratation estimée
+  const waterNeeds   = calculateWaterNeeds(mode, Math.floor(elapsed / 60), 20);
+  const waterEstimateMl = waterNeeds.totalMl;
+
+  // Fiabilité et avertissements
+  const warnings = [];
+  let reliabilityLevel = 'good';
+
+  if (pointCount < 3) {
+    warnings.push('Trop peu de points GPS enregistrés — données peu fiables.');
+    reliabilityLevel = 'poor';
+  }
+  if (avgAccuracy !== null && avgAccuracy > 40) {
+    warnings.push('Précision GPS faible — les distances peuvent être approximatives.');
+    if (reliabilityLevel === 'good') reliabilityLevel = 'medium';
+  }
+  if (distKm < 0.1 && elapsed > 120) {
+    warnings.push('Distance très courte — vérifiez que le GPS était actif.');
+    if (reliabilityLevel === 'good') reliabilityLevel = 'medium';
+  }
+
+  return {
+    distanceKm:      Math.round(distKm * 100) / 100,
+    durationSec:     elapsed,
+    avgSpeedKmh,
+    maxSpeedKmh:     Math.round(maxSpeedKmh * 10) / 10,
+    avgPaceMinKm,
+    elevationGain:   Math.round(elevGain),
+    minAltitude:     minAlt,
+    maxAltitude:     maxAlt,
+    calories:        Math.round(calories),
+    gpsPointCount:   pointCount,
+    avgAccuracy,
+    waterEstimateMl,
+    reliabilityLevel,
+    warnings,
+    splits
+  };
 }

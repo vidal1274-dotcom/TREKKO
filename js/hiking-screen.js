@@ -1,8 +1,8 @@
 /* =========================================================
    hiking-screen.js — Écran Randonnée / Balade (AllTrails + Komoot + Strava)
    ========================================================= */
-import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints, getElapsedSec, pauseElapsedTimer, resumeElapsedTimer } from './tracker.js';
-import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails } from './map.js?v=4';
+import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints, getElapsedSec, pauseElapsedTimer, resumeElapsedTimer, buildHikingSummary } from './tracker.js?v=3';
+import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails, flyToSite } from './map.js?v=5';
 import { getStoredOrigin } from './geolocation.js';
 import { OVERPASS_ENDPOINT } from './config.js';
 import { showToast } from './utils.js';
@@ -241,6 +241,15 @@ function _wireLive() {
     if (btn) btn.textContent = _voiceEnabled ? '🔊' : '🔇';
   });
 
+  // Bouton recentrer carte sur position GPS
+  _el('btn-hs-center')?.addEventListener('click', () => {
+    const origin = getStoredOrigin();
+    if (origin?.lat && origin?.lon) {
+      invalidateMapSize();
+      centerMap(origin.lat, origin.lon, 15);
+    }
+  });
+
   // Bouton ARRÊTER
   _el('btn-hs-stop')?.addEventListener('click', _onStopHike);
 
@@ -333,19 +342,52 @@ function _stopTimers() {
   document.removeEventListener('visibilitychange', _onHikingVisibility);
 }
 
+function _gpsState(accuracy) {
+  if (accuracy === null || accuracy === undefined) return { dot: 'gray',   label: 'GPS perdu',      cls: 'hs-gps-gray' };
+  if (accuracy < 15)  return { dot: 'green',  label: 'GPS excellent',  cls: 'hs-gps-green' };
+  if (accuracy < 40)  return { dot: 'orange', label: 'GPS moyen',      cls: 'hs-gps-orange' };
+  return                     { dot: 'red',    label: 'GPS faible',     cls: 'hs-gps-red' };
+}
+
 function _updateLiveStats() {
   const stats = getLiveStats();
   if (!stats) return;
 
-  const dist = (stats.distanceKm || 0).toFixed(2);
-  const elev = Math.round(stats.elevGainM || 0);
-  const pace = stats.paceMinKm ? _fmtPace(stats.paceMinKm) : '—';
-  const cals = Math.round(stats.calories || 0);
+  const dist    = (stats.distanceKm || 0).toFixed(2);
+  const elev    = Math.round(stats.elevGainM || 0);
+  const pace    = stats.paceMinKm ? _fmtPace(stats.paceMinKm) : '—';
+  const cals    = Math.round(stats.calories || 0);
+  const speed   = (stats.speedKmh || 0).toFixed(1);
+  const avgSpd  = (stats.avgSpeedKmh || 0).toFixed(1);
+  const pts     = stats.pointCount || 0;
 
-  if (_el('hs-stat-dist')) _el('hs-stat-dist').textContent = dist;
-  if (_el('hs-stat-elev')) _el('hs-stat-elev').textContent = `+${elev}`;
-  if (_el('hs-stat-pace')) _el('hs-stat-pace').textContent = pace;
-  if (_el('hs-stat-cals')) _el('hs-stat-cals').textContent = cals;
+  if (_el('hs-stat-dist'))   _el('hs-stat-dist').textContent   = dist;
+  if (_el('hs-stat-elev'))   _el('hs-stat-elev').textContent   = `+${elev}`;
+  if (_el('hs-stat-pace'))   _el('hs-stat-pace').textContent   = pace;
+  if (_el('hs-stat-cals'))   _el('hs-stat-cals').textContent   = cals;
+  if (_el('hs-stat-speed'))  _el('hs-stat-speed').textContent  = speed;
+  if (_el('hs-stat-avgspd')) _el('hs-stat-avgspd').textContent = avgSpd;
+  if (_el('hs-stat-pts'))    _el('hs-stat-pts').textContent    = pts;
+
+  // Indicateur GPS
+  const gps = _gpsState(stats.lastAccuracy);
+  const gpsEl = _el('hs-gps-indicator');
+  if (gpsEl) {
+    gpsEl.className = `hs-gps-indicator ${gps.cls}`;
+    const dotEl   = gpsEl.querySelector('.hs-gps-dot');
+    const lblEl   = gpsEl.querySelector('.hs-gps-label');
+    const accEl   = gpsEl.querySelector('.hs-gps-acc');
+    if (dotEl)  dotEl.className  = `hs-gps-dot hs-gps-dot-${gps.dot}`;
+    if (lblEl)  lblEl.textContent = gps.label;
+    if (accEl)  accEl.textContent = stats.lastAccuracy != null ? `±${Math.round(stats.lastAccuracy)} m` : '';
+  }
+
+  // Avertissement précision faible
+  const warnEl = _el('hs-gps-warn');
+  if (warnEl) {
+    const poor = stats.lastAccuracy != null && stats.lastAccuracy > 40;
+    warnEl.classList.toggle('hidden', !poor);
+  }
 
   // Progression objectif
   _updateProgressBar(stats.distanceKm || 0);
@@ -418,7 +460,7 @@ async function _onStopHike() {
 
 /* ─── SECTION C : RÉSUMÉ ────────────────────────────────────── */
 function _wireSummary() {
-  // Export GPX — exportAsGPX() gère lui-même le Blob + téléchargement
+  // Export GPX
   _el('btn-hs-gpx')?.addEventListener('click', async () => {
     if (!_sessionId) { showToast('Pas de session à exporter.', 'warning'); return; }
     try {
@@ -432,21 +474,35 @@ function _wireSummary() {
     }
   });
 
+  // Copier résumé texte
+  _el('btn-hs-copy')?.addEventListener('click', () => {
+    if (!_finalStats) { showToast('Pas de résumé disponible.', 'warning'); return; }
+    const summary = buildHikingSummary(_finalStats);
+    copyHikingSummaryText(summary);
+  });
+
+  // Retour carte
+  _el('btn-hs-back-map')?.addEventListener('click', _closeHikingScreen);
+
   // Nouvelle sortie
   _el('btn-hs-new')?.addEventListener('click', () => {
     _closeHikingScreen();
-    // Montrer le welcome screen
     if (window._showWelcome) window._showWelcome();
   });
 }
 
 function _showSummary() {
-  const cfg = MODE_CONFIG[_mode];
-  const s = _finalStats || {};
-  const distKm = s.distanceKm || 0;
-  const elevM = s.elevGainM || 0;
-  const cals = Math.round(s.calories || 0);
-  const elapsed = s.elapsedSec || 0;
+  const summary = buildHikingSummary(_finalStats);
+  renderHikingSummary(summary);
+
+  const startBtn = _el('hs-btn-start');
+  if (startBtn) { startBtn.disabled = false; startBtn.textContent = '▶ DÉMARRER'; }
+  _showSection('summary');
+}
+
+export function renderHikingSummary(summary) {
+  const cfg  = MODE_CONFIG[_mode];
+  const s    = summary || {};
 
   // Header
   const hdr = _el('hs-summary-header-text');
@@ -454,21 +510,55 @@ function _showSummary() {
   const dateEl = _el('hs-summary-date');
   if (dateEl) dateEl.textContent = _fmtDateLong();
 
-  // Stats héros
-  if (_el('hs-sum-dist')) _el('hs-sum-dist').textContent = distKm.toFixed(2);
+  // Héro distance
+  if (_el('hs-sum-dist')) _el('hs-sum-dist').textContent = (s.distanceKm || 0).toFixed(2);
 
-  // Stats secondaires
-  if (_el('hs-sum-duration')) _el('hs-sum-duration').textContent = _fmtTimerFull(elapsed);
-  if (_el('hs-sum-elev'))     _el('hs-sum-elev').textContent = `+${Math.round(elevM)} m`;
-  if (_el('hs-sum-cals'))     _el('hs-sum-cals').textContent = `${cals} kcal`;
+  // Grille principale
+  if (_el('hs-sum-duration')) _el('hs-sum-duration').textContent = _fmtTimerFull(s.durationSec || 0);
+  if (_el('hs-sum-elev'))     _el('hs-sum-elev').textContent     = `+${s.elevationGain || 0} m`;
+  if (_el('hs-sum-cals'))     _el('hs-sum-cals').textContent     = `${s.calories || 0} kcal`;
+  if (_el('hs-sum-avgspd'))   _el('hs-sum-avgspd').textContent   = `${s.avgSpeedKmh || 0} km/h`;
+  if (_el('hs-sum-maxspd'))   _el('hs-sum-maxspd').textContent   = s.maxSpeedKmh > 0 ? `${s.maxSpeedKmh} km/h` : '—';
+  if (_el('hs-sum-pace'))     _el('hs-sum-pace').textContent     = s.avgPaceMinKm ? _fmtPace(s.avgPaceMinKm) : '—';
+  if (_el('hs-sum-pts'))      _el('hs-sum-pts').textContent      = s.gpsPointCount || 0;
+  if (_el('hs-sum-acc'))      _el('hs-sum-acc').textContent      = s.avgAccuracy != null ? `±${s.avgAccuracy} m` : '—';
+  if (_el('hs-sum-water'))    _el('hs-sum-water').textContent    = s.waterEstimateMl > 0 ? `~${s.waterEstimateMl} ml` : '—';
+
+  // Altitude min / max
+  const altEl = _el('hs-sum-alt');
+  if (altEl) {
+    if (s.minAltitude != null && s.maxAltitude != null) {
+      altEl.textContent = `${s.minAltitude} → ${s.maxAltitude} m`;
+    } else {
+      altEl.textContent = '—';
+    }
+  }
 
   // Badge difficulté
-  const badge = _calcDifficultyBadge(distKm, elevM);
+  const badge = _calcDifficultyBadge(s.distanceKm || 0, s.elevationGain || 0);
   const badgeEl = _el('hs-sum-badge');
   if (badgeEl) {
     badgeEl.textContent = `${badge.icon} ${badge.label}`;
     badgeEl.style.color = badge.color;
     badgeEl.style.borderColor = badge.color;
+  }
+
+  // Fiabilité
+  const relEl = _el('hs-sum-reliability');
+  if (relEl) {
+    const icons = { good: '🟢', medium: '🟡', poor: '🔴' };
+    relEl.textContent = `${icons[s.reliabilityLevel] || '🟡'} Fiabilité ${s.reliabilityLevel === 'good' ? 'bonne' : s.reliabilityLevel === 'medium' ? 'moyenne' : 'faible'}`;
+  }
+
+  // Avertissements
+  const warnEl = _el('hs-sum-warnings');
+  if (warnEl) {
+    if (s.warnings?.length) {
+      warnEl.innerHTML = s.warnings.map(w => `<div class="hs-sum-warn">⚠️ ${w}</div>`).join('');
+      warnEl.classList.remove('hidden');
+    } else {
+      warnEl.classList.add('hidden');
+    }
   }
 
   // Splits
@@ -486,15 +576,32 @@ function _showSummary() {
         </div>`).join('');
     }
   }
+}
 
-  // Reset bouton démarrer pour prochaine utilisation
-  const startBtn = _el('hs-btn-start');
-  if (startBtn) {
-    startBtn.disabled = false;
-    startBtn.textContent = '▶ DÉMARRER';
+export function copyHikingSummaryText(summary) {
+  const s = summary || {};
+  const lines = [
+    'TREKKO — Résumé randonnée',
+    `Date : ${_fmtDateLong()}`,
+    `Distance : ${(s.distanceKm || 0).toFixed(2)} km`,
+    `Durée : ${_fmtTimerFull(s.durationSec || 0)}`,
+    `Vitesse moyenne : ${s.avgSpeedKmh || 0} km/h`,
+    s.avgPaceMinKm ? `Allure : ${_fmtPace(s.avgPaceMinKm)} min/km` : null,
+    `Dénivelé+ : ${s.elevationGain || 0} m`,
+    s.minAltitude != null ? `Altitude : ${s.minAltitude} → ${s.maxAltitude} m` : null,
+    `Calories : ${s.calories || 0} kcal`,
+    `Points GPS : ${s.gpsPointCount || 0}`,
+    s.avgAccuracy != null ? `Précision moyenne : ±${s.avgAccuracy} m` : null,
+    s.warnings?.length ? `⚠️ ${s.warnings.join(' | ')}` : null
+  ].filter(Boolean).join('\n');
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(lines)
+      .then(() => showToast('Résumé copié.', 'success'))
+      .catch(() => showToast('Copie non disponible.', 'warning'));
+  } else {
+    showToast('Copie non supportée sur ce navigateur.', 'warning');
   }
-
-  _showSection('summary');
 }
 
 /* ─── Sentiers depuis Overpass ──────────────────────────────── */

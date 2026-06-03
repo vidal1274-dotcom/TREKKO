@@ -604,9 +604,20 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
       <span id="hs-live-mode-label" class="hs-live-mode">🥾 Randonnée</span>
       <span id="hs-timer" class="hs-live-timer">00:00:00</span>
       <div class="hs-top-btns">
-        <button id="btn-hs-pause" class="hs-icon-btn" title="Pause">⏸</button>
-        <button id="btn-hs-lock"  class="hs-icon-btn" title="Verrouiller">🔓</button>
+        <button id="btn-hs-center" class="hs-icon-btn" title="Recentrer carte">📍</button>
+        <button id="btn-hs-pause"  class="hs-icon-btn" title="Pause">⏸</button>
+        <button id="btn-hs-lock"   class="hs-icon-btn" title="Verrouiller">🔓</button>
       </div>
+    </div>
+
+    <!-- Indicateur GPS -->
+    <div id="hs-gps-indicator" class="hs-gps-indicator hs-gps-gray">
+      <span class="hs-gps-dot hs-gps-dot-gray"></span>
+      <span class="hs-gps-label">GPS…</span>
+      <span class="hs-gps-acc"></span>
+    </div>
+    <div id="hs-gps-warn" class="hs-gps-warn hidden">
+      ⚠️ Précision GPS faible — distances approximatives
     </div>
 
     <!-- Zone transparente → carte visible en dessous -->
@@ -630,11 +641,19 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
         </div>
       </div>
 
-      <!-- Grille stats secondaires -->
-      <div class="hs-stat-grid">
+      <!-- Grille stats secondaires (4 cellules) -->
+      <div class="hs-stat-grid hs-stat-grid-4">
         <div class="hs-stat-cell">
           <span id="hs-stat-pace" class="hs-stat-val">—</span>
           <span class="hs-stat-lbl">min/km</span>
+        </div>
+        <div class="hs-stat-cell">
+          <span id="hs-stat-speed" class="hs-stat-val">0.0</span>
+          <span class="hs-stat-lbl">km/h</span>
+        </div>
+        <div class="hs-stat-cell">
+          <span id="hs-stat-avgspd" class="hs-stat-val">0.0</span>
+          <span class="hs-stat-lbl">moy km/h</span>
         </div>
         <div class="hs-stat-cell">
           <span id="hs-stat-cals" class="hs-stat-val">0</span>
@@ -667,17 +686,20 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
     </div>
 
     <div class="hs-summary-body">
-      <!-- Stat héros distance -->
+      <!-- Héro distance -->
       <div class="hs-sum-hero">
         <span id="hs-sum-dist" class="hs-sum-dist-val">0.00</span>
         <span class="hs-sum-dist-unit">km</span>
       </div>
 
-      <!-- Badge difficulté -->
-      <div id="hs-sum-badge" class="hs-sum-badge">🟡 Moyen</div>
+      <!-- Badge difficulté + fiabilité -->
+      <div class="hs-sum-badges-row">
+        <div id="hs-sum-badge" class="hs-sum-badge">🟡 Moyen</div>
+        <div id="hs-sum-reliability" class="hs-sum-reliability">🟢 Fiabilité bonne</div>
+      </div>
 
-      <!-- 3 stats secondaires -->
-      <div class="hs-sum-grid">
+      <!-- Grille 6 cellules -->
+      <div class="hs-sum-grid hs-sum-grid-6">
         <div class="hs-sum-cell">
           <span class="hs-sum-cell-icon">⏱</span>
           <span id="hs-sum-duration" class="hs-sum-cell-val">00:00:00</span>
@@ -693,7 +715,45 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
           <span id="hs-sum-cals" class="hs-sum-cell-val">0 kcal</span>
           <span class="hs-sum-cell-lbl">Calories</span>
         </div>
+        <div class="hs-sum-cell">
+          <span class="hs-sum-cell-icon">⚡</span>
+          <span id="hs-sum-avgspd" class="hs-sum-cell-val">—</span>
+          <span class="hs-sum-cell-lbl">km/h moy</span>
+        </div>
+        <div class="hs-sum-cell">
+          <span class="hs-sum-cell-icon">🏃</span>
+          <span id="hs-sum-pace" class="hs-sum-cell-val">—</span>
+          <span class="hs-sum-cell-lbl">min/km</span>
+        </div>
+        <div class="hs-sum-cell">
+          <span class="hs-sum-cell-icon">💧</span>
+          <span id="hs-sum-water" class="hs-sum-cell-val">—</span>
+          <span class="hs-sum-cell-lbl">Hydratation</span>
+        </div>
       </div>
+
+      <!-- Détails GPS -->
+      <div class="hs-sum-details">
+        <div class="hs-sum-detail-row">
+          <span class="hs-sum-detail-lbl">📍 Points GPS</span>
+          <span id="hs-sum-pts" class="hs-sum-detail-val">—</span>
+        </div>
+        <div class="hs-sum-detail-row">
+          <span class="hs-sum-detail-lbl">🎯 Précision moy.</span>
+          <span id="hs-sum-acc" class="hs-sum-detail-val">—</span>
+        </div>
+        <div class="hs-sum-detail-row">
+          <span class="hs-sum-detail-lbl">🏔 Altitude</span>
+          <span id="hs-sum-alt" class="hs-sum-detail-val">—</span>
+        </div>
+        <div class="hs-sum-detail-row">
+          <span class="hs-sum-detail-lbl">⚡ Vitesse max</span>
+          <span id="hs-sum-maxspd" class="hs-sum-detail-val">—</span>
+        </div>
+      </div>
+
+      <!-- Avertissements -->
+      <div id="hs-sum-warnings" class="hs-sum-warnings hidden"></div>
 
       <!-- Splits -->
       <div class="hs-sum-splits-wrap">
@@ -703,8 +763,10 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
     </div><!-- /.hs-summary-body -->
 
     <div class="hs-summary-footer">
-      <button id="btn-hs-gpx" class="hs-sum-btn hs-sum-btn-secondary">⬇ GPX</button>
-      <button id="btn-hs-new" class="hs-sum-btn hs-sum-btn-primary">Nouvelle sortie</button>
+      <button id="btn-hs-gpx"      class="hs-sum-btn hs-sum-btn-secondary">⬇ GPX</button>
+      <button id="btn-hs-copy"     class="hs-sum-btn hs-sum-btn-secondary">📋 Copier</button>
+      <button id="btn-hs-back-map" class="hs-sum-btn hs-sum-btn-secondary">🗺️ Carte</button>
+      <button id="btn-hs-new"      class="hs-sum-btn hs-sum-btn-primary">▶ Nouvelle</button>
     </div>
   </div><!-- /#hs-summary -->
 
