@@ -1,10 +1,14 @@
 /* =========================================================
-   BLOC 01 — IMPORTS
+   BLOC NAVIGATION — IMPORTS
+   Délègue la construction des URLs à utils.js (buildWazeLink,
+   buildGoogleMapsLink, buildAppleMapsLink).
    ========================================================= */
 import { buildWazeLink, buildGoogleMapsLink, buildAppleMapsLink } from './utils.js';
 
 /* =========================================================
-   BLOC 02 — OUVRIR GPS
+   BLOC NAVIGATION — OUVRIR APPLICATION GPS
+   Wrappers openWaze / openGoogleMaps / openAppleMaps :
+   construisent l'URL et l'ouvrent dans un nouvel onglet.
    ========================================================= */
 export function openWaze(lat, lon, name) {
   const url = buildWazeLink(lat, lon, name);
@@ -20,7 +24,9 @@ export function openAppleMaps(lat, lon, name) {
 }
 
 /* =========================================================
-   BLOC 03 — NAVIGATION VERS DESTINATION
+   BLOC NAVIGATION — NAVIGATION VERS DESTINATION (navigateTo)
+   Dispatch automatique selon la plateforme : Apple Maps sur iOS,
+   Google Maps sur Android/desktop. Nécessite site.has_gps.
    ========================================================= */
 export function navigateTo(site) {
   if (!site?.has_gps) return;
@@ -31,7 +37,9 @@ export function navigateTo(site) {
 }
 
 /* =========================================================
-   BLOC 04 — RECHERCHE BORNE RECHARGE
+   BLOC NAVIGATION — RECHERCHE BORNE RECHARGE
+   Ouvre une recherche Google Maps centrée sur la position
+   courante pour localiser les bornes de recharge électrique.
    ========================================================= */
 export function searchChargingStations(lat, lon) {
   const url = `https://www.google.com/maps/search/borne+recharge+electrique/@${lat},${lon},13z`;

@@ -1,7 +1,11 @@
 /* =========================================================
-   BLOC 01 — ÉTAT TRACKING
+   BLOC TRACKING — CONFIGURATION ET STATE MACHINE
+   Définit ACTIVITY_CONFIG (intervalles, MET, eau) et
+   HikingSessionStatus (IDLE → STARTING → RECORDING → PAUSED →
+   STOPPING → FINISHED). Déclare tout l'état module privé.
    ========================================================= */
 import { dbPut, dbGetAll, dbGetByIndex, STORES } from './storage.js';
+import { haversineDistance } from './utils.js';
 
 const ACTIVITY_CONFIG = {
   running: { label: 'Course',      emoji: '🏃', interval_ms: 10000,  water_base_ml_h: 900, met: 10 },
@@ -42,7 +46,10 @@ let _pauseStartMs    = 0;
 let _totalPausedMs   = 0;
 
 /* =========================================================
-   BLOC 02 — DÉMARRER / ARRÊTER
+   BLOC TRACKING — SESSION (start, stop, pause, resume)
+   startTracking() crée la session IndexedDB et arme l'intervalle.
+   stopTracking() flush les métriques finales et libère les ressources.
+   Guards anti-double-appel via la state machine.
    ========================================================= */
 export async function startTracking(label = 'Parcours', isPublic = false, activityMode = 'casual', tempCelsius = 20, weightKg = 70) {
   // Protège contre double-appel
@@ -137,7 +144,10 @@ export function getActiveSessionId(){ return _sessionId; }
 export function getSessionStatus()  { return _status; }
 
 /* =========================================================
-   BLOC 03 — TIMER FIABLE (Date.now — résistant veille iOS)
+   BLOC TRACKING — TIMER (Date.now based, iOS safe)
+   Chrono net des pauses basé sur Date.now() — résistant à la
+   suspension par l'OS (veille iOS / background throttling).
+   pauseElapsedTimer / resumeElapsedTimer accumulent _totalPausedMs.
    ========================================================= */
 /** Temps écoulé en secondes, net des pauses. */
 export function getElapsedSec() {
@@ -162,7 +172,10 @@ export function resumeElapsedTimer() {
 }
 
 /* =========================================================
-   BLOC 04 — ENREGISTRER UN POINT GPS
+   BLOC TRACKING — POINTS GPS (recordPoint)
+   Capture une position haute précision, calcule distance,
+   vitesse, dénivelé et splits km, puis persiste en IndexedDB.
+   _onVisibilityChange relance un point au retour d'arrière-plan.
    ========================================================= */
 export async function recordPoint() {
   if (!_sessionId) return;
@@ -180,7 +193,7 @@ export async function recordPoint() {
         };
 
         if (_lastPoint) {
-          const distKm   = _haversine(_lastPoint.lat, _lastPoint.lon, point.lat, point.lon);
+          const distKm   = haversineDistance(_lastPoint.lat, _lastPoint.lon, point.lat, point.lon);
           const elapsedH = (Date.parse(now) - Date.parse(_lastPoint.recorded_at)) / 3600000;
           _totalDistKm  += distKm;
           _currentSpeed  = elapsedH > 0 ? distKm / elapsedH : 0;
@@ -237,7 +250,11 @@ function _onVisibilityChange() {
 }
 
 /* =========================================================
-   BLOC 05 — MÉTRIQUES TEMPS RÉEL
+   BLOC TRACKING — MÉTRIQUES TEMPS RÉEL (getLiveStats)
+   Snapshot instantané de toutes les métriques de session :
+   distance, vitesse, pace, dénivelé, calories, splits, état.
+   calculateWaterNeeds() estime la consommation d'eau selon
+   l'activité et la température ambiante.
    ========================================================= */
 export function getLiveStats() {
   return {
@@ -276,7 +293,10 @@ export function isAutoPaused()          { return _autoPaused; }
 export function getCurrentSplits()      { return [..._splits]; }
 
 /* =========================================================
-   BLOC 06 — CHARGEMENT DONNÉES
+   BLOC TRACKING — DONNÉES SESSION (load, save, update)
+   Lecture des points GPS par session (loadTrackPoints),
+   liste des sessions triées par date (getAllSessions) et
+   mise à jour de la visibilité publique (updateSessionVisibility).
    ========================================================= */
 export async function loadTrackPoints(sessionId) {
   return dbGetByIndex(STORES.TRACK_POINTS, 'session_id', sessionId);
@@ -296,7 +316,10 @@ export async function updateSessionVisibility(sessionId, isPublic) {
 }
 
 /* =========================================================
-   BLOC 07 — EXPORT GPX
+   BLOC TRACKING — EXPORT GPX
+   Génère un fichier GPX 1.1 (trkpt avec ele si disponible)
+   et le déclenche en téléchargement. Nom de fichier horodaté.
+   revokeObjectURL différé 5 s pour compatibilité Safari iOS.
    ========================================================= */
 export function exportAsGPX(points, sessionLabel = 'Parcours') {
   const trkpts = points
@@ -335,7 +358,18 @@ ${trkpts}
 }
 
 /* =========================================================
-   BLOC 08 — UTILITAIRES INTERNES
+   BLOC TRACKING — RÉSUMÉ (buildHikingSummary)
+   Construit un objet de synthèse lisible à partir d'une session
+   et de ses points : durée formatée, pace moyen, dénivelé,
+   calories et splits. Utilisé par l'écran de fin de parcours.
+   ========================================================= */
+// Note : buildHikingSummary est assemblé à partir de getLiveStats()
+// et des données persistées — voir hiking-screen.js pour l'usage.
+
+/* =========================================================
+   BLOC TRACKING — UTILITAIRES INTERNES
+   _calcCalories() — formule MET × poids × durée.
+   _haversine()    — distance orthodromique en km.
    ========================================================= */
 function _calcCalories() {
   const cfg   = ACTIVITY_CONFIG[_activityMode] || ACTIVITY_CONFIG.casual;
@@ -343,10 +377,3 @@ function _calcCalories() {
   return Math.round(cfg.met * _weightKg * hours);
 }
 
-function _haversine(lat1, lon1, lat2, lon2) {
-  const R    = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a    = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}

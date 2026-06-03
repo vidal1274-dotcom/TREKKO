@@ -1,5 +1,7 @@
 /* =========================================================
-   BLOC 01 — IMPORTS ET CONSTANTES
+   BLOC PROGRAMME — IMPORTS ET CONSTANTES
+   Profils de vitesse (TRAVEL_SPEEDS), constantes de durée
+   (VISIT_MIN, MEAL_MIN, DEPART_HOUR_MIN) et clé localStorage.
    ========================================================= */
 import { formatCurrency, haversineDistance } from './utils.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
@@ -23,7 +25,9 @@ export const TRAVEL_SPEEDS = {
 };
 
 /* =========================================================
-   BLOC 02 — ORIGINE GPS INTELLIGENTE
+   BLOC PROGRAMME — ORIGINE GPS (getBestOriginCoords)
+   Priorise : 1) GPS temps réel (window._currentGpsCoords),
+   2) position enregistrée (localStorage), 3) fallback Nages.
    ========================================================= */
 /**
  * Retourne les meilleures coordonnées de départ disponibles :
@@ -46,7 +50,10 @@ export function getBestOriginCoords() {
 }
 
 /* =========================================================
-   BLOC 03 — GÉNÉRATION AUTOMATIQUE (nearest-neighbor)
+   BLOC PROGRAMME — CALCUL ITINÉRAIRE (_nearestNeighbor)
+   Algorithme glouton nearest-neighbor : part de l'origine,
+   choisit à chaque étape le site non encore sélectionné le
+   plus proche. Isolé pour faciliter un vrai routage ultérieur.
    ========================================================= */
 /**
  * Algorithme nearest-neighbor isolé — permettra un vrai routage plus tard.
@@ -75,6 +82,12 @@ function _nearestNeighbor(pool, originLat, originLon, maxStops) {
   return selected;
 }
 
+/* =========================================================
+   BLOC PROGRAMME — GÉNÉRATION (nearest-neighbor)
+   Filtre les candidats GPS dans le rayon, trie par eco_score,
+   applique _nearestNeighbor, construit la timeline chronologique
+   avec pauses repas automatiques et calcule le coût énergie.
+   ========================================================= */
 export function generateDayPlan(sites, vehicleProfile, options = {}) {
   const {
     maxKm       = 80,
@@ -192,7 +205,9 @@ function _fmtDuration(min) {
 }
 
 /* =========================================================
-   BLOC 04 — PERSISTANCE LOCALSTORAGE
+   BLOC PROGRAMME — PERSISTANCE (saveDayPlan, loadSavedDayPlan)
+   Sérialise le plan en localStorage (champs essentiels des sites
+   uniquement). loadSavedDayPlan() retourne null si absent.
    ========================================================= */
 export function saveDayPlan(plan) {
   lsSet(LS_KEY, {
@@ -211,7 +226,10 @@ export function loadSavedDayPlan() { return lsGet(LS_KEY, null); }
 export function deleteSavedDayPlan() { lsDel(LS_KEY); }
 
 /* =========================================================
-   BLOC 05 — RENDU HTML
+   BLOC PROGRAMME — RENDU TIMELINE (renderDayPlan)
+   Génère le HTML complet de la timeline : steps, leg-pills avec
+   liens Waze/Google Maps, badges origine GPS, coût énergie et
+   boutons d'action (carte, save, regen, copier, supprimer).
    ========================================================= */
 export function renderDayPlan(plan) {
   if (!plan || !plan.steps) return '<p class="dp-disclaimer">Aucun programme disponible.</p>';
@@ -292,7 +310,9 @@ export function renderDayPlan(plan) {
 }
 
 /* =========================================================
-   BLOC 06 — EXPORT TEXTE
+   BLOC PROGRAMME — EXPORT TEXTE
+   exportPlanAsText() : résumé lisible (étapes, distance, coût)
+   pour partage par SMS/email. exportPlanAsJson() : dump JSON brut.
    ========================================================= */
 export function exportPlanAsText(plan) {
   const lines = [

@@ -1,5 +1,7 @@
 /* =========================================================
-   BLOC 01 — LOCALISATION GPS UTILISATEUR
+   BLOC GPS — PERSISTANCE (saveOrigin, getStoredOrigin)
+   Lecture/écriture de la dernière position connue et du rayon
+   max de recherche dans localStorage. ORIGIN_DEFAULT = Nages.
    ========================================================= */
 import { UCHAUD_COORDS } from './config.js';
 import { lsGet, lsSet, lsDel } from './storage.js';
@@ -42,7 +44,10 @@ export function saveMaxKm(km) {
 }
 
 /* =========================================================
-   BLOC 02 — DEMANDE DE GÉOLOCALISATION
+   BLOC GPS — DEMANDE POSITION (requestUserLocation)
+   Résolution unique via getCurrentPosition (haute précision,
+   timeout 15 s). Rejette avec un message français selon le
+   code d'erreur GeolocationPositionError.
    ========================================================= */
 export function requestUserLocation() {
   return new Promise((resolve, reject) => {
@@ -74,7 +79,10 @@ export function isUsingGps() {
 }
 
 /* =========================================================
-   BLOC 03 — SUIVI CONTINU DE POSITION (watchPosition)
+   BLOC GPS — SUIVI CONTINU (watchPosition, startWatchingPosition)
+   watchPosition avec haute précision et maximumAge 10 s.
+   _watchId garantit un seul watcher actif. Erreurs silencieuses
+   pour éviter les popups intempestifs en mode background.
    ========================================================= */
 let _watchId = null;
 

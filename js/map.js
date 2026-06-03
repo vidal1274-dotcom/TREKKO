@@ -1,5 +1,7 @@
 /* =========================================================
-   BLOC 01 — INITIALISATION CARTE LEAFLET
+   BLOC CARTE — INITIALISATION ET GARDE
+   Déclare l'état module (_map, layers, flags) et expose
+   initMap(), isMapReady() ainsi que les accesseurs de couches.
    ========================================================= */
 let _map = null;
 let _markersLayer = null;
@@ -58,7 +60,9 @@ export function getPhotoMarkersLayer(){ return _photoMarkersLayer; }
 export function invalidateMapSize()   { if (isMapReady()) _map.invalidateSize(); }
 
 /* =========================================================
-   BLOC 02 — NAVIGATION CARTE
+   BLOC CARTE — NAVIGATION
+   flyTo, fitBounds, toggleLayer (street ↔ satellite IGN),
+   centerMap et isSatelliteMode.
    ========================================================= */
 export function flyToSite(lat, lon, zoom = 14) {
   if (!isMapReady() || !lat || !lon) return;
@@ -90,7 +94,9 @@ export function toggleMapLayer() {
 export function isSatelliteMode() { return _isSatellite; }
 
 /* =========================================================
-   BLOC 03 — LAYER MANAGEMENT
+   BLOC CARTE — LAYER MANAGEMENT
+   Gestion des couches markers/POI (clear, hide, show) et des
+   sentiers de randonnée OSM (clearHikingTrails, drawHikingTrails).
    ========================================================= */
 export function clearMarkers() {
   if (_markersLayer) _markersLayer.clearLayers();
@@ -146,7 +152,9 @@ export function drawHikingTrails(ways, nodes) {
 }
 
 /* =========================================================
-   BLOC 04 — ICÔNES PERSONNALISÉES
+   BLOC CARTE — ICÔNES ET MARQUEURS DE SITES
+   Calcul de couleur selon statut/budget, création de l'icône
+   Leaflet (divIcon pin) et choix de l'emoji par type de site.
    ========================================================= */
 export function getSiteStatusColor(site) {
   const statut = (site.statut || '').toLowerCase();
@@ -181,7 +189,9 @@ function getSiteEmoji(site) {
 }
 
 /* =========================================================
-   BLOC 05 — POSITION UTILISATEUR
+   BLOC CARTE — POSITION UTILISATEUR
+   Affiche le point bleu de position, le cercle de précision
+   et le rayon de recherche. Gère aussi le marqueur d'adresse.
    ========================================================= */
 export function showUserLocationMarker(lat, lon, label = 'Ma position', radiusKm = null, accuracyMeters = null) {
   if (!isMapReady()) return;
@@ -241,7 +251,9 @@ export function clearAddressMarker() {
 }
 
 /* =========================================================
-   BLOC 06 — TRACÉ GPS (recording)
+   BLOC CARTE — TRACÉ GPS (recording)
+   Rendu de la polyligne de session (renderTrack, addTrackPoint),
+   marqueurs départ/fin et icône photo sur le parcours.
    ========================================================= */
 export function renderTrack(points) {
   if (!isMapReady()) return;
@@ -295,7 +307,9 @@ export function createPhotoIcon() {
 }
 
 /* =========================================================
-   BLOC 07 — TRACÉ PROGRAMME JOURNÉE
+   BLOC CARTE — PROGRAMME JOURNÉE (route day-plan)
+   Polyligne orange pointillée reliant les étapes ordonnées,
+   avec numéros colorés (vert départ, rouge fin, orange milieu).
    ========================================================= */
 let _dayPlanPolyline = null;
 let _dayPlanMarkers  = [];

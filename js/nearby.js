@@ -1,5 +1,8 @@
 /* =========================================================
-   BLOC 01 — IMPORTS
+   BLOC POI — IMPORTS ET CONTRÔLEURS
+   _controllers map categoryId → AbortController actif.
+   Chaque nouvelle requête annule la précédente pour éviter
+   les réponses périmées (race condition).
    ========================================================= */
 import { OVERPASS_ENDPOINT, THEMATIC_CATEGORIES } from './config.js';
 import { cacheSet, cacheGet } from './storage.js';
@@ -8,7 +11,10 @@ import { cacheSet, cacheGet } from './storage.js';
 const _controllers = {};
 
 /* =========================================================
-   BLOC 02 — REQUÊTE OVERPASS
+   BLOC POI — REQUÊTE OVERPASS (AbortController)
+   Requête POST vers l'API Overpass avec cache 1 h (cacheSet/Get).
+   AbortController par catégorie annule les requêtes obsolètes.
+   Normalise les éléments OSM en objets {id, lat, lon, name, type}.
    ========================================================= */
 export async function fetchNearbyPlaces(lat, lon, categoryId, radiusM = 5000) {
   const cat = THEMATIC_CATEGORIES.find(c => c.id === categoryId);
@@ -58,7 +64,10 @@ export async function fetchNearbyPlaces(lat, lon, categoryId, radiusM = 5000) {
 }
 
 /* =========================================================
-   BLOC 03 — RENDU HTML RÉSULTATS
+   BLOC POI — RENDU RÉSULTATS
+   Génère les cartes HTML (max 10) avec lien Google Maps.
+   Affiche un message "Aucun résultat" si le tableau est vide.
+   buildGoogleMapsLink() reste privée (helper interne).
    ========================================================= */
 export function renderNearbyResults(places, category) {
   if (!places.length) return `<p style="color:#aaa;font-size:13px">Aucun résultat trouvé dans ce rayon. <span class="verify-tag">À vérifier</span></p>`;
