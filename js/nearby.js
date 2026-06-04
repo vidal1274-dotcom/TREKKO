@@ -3,6 +3,7 @@
    ========================================================= */
 import { OVERPASS_ENDPOINT, THEMATIC_CATEGORIES } from './config.js';
 import { cacheSet, cacheGet } from './storage.js';
+import { escapeHTML } from './utils.js';
 
 // AbortController par catégorie — annule les requêtes obsolètes
 const _controllers = {};
@@ -64,7 +65,7 @@ export function renderNearbyResults(places, category) {
   if (!places.length) return `<p style="color:#aaa;font-size:13px">Aucun résultat trouvé dans ce rayon. <span class="verify-tag">À vérifier</span></p>`;
   return places.slice(0, 10).map(p => `
     <div class="site-card" style="cursor:pointer" onclick="window.open('${buildGoogleMapsLink(p.lat,p.lon,p.name)}','_blank')">
-      <div class="site-name">${p.icon} ${p.name}</div>
+      <div class="site-name">${p.icon} ${escapeHTML(p.name)}</div>
       <div class="site-sector" style="font-size:12px">Source : OpenStreetMap — <span class="verify-tag">à vérifier</span></div>
     </div>`).join('');
 }

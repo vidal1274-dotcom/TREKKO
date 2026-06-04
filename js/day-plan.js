@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS ET CONSTANTES
    ========================================================= */
-import { formatCurrency, haversineDistance } from './utils.js';
+import { formatCurrency, haversineDistance, escapeHTML } from './utils.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
 import { lsGet, lsSet, lsDel } from './storage.js';
 import { UCHAUD_COORDS } from './config.js';
@@ -32,9 +32,10 @@ export const TRAVEL_SPEEDS = {
  * 3. Fallback Uchaud / Nages
  */
 export function getBestOriginCoords() {
-  // 1. GPS temps réel exposé par app.js
-  if (window._currentGpsCoords?.lat && window._currentGpsCoords?.lon) {
-    return { ...window._currentGpsCoords, label: 'position actuelle GPS', source: 'gps' };
+  // 1. GPS temps réel exposé par app.js — != null pour éviter le falsy-zero (lat=0 / lon=0)
+  const gps = window._currentGpsCoords;
+  if (gps?.lat != null && gps?.lon != null) {
+    return { ...gps, label: 'position actuelle GPS', source: 'gps' };
   }
   // 2. Dernière position connue
   const stored = getStoredOrigin();
@@ -77,10 +78,11 @@ function _nearestNeighbor(pool, originLat, originLon, maxStops) {
 
 export function generateDayPlan(sites, vehicleProfile, options = {}) {
   const {
-    maxKm       = 80,
-    minStops    = 3,
-    maxStops    = 5,
-    speedProfile = 'mixed'
+    maxKm        = 80,
+    minStops     = 3,
+    maxStops     = 5,
+    speedProfile  = 'mixed',
+    avoidTolls   = vehicleProfile?.avoid_tolls ?? true  // conservé pour usage futur
   } = options;
 
   const speedKmh = TRAVEL_SPEEDS[speedProfile]?.kmh ?? TRAVEL_SPEEDS.mixed.kmh;
@@ -263,7 +265,7 @@ export function renderDayPlan(plan) {
   const originBadge = plan.originSource === 'gps'
     ? `<span class="dp-badge dp-badge-gps">📍 Depuis position GPS</span>`
     : plan.originSource === 'stored'
-      ? `<span class="dp-badge">📍 Depuis ${plan.originLabel}</span>`
+      ? `<span class="dp-badge">📍 Depuis ${escapeHTML(plan.originLabel)}</span>`
       : `<span class="dp-badge dp-badge-warn">📍 Position par défaut — activez le GPS</span>`;
 
   return `
@@ -273,7 +275,7 @@ export function renderDayPlan(plan) {
         <div class="dp-meta-row">
           <span class="dp-badge">🗺️ ${plan.sites.length} étape${plan.sites.length > 1 ? 's' : ''}</span>
           <span class="dp-badge">📍 ~${plan.totalDistanceKm} km</span>
-          <span class="dp-badge">⏱ ${dH}h${String(dM).padStart(2,'00')}</span>
+          <span class="dp-badge">⏱ ${dH}h${String(dM).padStart(2,'0')}</span>
           ${originBadge}
         </div>
         <div class="dp-cost-line">${costStr}</div>

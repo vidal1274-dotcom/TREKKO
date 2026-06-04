@@ -166,12 +166,12 @@ export function isValidLatLon(lat, lon) {
   );
 }
 
-/** Autorise uniquement les URLs https ou les schémas connus. */
+/** Autorise uniquement les URLs https: (PWA — mixed-content sur http: bloqué par les navigateurs). */
 export function safeUrl(url) {
   if (!url || typeof url !== 'string') return null;
   try {
     const u = new URL(url);
-    if (u.protocol === 'https:' || u.protocol === 'http:') return url;
+    if (u.protocol === 'https:') return url;
     return null;
   } catch (_) {
     return null;

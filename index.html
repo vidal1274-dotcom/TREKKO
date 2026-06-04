@@ -490,19 +490,20 @@
 <script>
 // Enregistrement du Service Worker TREKKO
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js').then(reg => {
-    // Écouter le message SW_UPDATED pour afficher un toast
-    navigator.serviceWorker.addEventListener('message', e => {
-      if (e.data?.type === 'SW_UPDATED') {
-        const banner = document.createElement('div');
-        banner.style.cssText = 'position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:99990;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer';
-        banner.textContent = '✅ Application mise à jour — toucher pour recharger';
-        banner.onclick = () => location.reload();
-        document.body.appendChild(banner);
-        setTimeout(() => banner.remove(), 12000);
-      }
-    });
-  }).catch(() => {});
+  // Écouter SW_UPDATED avant register() pour éviter la race condition :
+  // si activate+postMessage se termine avant .then(reg=>...), le listener doit déjà être en place.
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'SW_UPDATED') {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:99990;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer';
+      banner.textContent = '✅ Application mise à jour — toucher pour recharger';
+      banner.onclick = () => location.reload();
+      document.body.appendChild(banner);
+      setTimeout(() => banner.remove(), 12000);
+    }
+  });
+  navigator.serviceWorker.register('./service-worker.js')
+    .catch(err => console.warn('[SW] Enregistrement échoué :', err));
 }
 window.addEventListener('error',function(e){var d=document.getElementById('critical-error');if(d){d.style.display='block';d.textContent='JS: '+(e.message||'?')+' '+((e.filename||'').split('/').pop())+':'+e.lineno;}});
 window.addEventListener('unhandledrejection',function(e){var d=document.getElementById('critical-error');if(d){d.style.display='block';d.textContent='Module: '+(e.reason||'?');}});

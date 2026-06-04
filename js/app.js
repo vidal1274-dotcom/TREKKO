@@ -445,6 +445,9 @@ function initLocationBar() {
    ========================================================= */
 let _autoGpsFirstFix = true;
 
+/** Ré-arme le premier fix GPS (ex : permission révoquée puis ré-accordée). */
+function _resetAutoGpsFirstFix() { _autoGpsFirstFix = true; }
+
 function _startAutoGpsWatch() {
   startWatchingPosition(pos => {
     // Toujours mettre à jour le marqueur bleu sur la carte
