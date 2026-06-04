@@ -2,7 +2,6 @@
    BLOC 01 — IMPORTS PRINCIPAUX
    ========================================================= */
 import { loadSites, cacheSitesLocally, getDataStats, applyManualGpsCorrection, recalcDistances } from './data-loader.js';
-import { loadSites, cacheSitesLocally, getDataStats, applyManualGpsCorrection, recalcDistances } from './data-loader.js';
 import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, showAddressMarker, clearAddressMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize, renderDayPlanRoute, clearDayPlanRoute } from './map.js?v=4';
 import { renderSiteMarkers, buildSiteBadges, focusOnSite } from './markers.js?v=4';
 import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilterChips, setProcheThreshold } from './filters.js';
