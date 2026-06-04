@@ -445,10 +445,16 @@ function initLocationBar() {
    ========================================================= */
 let _autoGpsFirstFix = true;
 
-/** Ré-arme le premier fix GPS (ex : permission révoquée puis ré-accordée). */
-function _resetAutoGpsFirstFix() { _autoGpsFirstFix = true; }
-
 function _startAutoGpsWatch() {
+  // Ré-arme le premier fix si la permission GPS change (révoquée → ré-accordée)
+  if ('permissions' in navigator) {
+    navigator.permissions.query({ name: 'geolocation' }).then(status => {
+      status.addEventListener('change', () => {
+        if (status.state === 'granted') _autoGpsFirstFix = true;
+      });
+    }).catch(() => {});
+  }
+
   startWatchingPosition(pos => {
     // Toujours mettre à jour le marqueur bleu sur la carte
     showUserLocationMarker(

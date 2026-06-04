@@ -81,8 +81,8 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
     maxKm        = 80,
     minStops     = 3,
     maxStops     = 5,
-    speedProfile  = 'mixed',
-    avoidTolls   = vehicleProfile?.avoid_tolls ?? true  // conservé pour usage futur
+    speedProfile = 'mixed'
+    // avoidTolls : réservé — actuellement non implémenté dans le nearest-neighbor
   } = options;
 
   const speedKmh = TRAVEL_SPEEDS[speedProfile]?.kmh ?? TRAVEL_SPEEDS.mixed.kmh;
@@ -115,7 +115,7 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
   let cur = DEPART_HOUR_MIN;
   steps.push({
     time: _fmt(cur), icon: '🚗',
-    label: `Départ depuis ${origin.label}`,
+    label: `Départ depuis ${escapeHTML(origin.label)}`,
     type: 'depart'
   });
 
@@ -160,7 +160,7 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
   const retMin = Math.round((retKm / speedKmh) * 60);
   totalKm += retKm;
   cur += retMin;
-  steps.push({ time: _fmt(cur), icon: '🏠', label: `Retour vers ${origin.label} (~${Math.round(retKm)} km)`, type: 'return' });
+  steps.push({ time: _fmt(cur), icon: '🏠', label: `Retour vers ${escapeHTML(origin.label)} (~${Math.round(retKm)} km)`, type: 'return' });
 
   // 5. Coût énergie
   let energyCost = null;
@@ -262,10 +262,11 @@ export function renderDayPlan(plan) {
   const dH = Math.floor(plan.totalDurationMin / 60);
   const dM = plan.totalDurationMin % 60;
 
+  const safeLabel = escapeHTML(plan.originLabel || '');
   const originBadge = plan.originSource === 'gps'
-    ? `<span class="dp-badge dp-badge-gps">📍 Depuis position GPS</span>`
+    ? `<span class="dp-badge dp-badge-gps">📍 Depuis ${safeLabel}</span>`
     : plan.originSource === 'stored'
-      ? `<span class="dp-badge">📍 Depuis ${escapeHTML(plan.originLabel)}</span>`
+      ? `<span class="dp-badge">📍 Depuis ${safeLabel}</span>`
       : `<span class="dp-badge dp-badge-warn">📍 Position par défaut — activez le GPS</span>`;
 
   return `

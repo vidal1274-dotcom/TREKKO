@@ -63,11 +63,14 @@ export async function fetchNearbyPlaces(lat, lon, categoryId, radiusM = 5000) {
    ========================================================= */
 export function renderNearbyResults(places, category) {
   if (!places.length) return `<p style="color:#aaa;font-size:13px">Aucun résultat trouvé dans ce rayon. <span class="verify-tag">À vérifier</span></p>`;
-  return places.slice(0, 10).map(p => `
-    <div class="site-card" style="cursor:pointer" onclick="window.open('${buildGoogleMapsLink(p.lat,p.lon,p.name)}','_blank')">
+  return places.slice(0, 10).map(p => {
+    const safeUrl = escapeHTML(buildGoogleMapsLink(p.lat, p.lon, p.name));
+    return `
+    <div class="site-card" style="cursor:pointer" onclick="window.open('${safeUrl}','_blank')">
       <div class="site-name">${p.icon} ${escapeHTML(p.name)}</div>
       <div class="site-sector" style="font-size:12px">Source : OpenStreetMap — <span class="verify-tag">à vérifier</span></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function buildGoogleMapsLink(lat, lon, name) {
