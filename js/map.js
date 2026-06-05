@@ -33,6 +33,9 @@ export function initMap(containerId = 'map') {
     maxZoom: 19,
     maxNativeZoom: 19
   }).addTo(_map);
+  const labelsPane = _map.createPane('labelsPane');
+  labelsPane.style.zIndex = 450; // au-dessus des tuiles (400) mais sous les marqueurs (600)
+  labelsPane.style.pointerEvents = 'none'; // ne bloque pas les clics
   const retina = L.Browser.retina;
   _satelliteLayer = L.tileLayer(
     'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
@@ -44,8 +47,8 @@ export function initMap(containerId = 'map') {
     }
   );
   _satelliteLabelsLayer = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
-    { attribution: '© CartoDB', subdomains: 'abcd', maxZoom: 20, maxNativeZoom: 19, detectRetina: true, opacity: 0.9 }
+    'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+    { attribution: '© CartoDB', subdomains: 'abcd', maxZoom: 20, maxNativeZoom: 19, detectRetina: true, opacity: 1.0, pane: 'labelsPane' }
   );
   _markersLayer = L.layerGroup().addTo(_map);
   _photoMarkersLayer = L.layerGroup().addTo(_map);
