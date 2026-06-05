@@ -1,94 +1,54 @@
 /* =========================================================
-   BLOC IA — SERVICE OPENAI
-   Gestion de la clé API, test de connexion et appels GPT.
-
-   ARCHITECTURE : appels directs depuis le navigateur avec
-   la clé personnelle de l'utilisateur (outil personnel).
-   La clé est stockée en base64 dans localStorage et n'est
-   jamais envoyée à un tiers autre qu'OpenAI.
+   BLOC IA — SERVICE OPENAI (via backend sécurisé)
+   Le frontend ne contacte PLUS api.openai.com directement.
+   Tous les appels passent par le backend local (localhost:3001).
+   La clé API n'est JAMAIS stockée dans le navigateur.
    ========================================================= */
 
-const LS_KEY    = 'trekko_oai_key';
-const LS_MODEL  = 'trekko_oai_model';
-const LS_STATUS = 'trekko_oai_status';
-const OPENAI_BASE = 'https://api.openai.com/v1';
+// URL du backend Trekko — configurable si le port change
+const BACKEND_URL = 'http://localhost:3001';
+
+let _cachedStatus = null;
 
 /* =========================================================
-   BLOC IA — GESTION CLÉ API (localStorage obfusqué)
+   BLOC IA — STATUT (lecture seule depuis le backend)
    ========================================================= */
-function _enc(v) { return btoa(unescape(encodeURIComponent(v))); }
-function _dec(v) {
-  try { return decodeURIComponent(escape(atob(v))); } catch { return null; }
+/**
+ * Vérifie si le backend IA est joignable et si la clé est configurée.
+ * @returns {Promise<{configured:boolean, model:string|null, reachable:boolean}>}
+ */
+export async function getAiStatus() {
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/ai/status`, {
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!resp.ok) return { configured: false, model: null, reachable: true };
+    _cachedStatus = await resp.json();
+    return { ..._cachedStatus, reachable: true };
+  } catch {
+    return { configured: false, model: null, reachable: false };
+  }
 }
 
-export function saveApiKey(key) {
-  if (!key || typeof key !== 'string') return;
-  localStorage.setItem(LS_KEY, _enc(key.trim()));
-}
-
-export function getApiKey() {
-  const s = localStorage.getItem(LS_KEY);
-  return s ? _dec(s) : null;
-}
-
-export function deleteApiKey() {
-  localStorage.removeItem(LS_KEY);
-  localStorage.removeItem(LS_STATUS);
-}
-
-export function hasApiKey() { return !!getApiKey(); }
-
-export function getMaskedKey() {
-  const k = getApiKey();
-  if (!k || k.length < 10) return '—';
-  return `${k.slice(0, 7)}...${k.slice(-4)}`;
-}
-
-export function saveModel(model) {
-  if (model) localStorage.setItem(LS_MODEL, model);
-}
-export function getModel() {
-  return localStorage.getItem(LS_MODEL) || 'gpt-4o-mini';
-}
-
-function _saveStatus(success, model) {
-  localStorage.setItem(LS_STATUS, JSON.stringify({
-    connected: success, model, checkedAt: new Date().toISOString()
-  }));
-}
-
-export function getConnectionStatus() {
-  const s = localStorage.getItem(LS_STATUS);
-  if (!s) return { connected: false, model: null, checkedAt: null };
-  try { return JSON.parse(s); } catch { return { connected: false }; }
-}
+export function getCachedStatus() { return _cachedStatus; }
 
 /* =========================================================
    BLOC IA — TEST DE CONNEXION
    ========================================================= */
 export async function testConnection() {
-  const key = getApiKey();
-  if (!key) {
-    return { success: false, message: 'La clé API est absente ou invalide.' };
-  }
   try {
-    const resp = await fetch(`${OPENAI_BASE}/models`, {
-      headers: { 'Authorization': `Bearer ${key}` }
+    const resp = await fetch(`${BACKEND_URL}/api/ai/test-connection`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(15000)
     });
-    if (resp.status === 401) {
-      _saveStatus(false, null);
-      return { success: false, message: 'Clé API invalide. Vérifiez votre clé OpenAI.' };
-    }
-    if (!resp.ok) {
-      _saveStatus(false, null);
-      return { success: false, message: `Erreur OpenAI (${resp.status}). Réessayez.` };
-    }
-    const model = getModel();
-    _saveStatus(true, model);
-    return { success: true, message: 'Connexion ChatGPT validée avec succès.', model };
+    const data = await resp.json();
+    return data;
   } catch (e) {
-    _saveStatus(false, null);
-    return { success: false, message: 'Impossible de contacter OpenAI. Vérifiez votre connexion internet.' };
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      return { success: false, message: 'Impossible de contacter le backend IA. Vérifiez que le serveur est démarré.' };
+    }
+    return { success: false, message: 'Impossible de contacter le backend IA. Est-il démarré sur le port 3001 ?' };
   }
 }
 
@@ -96,50 +56,44 @@ export async function testConnection() {
    BLOC IA — GÉNÉRATION DE CIRCUIT
    ========================================================= */
 /**
- * Appelle OpenAI avec le prompt circuit et retourne un objet JSON structuré.
- * @param {string} prompt — prompt complet construit par circuit-creator.js
+ * Envoie les paramètres du circuit au backend qui appelle OpenAI.
+ * @param {object} params
  * @returns {Promise<object>} circuit JSON
  */
-export async function callOpenAI(prompt) {
-  const key = getApiKey();
-  if (!key) throw new Error('Clé API OpenAI non configurée. Ajoutez votre clé dans Paramètres > IA.');
-
-  const model = getModel();
-  const resp = await fetch(`${OPENAI_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${key}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: 'system',
-          content: 'Tu es un assistant expert en circuits touristiques. Tu réponds UNIQUEMENT en JSON valide, sans texte avant ou après.'
-        },
-        { role: 'user', content: prompt }
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.7,
-      max_tokens: 4000
-    })
-  });
-
-  if (resp.status === 401) throw new Error('Clé API invalide. Vérifiez vos paramètres IA.');
-  if (resp.status === 429) throw new Error('Quota OpenAI dépassé. Réessayez dans quelques minutes.');
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Erreur OpenAI (${resp.status})`);
-  }
-
-  const data = await resp.json();
-  const raw = data.choices?.[0]?.message?.content;
-  if (!raw) throw new Error('Réponse OpenAI vide ou invalide.');
-
+export async function generateCircuit(params) {
+  let resp;
   try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error('Le circuit généré n\'est pas dans un format JSON valide.');
+    resp = await fetch(`${BACKEND_URL}/api/circuits/generate-ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+      signal: AbortSignal.timeout(60000)  // 60s max pour la génération IA
+    });
+  } catch (e) {
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      throw new Error('La génération a pris trop de temps. Réessayez ou choisissez un modèle plus rapide.');
+    }
+    throw new Error('Impossible de contacter le backend IA. Vérifiez que le serveur est démarré (port 3001).');
   }
+
+  const data = await resp.json().catch(() => null);
+  if (!resp.ok) {
+    const msg = data?.message || data?.errors?.join(', ') || `Erreur backend (${resp.status})`;
+    throw new Error(msg);
+  }
+  if (!data?.circuit) throw new Error('Réponse backend invalide — circuit absent.');
+  return data.circuit;
 }
+
+/* =========================================================
+   BLOC IA — UTILITAIRES (rétrocompat)
+   ========================================================= */
+// Ces fonctions existaient dans l'ancienne version.
+// Elles sont conservées avec des valeurs neutres pour ne pas casser l'existant.
+export function hasApiKey() { return false; }
+export function getMaskedKey() { return '— clé côté serveur —'; }
+export function saveApiKey() { /* no-op : clé gérée côté serveur */ }
+export function deleteApiKey() { /* no-op */ }
+export function getModel() { return _cachedStatus?.model || 'gpt-4o-mini'; }
+export function saveModel() { /* no-op : modèle géré côté serveur */ }
+export function getConnectionStatus() { return _cachedStatus || { connected: false, model: null }; }

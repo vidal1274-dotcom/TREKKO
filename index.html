@@ -302,40 +302,34 @@
       <!-- Paramètres IA / OpenAI -->
       <div class="settings-section" id="section-ai">
         <h3>🤖 Paramètres IA / ChatGPT</h3>
-        <p class="info-disclaimer">
-          Connectez Trekko à OpenAI pour générer des circuits intelligents.
-          Votre clé API personnelle est stockée localement sur cet appareil et envoyée directement à OpenAI.
-          <strong>Ne partagez jamais cet appareil non verrouillé avec quelqu'un d'autre.</strong>
-        </p>
-
-        <label class="settings-label">Clé API OpenAI
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="password" id="ai-api-key-input" placeholder="sk-..." style="flex:1" autocomplete="off" />
-            <button id="ai-toggle-key-btn" class="btn-xs" title="Afficher/masquer">👁</button>
-          </div>
-        </label>
-        <div id="ai-masked-key" class="ai-masked-key hidden"></div>
-
-        <label class="settings-label">Modèle OpenAI
-          <select id="ai-model-select">
-            <option value="gpt-4o-mini">gpt-4o-mini (rapide, économique)</option>
-            <option value="gpt-4o">gpt-4o (plus puissant)</option>
-            <option value="gpt-4-turbo">gpt-4-turbo</option>
-            <option value="gpt-3.5-turbo">gpt-3.5-turbo (économique)</option>
-          </select>
-        </label>
-
-        <div class="ai-btn-row">
-          <button id="ai-save-key-btn" class="btn-primary">💾 Enregistrer la clé</button>
-          <button id="ai-test-btn" class="btn-secondary">🔌 Tester la connexion</button>
-          <button id="ai-delete-key-btn" class="btn-secondary" style="color:#e74c3c">🗑️ Supprimer la clé</button>
+        <div class="ai-info-box">
+          <p>La clé API OpenAI est configurée <strong>côté serveur</strong>, dans le fichier <code>.env</code> du backend Trekko.</p>
+          <p>Elle n'est jamais stockée dans le navigateur.</p>
+          <p>Pour configurer : ajoutez <code>OPENAI_API_KEY=sk-...</code> dans <code>.env</code> et lancez le backend (<code>cd server && npm start</code>).</p>
         </div>
 
         <div id="ai-status-box" class="ai-status-box">
           <span id="ai-status-icon">⚪</span>
-          <span id="ai-status-msg">La recherche intelligente n'est pas encore configurée.</span>
+          <span id="ai-status-msg">Vérification du backend…</span>
         </div>
         <div id="ai-last-check" class="ai-last-check hidden"></div>
+
+        <div class="ai-btn-row">
+          <button id="ai-test-btn" class="btn-secondary">🔌 Tester la connexion</button>
+          <button id="ai-refresh-btn" class="btn-secondary">🔄 Actualiser le statut</button>
+        </div>
+
+        <div class="ai-help-box">
+          <h4>📘 Aide</h4>
+          <ol>
+            <li>Créez une clé sur <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a></li>
+            <li>Copiez <code>.env.example</code> → <code>.env</code></li>
+            <li>Ajoutez votre clé dans <code>.env</code></li>
+            <li>Lancez : <code>cd server && npm install && npm start</code></li>
+            <li>Cliquez "Tester la connexion" ici</li>
+          </ol>
+          <p class="ai-cost-warning">⚠️ L'API OpenAI est facturée séparément de ChatGPT Plus. Chaque circuit génère ~0.01-0.05€ de coût API.</p>
+        </div>
       </div>
 
       <!-- Reset SW / Cache -->

@@ -3,7 +3,7 @@
    Formulaire, prompt builder, appel IA, scoring, affichage,
    sauvegarde offline.
    ========================================================= */
-import { callOpenAI, hasApiKey, getModel } from './ai-service.js';
+import { generateCircuit, getAiStatus, getModel } from './ai-service.js';
 import { showToast } from './utils.js';
 import { escapeHTML } from './utils.js';
 
@@ -198,8 +198,13 @@ function _enrichCircuit(circuit, params) {
    BLOC CIRCUIT — GÉNÉRATION
    ========================================================= */
 async function _onGenerate() {
-  if (!hasApiKey()) {
-    showToast('Configurez votre clé API OpenAI dans Paramètres → IA.', 'warning');
+  const status = await getAiStatus();
+  if (!status.reachable) {
+    showToast('Impossible de contacter le backend IA. Vérifiez que le serveur est démarré sur le port 3001.', 'error');
+    return;
+  }
+  if (!status.configured) {
+    showToast('Clé API absente côté serveur. Ajoutez OPENAI_API_KEY dans le fichier .env du backend.', 'warning');
     return;
   }
 
@@ -211,8 +216,7 @@ async function _onGenerate() {
   _el('circuit-results')?.classList.add('hidden');
 
   try {
-    const prompt = _buildPrompt(params);
-    let circuit = await callOpenAI(prompt);
+    let circuit = await generateCircuit(params);
     circuit = _enrichCircuit(circuit, params);
     circuit._generatedAt = new Date().toISOString();
     circuit._params = params;

@@ -3906,6 +3906,22 @@ body.hiking-active #app-main {
   padding: 10px 14px; font-size: 13px; margin-top: 8px;
 }
 .ai-last-check { font-size: 11px; color: var(--color-text-dim); margin-top: 4px; }
+.ai-info-box {
+  background: var(--color-card2); border-radius: 8px;
+  padding: 12px 16px; font-size: 13px; margin-bottom: 12px;
+  border-left: 3px solid var(--color-info);
+  line-height: 1.6;
+}
+.ai-info-box code { background: var(--color-surface); padding: 1px 5px; border-radius: 4px; font-family: monospace; }
+.ai-help-box {
+  background: var(--color-card2); border-radius: 8px;
+  padding: 12px 16px; font-size: 13px; margin-top: 12px;
+}
+.ai-help-box h4 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.ai-help-box ol { padding-left: 18px; line-height: 1.8; }
+.ai-help-box code { background: var(--color-surface); padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 11px; }
+.ai-cost-warning { color: #f5a623; font-size: 12px; margin-top: 8px; }
+.ai-help-box a { color: var(--color-info); }
 .settings-label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--color-text-mid); margin-bottom: 10px; }
 .settings-label input, .settings-label select {
   background: var(--color-card); border: 1px solid var(--color-border2);

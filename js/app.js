@@ -30,8 +30,7 @@ import { getVisitedIds } from './visited.js?v=25';
 import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=4';
 import { initCircuitCreator } from './circuit-creator.js';
 import {
-  hasApiKey, getMaskedKey, saveApiKey, deleteApiKey, getModel, saveModel,
-  testConnection, getConnectionStatus
+  getAiStatus, testConnection
 } from './ai-service.js';
 // Imports lazy — chargés à la demande pour ne pas bloquer le démarrage
 let _fetchWeather = null;
@@ -675,67 +674,42 @@ async function updatePhotoPanel() {
 /* =========================================================
    BLOC 10 — PARAMÈTRES IA / OPENAI
    ========================================================= */
+let _cachedAiStatus = null;
+
 function initAiSettings() {
+  // Vérifier le statut au chargement
   _refreshAiStatusUI();
+  getAiStatus().then(_updateAiStatusFromResponse);
 
-  // Afficher la clé masquée si déjà configurée
-  const masked = document.getElementById('ai-masked-key');
-  const keyInput = document.getElementById('ai-api-key-input');
-  if (hasApiKey() && masked && keyInput) {
-    masked.textContent = getMaskedKey();
-    masked.classList.remove('hidden');
-    keyInput.placeholder = getMaskedKey();
-  }
-
-  // Modèle sélectionné
-  const modelSel = document.getElementById('ai-model-select');
-  if (modelSel) modelSel.value = getModel();
-
-  // Enregistrer la clé
-  document.getElementById('ai-save-key-btn')?.addEventListener('click', () => {
-    const val = keyInput?.value?.trim();
-    if (!val || !val.startsWith('sk-')) {
-      showToast('Clé API invalide. Elle doit commencer par "sk-".', 'warning');
-      return;
-    }
-    saveApiKey(val);
-    if (modelSel) saveModel(modelSel.value);
-    if (keyInput) { keyInput.value = ''; keyInput.placeholder = getMaskedKey(); }
-    if (masked) { masked.textContent = getMaskedKey(); masked.classList.remove('hidden'); }
-    _refreshAiStatusUI();
-    showToast('Clé API enregistrée.', 'success');
-  });
-
-  // Modèle changé
-  modelSel?.addEventListener('change', () => {
-    if (hasApiKey()) saveModel(modelSel.value);
-  });
-
-  // Toggle affichage clé
-  document.getElementById('ai-toggle-key-btn')?.addEventListener('click', () => {
-    if (!keyInput) return;
-    keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
-  });
-
-  // Test de connexion
   document.getElementById('ai-test-btn')?.addEventListener('click', async () => {
     const btn = document.getElementById('ai-test-btn');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Test en cours…'; }
     const result = await testConnection();
     showToast(result.message, result.success ? 'success' : 'error');
+    if (result.success) {
+      _cachedAiStatus = { connected: true, model: result.model, checkedAt: new Date().toISOString() };
+    }
     _refreshAiStatusUI();
     if (btn) { btn.disabled = false; btn.textContent = '🔌 Tester la connexion'; }
   });
 
-  // Supprimer la clé
-  document.getElementById('ai-delete-key-btn')?.addEventListener('click', () => {
-    if (!confirm('Supprimer la clé API OpenAI ?')) return;
-    deleteApiKey();
-    if (keyInput) { keyInput.value = ''; keyInput.placeholder = 'sk-...'; }
-    if (masked) { masked.textContent = ''; masked.classList.add('hidden'); }
+  document.getElementById('ai-refresh-btn')?.addEventListener('click', async () => {
+    const status = await getAiStatus();
+    _updateAiStatusFromResponse(status);
     _refreshAiStatusUI();
-    showToast('Clé API supprimée.', 'info');
   });
+}
+
+function _updateAiStatusFromResponse(status) {
+  if (!status) return;
+  _cachedAiStatus = {
+    connected: status.configured && status.reachable,
+    model: status.model,
+    checkedAt: new Date().toISOString(),
+    reachable: status.reachable,
+    configured: status.configured
+  };
+  _refreshAiStatusUI();
 }
 
 function _refreshAiStatusUI() {
@@ -744,23 +718,28 @@ function _refreshAiStatusUI() {
   const lastEl = document.getElementById('ai-last-check');
   const barEl  = document.getElementById('circuit-ai-status-bar');
 
-  if (!hasApiKey()) {
+  const st = _cachedAiStatus;
+
+  if (!st) {
     if (iconEl) iconEl.textContent = '⚪';
-    if (msgEl)  msgEl.textContent  = 'La recherche intelligente n\'est pas encore configurée.';
+    if (msgEl)  msgEl.textContent  = 'Vérification du backend…';
     if (lastEl) lastEl.classList.add('hidden');
-    if (barEl)  barEl.innerHTML    = '⚪ IA non configurée — allez dans <strong>Paramètres → IA</strong>';
+    if (barEl)  barEl.innerHTML    = '⚪ IA non vérifiée — allez dans <strong>Paramètres → IA</strong>';
     return;
   }
 
-  const st = getConnectionStatus();
-  if (st.connected) {
-    if (iconEl) iconEl.textContent = '🟢';
-    if (msgEl)  msgEl.textContent  = `Connexion ChatGPT validée — modèle : ${st.model || getModel()}`;
-    if (barEl)  barEl.innerHTML    = `🟢 IA prête — ${st.model || getModel()}`;
-  } else {
+  if (!st.reachable) {
     if (iconEl) iconEl.textContent = '🔴';
-    if (msgEl)  msgEl.textContent  = 'Clé configurée mais connexion non testée ou invalide.';
-    if (barEl)  barEl.innerHTML    = '🟡 IA configurée — testez la connexion dans Paramètres → IA';
+    if (msgEl)  msgEl.textContent  = 'Backend IA inaccessible. Vérifiez que le serveur est démarré sur le port 3001.';
+    if (barEl)  barEl.innerHTML    = '🔴 Backend IA non démarré — <strong>Paramètres → IA</strong>';
+  } else if (!st.configured) {
+    if (iconEl) iconEl.textContent = '🟡';
+    if (msgEl)  msgEl.textContent  = 'Backend joignable mais clé API absente. Ajoutez OPENAI_API_KEY dans .env.';
+    if (barEl)  barEl.innerHTML    = '🟡 Clé API manquante — allez dans <strong>Paramètres → IA</strong>';
+  } else {
+    if (iconEl) iconEl.textContent = '🟢';
+    if (msgEl)  msgEl.textContent  = `Backend IA prêt — modèle : ${st.model || 'gpt-4o-mini'}`;
+    if (barEl)  barEl.innerHTML    = `🟢 IA prête — ${st.model || 'gpt-4o-mini'}`;
   }
 
   if (st.checkedAt && lastEl) {
