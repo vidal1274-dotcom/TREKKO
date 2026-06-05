@@ -9,8 +9,9 @@ env/
 dist/
 build/
 
-# Node / NPM (si futur build)
+# Node / NPM
 node_modules/
+server/node_modules/
 
 # Données sensibles
 .env
