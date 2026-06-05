@@ -96,6 +96,7 @@
   <button class="nav-tab" data-panel="panel-economy">💰 Bons plans</button>
   <button class="nav-tab" data-panel="panel-carnet">📔 Carnet</button>
   <button class="nav-tab" data-panel="panel-photos">📷 Photos</button>
+  <button class="nav-tab" data-panel="panel-circuit">🤖 Circuit IA</button>
   <button class="nav-tab" data-panel="panel-settings">⚙️ Paramètres</button>
   <button class="nav-tab" data-panel="panel-prog">📍 Programme</button>
 </nav>
@@ -298,11 +299,188 @@
         <input type="file" id="import-data-input" accept=".json" style="display:none" />
       </div>
 
+      <!-- Paramètres IA / OpenAI -->
+      <div class="settings-section" id="section-ai">
+        <h3>🤖 Paramètres IA / ChatGPT</h3>
+        <p class="info-disclaimer">
+          Connectez Trekko à OpenAI pour générer des circuits intelligents.
+          Votre clé API personnelle est stockée localement sur cet appareil et envoyée directement à OpenAI.
+          <strong>Ne partagez jamais cet appareil non verrouillé avec quelqu'un d'autre.</strong>
+        </p>
+
+        <label class="settings-label">Clé API OpenAI
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="password" id="ai-api-key-input" placeholder="sk-..." style="flex:1" autocomplete="off" />
+            <button id="ai-toggle-key-btn" class="btn-xs" title="Afficher/masquer">👁</button>
+          </div>
+        </label>
+        <div id="ai-masked-key" class="ai-masked-key hidden"></div>
+
+        <label class="settings-label">Modèle OpenAI
+          <select id="ai-model-select">
+            <option value="gpt-4o-mini">gpt-4o-mini (rapide, économique)</option>
+            <option value="gpt-4o">gpt-4o (plus puissant)</option>
+            <option value="gpt-4-turbo">gpt-4-turbo</option>
+            <option value="gpt-3.5-turbo">gpt-3.5-turbo (économique)</option>
+          </select>
+        </label>
+
+        <div class="ai-btn-row">
+          <button id="ai-save-key-btn" class="btn-primary">💾 Enregistrer la clé</button>
+          <button id="ai-test-btn" class="btn-secondary">🔌 Tester la connexion</button>
+          <button id="ai-delete-key-btn" class="btn-secondary" style="color:#e74c3c">🗑️ Supprimer la clé</button>
+        </div>
+
+        <div id="ai-status-box" class="ai-status-box">
+          <span id="ai-status-icon">⚪</span>
+          <span id="ai-status-msg">La recherche intelligente n'est pas encore configurée.</span>
+        </div>
+        <div id="ai-last-check" class="ai-last-check hidden"></div>
+      </div>
+
       <!-- Reset SW / Cache -->
       <div class="settings-section">
         <h3>🔄 Réinitialiser l'application</h3>
         <p class="info-disclaimer">Si l'app est bloquée ou affiche une page blanche, vide le cache du Service Worker.</p>
         <button id="btn-reset-sw" class="btn-secondary" style="border-color:#e74c3c;color:#e74c3c">🗑️ Vider le cache et recharger</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ PANEL CIRCUIT IA ══════════════════════════════════════ -->
+  <section id="panel-circuit" class="panel">
+    <div class="circuit-container">
+
+      <!-- En-tête -->
+      <div class="circuit-header">
+        <h2>🤖 Créer un circuit intelligent</h2>
+        <p class="circuit-subtitle">Laissez l'IA planifier votre voyage étape par étape</p>
+        <div id="circuit-ai-status-bar" class="circuit-ai-bar">⚪ IA non configurée — allez dans <strong>Paramètres → IA</strong></div>
+      </div>
+
+      <!-- Formulaire -->
+      <div class="circuit-form">
+
+        <!-- Destination -->
+        <div class="circuit-form-section">
+          <h3>📍 Destination</h3>
+          <div class="circuit-form-row">
+            <label class="circuit-label">Pays *
+              <input id="circuit-country" type="text" placeholder="France, Italie, Espagne…" />
+            </label>
+            <label class="circuit-label">Ville / point de départ *
+              <input id="circuit-start" type="text" placeholder="Nîmes, Paris, Lyon…" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Durée & sites -->
+        <div class="circuit-form-section">
+          <h3>📅 Durée et sites</h3>
+          <div class="circuit-form-row">
+            <label class="circuit-label">Durée *
+              <select id="circuit-duration">
+                <option value="1day">1 jour</option>
+                <option value="2days">2 jours</option>
+                <option value="3days">3 jours</option>
+                <option value="weekend">Week-end</option>
+                <option value="week">Semaine</option>
+                <option value="custom">Personnalisé</option>
+              </select>
+            </label>
+            <label class="circuit-label hidden" id="circuit-duration-custom">Nombre de jours
+              <input id="circuit-duration-custom-val" type="number" min="1" max="30" value="4" />
+            </label>
+            <label class="circuit-label">Nombre de sites *
+              <select id="circuit-sites">
+                <option value="3">3 sites</option>
+                <option value="5" selected>5 sites</option>
+                <option value="8">8 sites</option>
+                <option value="10">10 sites</option>
+                <option value="custom">Personnalisé</option>
+              </select>
+            </label>
+            <label class="circuit-label hidden" id="circuit-sites-custom">Nombre exact
+              <input id="circuit-sites-custom-val" type="number" min="1" max="20" value="6" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Transport & budget -->
+        <div class="circuit-form-section">
+          <h3>🚗 Transport et budget</h3>
+          <div class="circuit-form-row">
+            <label class="circuit-label">Transport *
+              <select id="circuit-transport">
+                <option value="car_thermal">🚗 Voiture thermique</option>
+                <option value="car_electric">⚡ Voiture électrique</option>
+                <option value="public">🚌 Transports en commun</option>
+                <option value="bike">🚲 Vélo</option>
+                <option value="walking">🚶 Marche</option>
+              </select>
+            </label>
+            <label class="circuit-label">Budget (€ total) *
+              <input id="circuit-budget" type="number" min="0" value="150" placeholder="150" />
+            </label>
+            <label class="circuit-label">Personnes *
+              <input id="circuit-people" type="number" min="1" max="20" value="2" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Préférences -->
+        <div class="circuit-form-section">
+          <h3>✅ Préférences (optionnel)</h3>
+          <div class="circuit-prefs-grid">
+            <label class="circuit-pref"><input type="checkbox" id="pref-nature" class="circuit-pref-check"> 🌿 Nature</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-heritage" class="circuit-pref-check"> 🏛️ Patrimoine</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-villages" class="circuit-pref-check"> 🏘️ Villages</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-monuments" class="circuit-pref-check"> 🗿 Monuments</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-museums" class="circuit-pref-check"> 🏛️ Musées</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-beaches" class="circuit-pref-check"> 🏖️ Plages</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-hiking" class="circuit-pref-check"> 🥾 Randonnées</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-viewpoints" class="circuit-pref-check"> 🌅 Points de vue</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-unusual" class="circuit-pref-check"> 🎩 Lieux insolites</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-free" class="circuit-pref-check"> 🆓 Lieux gratuits</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-family" class="circuit-pref-check"> 👨‍👩‍👧 Famille / enfants</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-offbeaten" class="circuit-pref-check"> 🚶 Peu fréquentés</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-no-tolls" class="circuit-pref-check"> 🚫 Éviter péages</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-free-parking" class="circuit-pref-check"> 🅿️ Parking gratuit</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-low-cost" class="circuit-pref-check"> 💰 Budget serré</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-picnic" class="circuit-pref-check"> 🧺 Pique-nique</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-rain" class="circuit-pref-check"> ☂️ Alternative pluie</label>
+            <label class="circuit-pref"><input type="checkbox" id="pref-uncrowded" class="circuit-pref-check"> 😌 Éviter foules</label>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="circuit-form-actions">
+          <button id="circuit-generate-btn" class="circuit-btn-primary">🤖 Générer avec IA</button>
+          <button id="circuit-reset-btn" class="circuit-btn-secondary">🔄 Réinitialiser</button>
+        </div>
+
+        <div id="circuit-spinner" class="circuit-spinner hidden">
+          <div class="circuit-spinner-ring"></div>
+          <span>L'IA analyse et construit votre circuit…</span>
+        </div>
+        <div id="circuit-error" class="circuit-error hidden"></div>
+      </div>
+
+      <!-- Résultats -->
+      <div id="circuit-results" class="circuit-results hidden">
+        <div class="circuit-results-toolbar">
+          <button id="circuit-save-btn" class="circuit-btn-secondary">💾 Sauvegarder</button>
+          <button id="circuit-export-btn" class="circuit-btn-secondary">⬇️ Exporter JSON</button>
+          <button id="circuit-copy-btn" class="circuit-btn-secondary">📋 Copier résumé</button>
+        </div>
+        <div id="circuit-results-content"></div>
+      </div>
+
+      <!-- Circuits sauvegardés -->
+      <div class="circuit-saved-section">
+        <h3>📂 Circuits sauvegardés (hors ligne)</h3>
+        <div id="circuit-saved-list"></div>
       </div>
 
     </div>
@@ -712,7 +890,7 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 </div><!-- /#hiking-screen -->
 
 <!-- Modules JS (ESM) -->
-<script type="module" src="js/app.js?v=65"></script>
+<script type="module" src="js/app.js?v=66"></script>
 
 </body>
 </html>

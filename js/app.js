@@ -28,6 +28,11 @@ import { initAuthScreen, logout, getCurrentUser } from './auth.js';
 import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=27';
 import { getVisitedIds } from './visited.js?v=25';
 import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=4';
+import { initCircuitCreator } from './circuit-creator.js';
+import {
+  hasApiKey, getMaskedKey, saveApiKey, deleteApiKey, getModel, saveModel,
+  testConnection, getConnectionStatus
+} from './ai-service.js';
 // Imports lazy — chargés à la demande pour ne pas bloquer le démarrage
 let _fetchWeather = null;
 let _renderCarnet = null;
@@ -126,6 +131,8 @@ async function startApp() {
   // Écran de choix d'activité — affiché au démarrage
   initWelcomeScreen(onWelcomeModeSelect);
   initHikingScreen();
+  initCircuitCreator();
+  initAiSettings();
   window._showWelcome = showWelcomeScreen;
   showWelcomeScreen();
 
@@ -666,7 +673,104 @@ async function updatePhotoPanel() {
 }
 
 /* =========================================================
-   BLOC 10 — LIENS VÉRIFICATION ÉNERGIE
+   BLOC 10 — PARAMÈTRES IA / OPENAI
+   ========================================================= */
+function initAiSettings() {
+  _refreshAiStatusUI();
+
+  // Afficher la clé masquée si déjà configurée
+  const masked = document.getElementById('ai-masked-key');
+  const keyInput = document.getElementById('ai-api-key-input');
+  if (hasApiKey() && masked && keyInput) {
+    masked.textContent = getMaskedKey();
+    masked.classList.remove('hidden');
+    keyInput.placeholder = getMaskedKey();
+  }
+
+  // Modèle sélectionné
+  const modelSel = document.getElementById('ai-model-select');
+  if (modelSel) modelSel.value = getModel();
+
+  // Enregistrer la clé
+  document.getElementById('ai-save-key-btn')?.addEventListener('click', () => {
+    const val = keyInput?.value?.trim();
+    if (!val || !val.startsWith('sk-')) {
+      showToast('Clé API invalide. Elle doit commencer par "sk-".', 'warning');
+      return;
+    }
+    saveApiKey(val);
+    if (modelSel) saveModel(modelSel.value);
+    if (keyInput) { keyInput.value = ''; keyInput.placeholder = getMaskedKey(); }
+    if (masked) { masked.textContent = getMaskedKey(); masked.classList.remove('hidden'); }
+    _refreshAiStatusUI();
+    showToast('Clé API enregistrée.', 'success');
+  });
+
+  // Modèle changé
+  modelSel?.addEventListener('change', () => {
+    if (hasApiKey()) saveModel(modelSel.value);
+  });
+
+  // Toggle affichage clé
+  document.getElementById('ai-toggle-key-btn')?.addEventListener('click', () => {
+    if (!keyInput) return;
+    keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
+  });
+
+  // Test de connexion
+  document.getElementById('ai-test-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('ai-test-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Test en cours…'; }
+    const result = await testConnection();
+    showToast(result.message, result.success ? 'success' : 'error');
+    _refreshAiStatusUI();
+    if (btn) { btn.disabled = false; btn.textContent = '🔌 Tester la connexion'; }
+  });
+
+  // Supprimer la clé
+  document.getElementById('ai-delete-key-btn')?.addEventListener('click', () => {
+    if (!confirm('Supprimer la clé API OpenAI ?')) return;
+    deleteApiKey();
+    if (keyInput) { keyInput.value = ''; keyInput.placeholder = 'sk-...'; }
+    if (masked) { masked.textContent = ''; masked.classList.add('hidden'); }
+    _refreshAiStatusUI();
+    showToast('Clé API supprimée.', 'info');
+  });
+}
+
+function _refreshAiStatusUI() {
+  const iconEl = document.getElementById('ai-status-icon');
+  const msgEl  = document.getElementById('ai-status-msg');
+  const lastEl = document.getElementById('ai-last-check');
+  const barEl  = document.getElementById('circuit-ai-status-bar');
+
+  if (!hasApiKey()) {
+    if (iconEl) iconEl.textContent = '⚪';
+    if (msgEl)  msgEl.textContent  = 'La recherche intelligente n\'est pas encore configurée.';
+    if (lastEl) lastEl.classList.add('hidden');
+    if (barEl)  barEl.innerHTML    = '⚪ IA non configurée — allez dans <strong>Paramètres → IA</strong>';
+    return;
+  }
+
+  const st = getConnectionStatus();
+  if (st.connected) {
+    if (iconEl) iconEl.textContent = '🟢';
+    if (msgEl)  msgEl.textContent  = `Connexion ChatGPT validée — modèle : ${st.model || getModel()}`;
+    if (barEl)  barEl.innerHTML    = `🟢 IA prête — ${st.model || getModel()}`;
+  } else {
+    if (iconEl) iconEl.textContent = '🔴';
+    if (msgEl)  msgEl.textContent  = 'Clé configurée mais connexion non testée ou invalide.';
+    if (barEl)  barEl.innerHTML    = '🟡 IA configurée — testez la connexion dans Paramètres → IA';
+  }
+
+  if (st.checkedAt && lastEl) {
+    lastEl.textContent = `Dernier test : ${new Date(st.checkedAt).toLocaleString('fr-FR')}`;
+    lastEl.classList.remove('hidden');
+  }
+}
+
+/* =========================================================
+   BLOC 10b — LIENS VÉRIFICATION ÉNERGIE
    ========================================================= */
 function renderEnergyVerificationLinks() {
   const container = document.getElementById('energy-verification-links');
