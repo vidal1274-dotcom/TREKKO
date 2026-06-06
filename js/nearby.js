@@ -3,7 +3,7 @@
    ========================================================= */
 import { OVERPASS_ENDPOINT, THEMATIC_CATEGORIES } from './config.js';
 import { cacheSet, cacheGet } from './storage.js';
-import { escapeHTML, buildGoogleMapsLink } from './utils.js';
+import { escapeHTML, buildGoogleMapsLink, buildWazeLink } from './utils.js';
 import { getStoredOrigin } from './geolocation.js';
 import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
 
@@ -79,13 +79,18 @@ export async function renderNearbyResults(places, category) {
   );
 
   return visible.map((p, i) => {
-    const safeUrl = escapeHTML(buildGoogleMapsLink(p.lat, p.lon, p.name) || '');
-    const distStr = formatRouteDistance(distances[i]); // '🚗 X km' ou null
+    const mapsUrl  = buildGoogleMapsLink(p.lat, p.lon, p.name);
+    const wazeUrl  = buildWazeLink(p.lat, p.lon);
+    const distStr  = formatRouteDistance(distances[i]); // '🚗 X km' ou null
     return `
-    <div class="site-card" style="cursor:pointer" onclick="window.open('${safeUrl}','_blank')">
+    <div class="site-card">
       <div class="site-name">${p.icon} ${escapeHTML(p.name)}</div>
       <div class="site-sector" style="font-size:12px">
         ${distStr ? `<span class="distance-badge">${distStr}</span> · ` : ''}Source : OpenStreetMap — <span class="verify-tag">à vérifier</span>
+      </div>
+      <div class="nearby-actions">
+        ${mapsUrl ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener noreferrer" class="nearby-btn nearby-btn-maps">🗺️ Maps</a>` : ''}
+        ${wazeUrl ? `<a href="${escapeHTML(wazeUrl)}" target="_blank" rel="noopener noreferrer" class="nearby-btn nearby-btn-waze">🚗 Waze</a>` : ''}
       </div>
     </div>`;
   }).join('');

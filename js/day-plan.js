@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS ET CONSTANTES
    ========================================================= */
-import { formatCurrency, haversineDistance, escapeHTML } from './utils.js';
+import { formatCurrency, haversineDistance, escapeHTML, buildWazeLink } from './utils.js';
 import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
 import { lsGet, lsSet, lsDel } from './storage.js';
@@ -234,15 +234,15 @@ export function renderDayPlan(plan) {
   const stepsHtml = plan.steps.map(s => {
     let legHtml = '';
     if (s.travelKm && s.type === 'arrival') {
-      const wazeUrl = s.site?.lat ? `https://waze.com/ul?ll=${s.site.lat},${s.site.lon}&navigate=yes` : null;
+      const wazeUrl = buildWazeLink(s.site?.lat, s.site?.lon);
       const gmUrl   = s.site?.lat ? `https://www.google.com/maps/dir/?api=1&destination=${s.site.lat},${s.site.lon}` : null;
       legHtml = `
         <div class="dp-leg">
           <div class="dp-leg-bar"></div>
           <div class="dp-leg-pill">
             <strong>${s.isRoadDist ? formatRouteDistance(s.travelKm) : `≈ ${s.travelKm} km`}</strong> &nbsp;·&nbsp; ~${_fmtDuration(s.travelMin)}
-            ${wazeUrl ? `<a href="${wazeUrl}" target="_blank" rel="noopener" class="dp-leg-nav dp-nav-waze">Waze</a>` : ''}
-            ${gmUrl   ? `<a href="${gmUrl}"   target="_blank" rel="noopener" class="dp-leg-nav dp-nav-gm">Maps</a>` : ''}
+            ${wazeUrl ? `<a href="${escapeHTML(wazeUrl)}" target="_blank" rel="noopener noreferrer" class="dp-leg-nav dp-nav-waze">Waze</a>` : ''}
+            ${gmUrl   ? `<a href="${gmUrl}"              target="_blank" rel="noopener noreferrer" class="dp-leg-nav dp-nav-gm">Maps</a>` : ''}
           </div>
           <div class="dp-leg-bar"></div>
         </div>`;

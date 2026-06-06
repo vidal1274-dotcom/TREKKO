@@ -4,7 +4,7 @@
    sauvegarde offline.
    ========================================================= */
 import { generateCircuit, getAiStatus, getModel } from './ai-service.js';
-import { showToast, escapeHTML } from './utils.js';
+import { showToast, escapeHTML, getWazeUrlForPlace } from './utils.js';
 import { getRouteLegDistances, formatRouteDistance } from './routing-utils.js';
 
 const LS_CIRCUITS    = 'trekko_saved_circuits';
@@ -321,7 +321,10 @@ function _renderSite(site, stepDist = null) {
   const mapsUrl = (site.coordinates?.lat && site.coordinates?.lng)
     ? `https://www.google.com/maps?q=${site.coordinates.lat},${site.coordinates.lng}` : null;
   const mapBtn = mapsUrl
-    ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener" class="circuit-site-map-btn">🗺️ Maps</a>` : '';
+    ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener noreferrer" class="circuit-site-map-btn">🗺️ Maps</a>` : '';
+  const wazeUrl = getWazeUrlForPlace(site);
+  const wazeBtn = wazeUrl
+    ? `<a href="${escapeHTML(wazeUrl)}" target="_blank" rel="noopener noreferrer" class="circuit-site-waze-btn">🚗 Waze</a>` : '';
 
   const prevDist = stepDist?.distFromPrev != null
     ? formatRouteDistance(stepDist.distFromPrev) : null;
@@ -347,6 +350,7 @@ function _renderSite(site, stepDist = null) {
         <span class="circuit-chip ${site.estimatedCost === 0 ? 'chip-free' : ''}">💰 ${site.estimatedCost === 0 ? 'Gratuit' : `~${site.estimatedCost}€/pers.`}</span>
         ${parking}
         ${mapBtn}
+        ${wazeBtn}
       </div>
       ${neg}${tips}
     </div>`;

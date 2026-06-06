@@ -3,7 +3,7 @@
    ========================================================= */
 import { getBestDeals } from './economy-engine.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
-import { formatCurrency, buildGoogleMapsLink, escapeHTML } from './utils.js';
+import { formatCurrency, buildGoogleMapsLink, escapeHTML, getWazeUrlForPlace } from './utils.js';
 import { filterUnvisited } from './visited.js';
 import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
 import { getStoredOrigin } from './geolocation.js';
@@ -151,6 +151,12 @@ export async function renderSurpriseCard(card) {
     ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener noreferrer" class="sc-action-btn sc-maps-btn">🗺️ Ouvrir dans Maps</a>`
     : '';
 
+  // --- Bouton Waze (deep link officiel uniquement)
+  const wazeUrl = getWazeUrlForPlace(site);
+  const wazeBtn = wazeUrl
+    ? `<a href="${escapeHTML(wazeUrl)}" target="_blank" rel="noopener noreferrer" class="sc-action-btn sc-waze-btn">🚗 Waze</a>`
+    : '';
+
   // --- Lien Photos (encodeURIComponent + escapeHTML sur l'URL finale)
   const photoQuery = encodeURIComponent(`${site.destination} ${site.secteur || ''} photos`);
   const photoUrl   = `https://www.google.com/search?tbm=isch&q=${photoQuery}`;
@@ -178,6 +184,7 @@ export async function renderSurpriseCard(card) {
         ${tipHtml}
         <div class="sc-actions">
           ${mapsBtn}
+          ${wazeBtn}
           ${photoBtn}
         </div>
       </div>

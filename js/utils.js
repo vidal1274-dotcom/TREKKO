@@ -143,10 +143,27 @@ export function showToast(message, type = 'info', duration = 3000) {
 /* =========================================================
    BLOC 06 — LIENS GPS
    ========================================================= */
-export function buildWazeLink(lat, lon, name) {
+export function buildWazeLink(lat, lon, name, avoidTolls = false) {
   if (!lat || !lon) return null;
-  return `https://waze.com/ul?ll=${lat},${lon}&navigate=yes&zoom=17`;
+  const base = `https://waze.com/ul?ll=${lat},${lon}&navigate=yes&utm_source=trekko`;
+  return avoidTolls ? base + '&avoid_tolls=true' : base;
 }
+
+export function buildWazeSearchUrl(query) {
+  if (!query?.trim()) return null;
+  return `https://waze.com/ul?q=${encodeURIComponent(query.trim())}&navigate=yes&utm_source=trekko`;
+}
+
+export function getWazeUrlForPlace(place, { avoidTolls = false } = {}) {
+  const lat = Number(place?.lat ?? place?.coordinates?.lat);
+  const lon = Number(place?.lon ?? place?.coordinates?.lng ?? place?.coordinates?.lon);
+  if (Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90)
+    return buildWazeLink(lat, lon, null, avoidTolls);
+  const name = place?.destination || place?.name || place?.label;
+  if (name) return buildWazeSearchUrl(name);
+  return null;
+}
+
 export function buildGoogleMapsLink(lat, lon, name) {
   if (!lat || !lon) return null;
   const q = name ? encodeURIComponent(name) : `${lat},${lon}`;
