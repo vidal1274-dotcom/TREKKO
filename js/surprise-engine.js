@@ -3,7 +3,7 @@
    ========================================================= */
 import { getBestDeals } from './economy-engine.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
-import { formatCurrency, buildGoogleMapsLink, escapeHTML } from './utils.js';
+import { formatCurrency, buildGoogleMapsLink, escapeHTML, formatDistApprox } from './utils.js';
 import { filterUnvisited } from './visited.js';
 
 /* =========================================================
@@ -130,7 +130,7 @@ export function renderSurpriseCard(card) {
   const title = escapeHTML(site.destination || '—');
 
   // --- Ligne méta : distance · Gratuit (valeurs numériques/constantes, pas d'injection)
-  const distStr  = site.distance_km ? `${site.distance_km} km` : null;
+  const distStr = formatDistApprox(site.distance_km);
   const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratu');
   const priceStr = isGratuit ? 'Gratuit' : null;
   const metaLine = [distStr, priceStr].filter(Boolean).join(' · ');

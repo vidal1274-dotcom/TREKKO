@@ -2,7 +2,7 @@
    BLOC 01 — IMPORTS
    ========================================================= */
 import { getSiteStatusColor } from './map.js?v=4';
-import { formatDistance, formatCurrency, createElement } from './utils.js';
+import { formatDistance, formatDistApprox, formatCurrency, createElement } from './utils.js';
 
 /* =========================================================
    BLOC 02 — NAVIGATION ONGLETS
@@ -85,7 +85,7 @@ function buildSiteCard(site, vehicleProfile) {
   const meta        = getSiteTypeMeta(site);
   const statusColor = getSiteStatusColor(site);
   const isFerme     = (site.statut || '').toLowerCase().includes('ferm');
-  const distStr     = site.distance_km != null ? `${site.distance_km} km` : '—';
+  const distStr     = formatDistApprox(site.distance_km) || '—';
   const vigil       = (site.vigilance || '').toLowerCase();
   const budgetTxt   = (site.budget_indicatif || '').toLowerCase();
 
@@ -150,7 +150,7 @@ export function renderEconomyPanel(sites) {
         <span class="site-name">${site.destination || site.nom}</span>
         <span class="eco-score">🟢 ${site.eco_score || 0}/100</span>
       </div>
-      <div class="site-sector">${site.secteur || ''} · ${site.distance_km ? site.distance_km + ' km' : '—'}</div>
+      <div class="site-sector">${site.secteur || ''} · ${formatDistApprox(site.distance_km) || '—'}</div>
       <div class="site-badges">${notes}</div>
       ${site.budget_indicatif ? `<div class="site-summary">${site.budget_indicatif.substring(0,80)}</div>` : ''}
     `);

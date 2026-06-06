@@ -16,6 +16,37 @@ export function formatDistance(km) {
   return `${Math.round(km)} km`;
 }
 
+export function formatDistApprox(km) {
+  if (km == null || typeof km !== 'number' || isNaN(km) || !isFinite(km) || km < 0) return null;
+  if (km < 1) return `≈ ${Math.round(km * 1000)} m`;
+  if (km < 10) return `≈ ${km.toFixed(1).replace('.', ',')} km`;
+  return `≈ ${Math.round(km)} km`;
+}
+
+export function computeCircuitDistances(steps) {
+  if (!Array.isArray(steps) || steps.length === 0) return [];
+  const result = [];
+  let cumulative = 0;
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+    const lat  = step?.lat ?? step?.coordinates?.lat ?? null;
+    const lon  = step?.lon ?? step?.coordinates?.lng ?? step?.coordinates?.lon ?? null;
+    const validCurr = lat != null && lon != null && !isNaN(Number(lat)) && !isNaN(Number(lon));
+    if (i === 0 || !validCurr) {
+      result.push({ distFromPrev: null, cumulative: cumulative > 0 ? cumulative : null });
+      continue;
+    }
+    const prev     = steps[i - 1];
+    const prevLat  = prev?.lat ?? prev?.coordinates?.lat ?? null;
+    const prevLon  = prev?.lon ?? prev?.coordinates?.lng ?? prev?.coordinates?.lon ?? null;
+    const validPrev = prevLat != null && prevLon != null && !isNaN(Number(prevLat)) && !isNaN(Number(prevLon));
+    const dist = validPrev ? haversineDistance(Number(prevLat), Number(prevLon), Number(lat), Number(lon)) : null;
+    if (dist != null) cumulative += dist;
+    result.push({ distFromPrev: dist, cumulative: cumulative > 0 ? cumulative : null });
+  }
+  return result;
+}
+
 /* =========================================================
    BLOC 02 — FORMATAGE MONÉTAIRE / TEMPS
    ========================================================= */

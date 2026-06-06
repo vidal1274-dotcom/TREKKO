@@ -1,6 +1,7 @@
 /* =========================================================
    PROGRAMME.JS — Sélection de sites, carte, photos
    ========================================================= */
+import { formatDistApprox } from './utils.js';
 const LS_KEY = 'trekko_programme_v1';
 const ORIGIN = { lat: 43.7169, lon: 4.3789 }; // Nages-et-Solorgues
 
@@ -129,7 +130,7 @@ function _setupSearch() {
         s.sans_peage ? `<span class="p2r-badge p2r-blue">Sans péage</span>` : '',
       ].join('');
 
-      const dist  = s.distance_km != null ? `${Math.round(s.distance_km)} km` : '';
+      const dist  = s.distance_km != null ? (formatDistApprox(s.distance_km) || '') : '';
       const meta  = [s.secteur, dist].filter(Boolean).join(' · ');
 
       return `<div class="prog2-result-item" data-id="${s.id}" tabindex="-1">

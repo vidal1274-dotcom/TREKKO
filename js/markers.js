@@ -2,7 +2,7 @@
    BLOC 01 — IMPORTS
    ========================================================= */
 import { getMarkersLayer, createSiteIcon, getSiteStatusColor, flyToSite } from './map.js?v=4';
-import { formatCurrency, formatDistance, buildWazeLink, buildGoogleMapsLink } from './utils.js';
+import { formatCurrency, formatDistance, formatDistApprox, buildWazeLink, buildGoogleMapsLink } from './utils.js';
 import { setState } from './state.js';
 
 /* =========================================================
@@ -41,7 +41,7 @@ export function renderSiteMarkers(sites, onSiteClick) {
    BLOC 03 — TOOLTIP SURVOL (légende rapide)
    ========================================================= */
 function buildSiteTooltipHtml(site) {
-  const dist = site.distance_km != null ? `${site.distance_km} km` : '';
+  const dist = formatDistApprox(site.distance_km) || '';
   const color = getSiteStatusColor(site);
   const isFerme  = (site.statut || '').toLowerCase().includes('ferm');
   const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratuit');
@@ -76,7 +76,7 @@ function buildSitePopupHtml(site) {
 
   return `
     <div class="popup-title">${site.destination || site.nom || 'Site'}</div>
-    <div style="font-size:12px;color:#aaa;margin:2px 0">${site.secteur || ''} ${site.distance_km ? '· ' + site.distance_km + ' km' : ''}</div>
+    <div style="font-size:12px;color:#aaa;margin:2px 0">${site.secteur || ''} ${site.distance_km != null ? '· ' + (formatDistApprox(site.distance_km) || '') : ''}</div>
     <div class="popup-badges">${badges}</div>
     ${site.programme_court ? `<div style="font-size:13px;margin:4px 0;line-height:1.4">${site.programme_court.substring(0,120)}${site.programme_court.length>120?'…':''}</div>` : ''}
     <div class="popup-actions">

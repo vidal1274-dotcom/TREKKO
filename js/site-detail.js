@@ -3,8 +3,9 @@
    ========================================================= */
 import { enrichSiteInfo, buildWhatToDoList, estimateVisitDuration } from './site-insights.js';
 import { buildSiteBadges } from './markers.js';
-import { buildWazeLink, buildGoogleMapsLink, buildAppleMapsLink } from './utils.js';
+import { buildWazeLink, buildGoogleMapsLink, buildAppleMapsLink, formatDistApprox, escapeHTML } from './utils.js';
 import { toggleVisited, isVisited } from './visited.js';
+import { getStoredOrigin } from './geolocation.js';
 
 /* =========================================================
    BLOC 02 — OUVERTURE / FERMETURE
@@ -42,7 +43,9 @@ export function closeSiteDetail() {
    BLOC 03 — HTML FICHE SITE (design refondu)
    ========================================================= */
 function buildSiteDetailHtml(site) {
-  const distStr  = site.distance_km ? `${site.distance_km} km` : null;
+  const _origin      = getStoredOrigin();
+  const _originLabel = escapeHTML(_origin.label || 'le départ');
+  const distStr      = formatDistApprox(site.distance_km);
   const duration = estimateVisitDuration(site);
   const visited  = isVisited(site.id);
 
@@ -109,7 +112,7 @@ function buildSiteDetailHtml(site) {
         <div class="sd-title">${site.destination || site.nom || 'Site'}</div>
         <div class="sd-meta">
           ${site.secteur ? `<span>${site.secteur}</span>` : ''}
-          ${distStr ? `<span>📍 ${distStr} depuis Nages</span>` : ''}
+          ${distStr ? `<span class="distance-badge">📍 ${distStr} depuis ${_originLabel}</span>` : ''}
           ${duration ? `<span>⏱ ${duration}</span>` : ''}
         </div>
         <div class="sd-badges">${buildSiteBadges(site)}</div>

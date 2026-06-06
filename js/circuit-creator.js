@@ -4,8 +4,7 @@
    sauvegarde offline.
    ========================================================= */
 import { generateCircuit, getAiStatus, getModel } from './ai-service.js';
-import { showToast } from './utils.js';
-import { escapeHTML } from './utils.js';
+import { showToast, escapeHTML, formatDistApprox } from './utils.js';
 
 const LS_CIRCUITS    = 'trekko_saved_circuits';
 const LS_LAST_PARAMS = 'trekko_last_circuit_params';
@@ -350,7 +349,7 @@ function _renderDay(day) {
       <div class="circuit-day-header">
         <span class="circuit-day-title">📅 Jour ${day.day} — ${escapeHTML(day.title || '')}</span>
         <div class="circuit-day-meta">
-          <span>🚗 ~${day.estimatedDistanceKm || '?'} km</span>
+          <span>🚗 ${day.estimatedDistanceKm != null ? (formatDistApprox(Number(day.estimatedDistanceKm)) || '≈ ' + day.estimatedDistanceKm + ' km') : '?'}</span>
           <span>⏱ ~${escapeHTML(day.estimatedTravelTime || '?')}</span>
           <span>💰 ~${day.estimatedCost || '?'}€</span>
         </div>

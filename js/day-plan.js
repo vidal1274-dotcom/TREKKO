@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS ET CONSTANTES
    ========================================================= */
-import { formatCurrency, haversineDistance, escapeHTML } from './utils.js';
+import { formatCurrency, haversineDistance, escapeHTML, formatDistApprox } from './utils.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
 import { lsGet, lsSet, lsDel } from './storage.js';
 import { UCHAUD_COORDS } from './config.js';
@@ -160,7 +160,7 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
   const retMin = Math.round((retKm / speedKmh) * 60);
   totalKm += retKm;
   cur += retMin;
-  steps.push({ time: _fmt(cur), icon: '🏠', label: `Retour vers ${escapeHTML(origin.label)} (~${Math.round(retKm)} km)`, type: 'return' });
+  steps.push({ time: _fmt(cur), icon: '🏠', label: `Retour vers ${escapeHTML(origin.label)} (≈ ${Math.round(retKm)} km)`, type: 'return' });
 
   // 5. Coût énergie
   let energyCost = null;
@@ -227,7 +227,7 @@ export function renderDayPlan(plan) {
         <div class="dp-leg">
           <div class="dp-leg-bar"></div>
           <div class="dp-leg-pill">
-            🚗 <strong>${s.travelKm} km</strong> &nbsp;·&nbsp; ~${_fmtDuration(s.travelMin)}
+            🚗 <strong>≈ ${s.travelKm} km</strong> &nbsp;·&nbsp; ~${_fmtDuration(s.travelMin)}
             ${wazeUrl ? `<a href="${wazeUrl}" target="_blank" rel="noopener" class="dp-leg-nav dp-nav-waze">Waze</a>` : ''}
             ${gmUrl   ? `<a href="${gmUrl}"   target="_blank" rel="noopener" class="dp-leg-nav dp-nav-gm">Maps</a>` : ''}
           </div>
@@ -241,7 +241,7 @@ export function renderDayPlan(plan) {
     if (s.type === 'arrival' && s.site) {
       if (s.site.budget_indicatif) extras += `<span class="dp-tag dp-tag-budget">💰 ${s.site.budget_indicatif}</span>`;
       if (s.site.eco_score != null) extras += `<span class="dp-tag dp-tag-eco">🌿 ${s.site.eco_score}/10</span>`;
-      if (s.site.distance_km != null) extras += `<span class="dp-tag">📍 ${Math.round(s.site.distance_km)} km de chez vous</span>`;
+      if (s.site.distance_km != null) extras += `<span class="dp-tag">📍 ${formatDistApprox(s.site.distance_km) || Math.round(s.site.distance_km) + ' km'} depuis le départ</span>`;
     }
 
     return legHtml + `
