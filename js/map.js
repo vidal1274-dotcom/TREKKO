@@ -46,10 +46,15 @@ export function initMap(containerId = 'map') {
       zoomOffset: retina ? -1 : 0
     }
   );
+  // Voyager Only Labels : labels plus grands, halo blanc solide, meilleure hiérarchie visuelle
   _satelliteLabelsLayer = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
     { attribution: '© CartoDB', subdomains: 'abcd', maxZoom: 20, maxNativeZoom: 19, detectRetina: true, opacity: 1.0, pane: 'labelsPane' }
   );
+  // Restaurer le mode lisibilité renforcée si mémorisé
+  try {
+    if (localStorage.getItem('trekko_hybrid_labels_enhanced') === '1') labelsPane.classList.add('labels-enhanced');
+  } catch { /* silencieux */ }
   _markersLayer = L.layerGroup().addTo(_map);
   _photoMarkersLayer = L.layerGroup().addTo(_map);
   return _map;
@@ -91,6 +96,20 @@ export function toggleMapLayer() {
   return _isSatellite;
 }
 export function isSatelliteMode() { return _isSatellite; }
+
+export function toggleHybridLabelsEnhanced() {
+  if (!isMapReady()) return false;
+  const pane = _map.getPane('labelsPane');
+  if (!pane) return false;
+  const enhanced = pane.classList.toggle('labels-enhanced');
+  try { localStorage.setItem('trekko_hybrid_labels_enhanced', enhanced ? '1' : '0'); } catch { /* silencieux */ }
+  return enhanced;
+}
+
+export function isHybridLabelsEnhanced() {
+  if (!isMapReady()) return localStorage.getItem('trekko_hybrid_labels_enhanced') === '1';
+  return !!_map.getPane('labelsPane')?.classList.contains('labels-enhanced');
+}
 
 /* =========================================================
    BLOC 03 — LAYER MANAGEMENT

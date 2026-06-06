@@ -4056,10 +4056,39 @@ body.hiking-active #app-main {
 .circuit-saved-date { font-size: 11px; color: var(--color-text-dim); }
 .circuit-saved-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
-/* Labels carte hybride — meilleure lisibilité sur fond satellite */
+/* Labels carte hybride — lisibilité améliorée sur fond satellite */
 .leaflet-pane.leaflet-labelsPane-pane {
-  filter: drop-shadow(0 0 3px rgba(0,0,0,0.9)) drop-shadow(0 0 1px rgba(0,0,0,1));
+  filter: brightness(1.05) drop-shadow(0 0 3px rgba(0,0,0,0.95)) drop-shadow(0 0 2px rgba(0,0,0,1));
+  transition: filter 0.3s ease;
 }
+/* Mode lisibilité renforcée — contraste et halo maximaux */
+.leaflet-pane.leaflet-labelsPane-pane.labels-enhanced {
+  filter: brightness(1.3) contrast(1.2) drop-shadow(0 0 5px rgba(0,0,0,1)) drop-shadow(0 0 2px rgba(0,0,0,1)) drop-shadow(0 0 1px rgba(0,0,0,1));
+}
+
+/* Bouton lisibilité labels — affiché uniquement en mode satellite */
+.map-labels-btn {
+  position: absolute;
+  top: 52px;
+  right: 12px;
+  z-index: 500;
+  background: rgba(13,15,26,0.75);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #888;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 11px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+  display: none;
+  white-space: nowrap;
+}
+.map-labels-btn:hover { border-color: rgba(255,255,255,0.28); color: #eaeaf0; }
+.map-labels-btn.active { color: #5dade2; border-color: rgba(93,173,226,0.5); background: rgba(13,15,26,0.92); }
+body.satellite-mode .map-labels-btn { display: block; }
 
 /* =========================================================
    BLOC — CARTE IDÉE SURPRISE (mobile-first, ultra-compact)

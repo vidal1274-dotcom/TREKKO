@@ -2,7 +2,7 @@
    BLOC 01 — IMPORTS PRINCIPAUX
    ========================================================= */
 import { loadSites, cacheSitesLocally, getDataStats, applyManualGpsCorrection, recalcDistances } from './data-loader.js';
-import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, showAddressMarker, clearAddressMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize, renderDayPlanRoute, clearDayPlanRoute } from './map.js?v=4';
+import { initMap, fitBoundsToSites, flyToSite, showUserLocationMarker, clearUserLocationMarker, showAddressMarker, clearAddressMarker, renderTrack, clearTrack, addTrackPoint, toggleMapLayer, isSatelliteMode, invalidateMapSize, renderDayPlanRoute, clearDayPlanRoute, toggleHybridLabelsEnhanced, isHybridLabelsEnhanced } from './map.js?v=4';
 import { renderSiteMarkers, buildSiteBadges, focusOnSite } from './markers.js?v=4';
 import { applyFilter, applyTextFilter, applyDistanceFilter, sortSites, initFilterChips, setProcheThreshold } from './filters.js';
 import { requestUserLocation, getStoredOrigin, saveOrigin, clearUserLocation, getStoredMaxKm, saveMaxKm, isUsingGps, ORIGIN_DEFAULT, startWatchingPosition } from './geolocation.js';
@@ -146,7 +146,24 @@ async function startApp() {
     const isSat = toggleMapLayer();
     const btn = document.getElementById('btn-map-layer');
     if (btn) btn.textContent = isSat ? '🗺️ Carte' : '🛰️ Satellite';
+    document.body.classList.toggle('satellite-mode', isSat);
   });
+
+  // Lisibilité renforcée des labels hybrides
+  document.getElementById('btn-labels-enhance')?.addEventListener('click', () => {
+    const enhanced = toggleHybridLabelsEnhanced();
+    const btn = document.getElementById('btn-labels-enhance');
+    if (btn) {
+      btn.textContent = enhanced ? 'Aa ✓' : 'Aa';
+      btn.title = enhanced ? 'Lisibilité renforcée active — cliquer pour désactiver' : 'Activer lisibilité renforcée des noms de rues';
+      btn.classList.toggle('active', enhanced);
+    }
+  });
+  // Restaurer l'état du bouton Aa au démarrage
+  if (isHybridLabelsEnhanced()) {
+    const btn = document.getElementById('btn-labels-enhance');
+    if (btn) { btn.textContent = 'Aa ✓'; btn.classList.add('active'); }
+  }
 
   // Bouton surprise
   document.getElementById('btn-surprise')?.addEventListener('click', onSurpriseClick);
