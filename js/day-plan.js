@@ -241,7 +241,7 @@ export function renderDayPlan(plan) {
           <div class="dp-leg-bar"></div>
           <div class="dp-leg-pill">
             <strong>${s.isRoadDist ? formatRouteDistance(s.travelKm) : `≈ ${s.travelKm} km`}</strong> &nbsp;·&nbsp; ~${_fmtDuration(s.travelMin)}
-            ${wazeUrl ? `<a href="${escapeHTML(wazeUrl)}" target="_blank" rel="noopener noreferrer" class="dp-leg-nav dp-nav-waze">Waze</a>` : ''}
+            ${wazeUrl ? `<a href="${escapeHTML(wazeUrl)}" target="_blank" rel="noopener noreferrer" class="dp-leg-nav dp-nav-waze">🚗 Waze</a>` : ''}
             ${gmUrl   ? `<a href="${gmUrl}"              target="_blank" rel="noopener noreferrer" class="dp-leg-nav dp-nav-gm">Maps</a>` : ''}
           </div>
           <div class="dp-leg-bar"></div>

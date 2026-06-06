@@ -144,7 +144,7 @@ export function showToast(message, type = 'info', duration = 3000) {
    BLOC 06 — LIENS GPS
    ========================================================= */
 export function buildWazeLink(lat, lon, name, avoidTolls = false) {
-  if (!lat || !lon) return null;
+  if (!isValidCoord(lat, lon)) return null;
   const base = `https://waze.com/ul?ll=${lat},${lon}&navigate=yes&utm_source=trekko`;
   return avoidTolls ? base + '&avoid_tolls=true' : base;
 }
@@ -157,7 +157,7 @@ export function buildWazeSearchUrl(query) {
 export function getWazeUrlForPlace(place, { avoidTolls = false } = {}) {
   const lat = Number(place?.lat ?? place?.coordinates?.lat);
   const lon = Number(place?.lon ?? place?.coordinates?.lng ?? place?.coordinates?.lon);
-  if (Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90)
+  if (isValidCoord(lat, lon))
     return buildWazeLink(lat, lon, null, avoidTolls);
   const name = place?.destination || place?.name || place?.label;
   if (name) return buildWazeSearchUrl(name);
