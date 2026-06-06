@@ -4055,3 +4055,145 @@ body.hiking-active #app-main {
 .leaflet-pane.leaflet-labelsPane-pane {
   filter: drop-shadow(0 0 3px rgba(0,0,0,0.9)) drop-shadow(0 0 1px rgba(0,0,0,1));
 }
+
+/* =========================================================
+   BLOC — CARTE IDÉE SURPRISE (mobile-first, ultra-compact)
+   ========================================================= */
+.sc-card {
+  background: var(--color-card);
+  border: 2px solid #e94560;
+  border-radius: var(--radius);
+  padding: 18px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: normal;
+}
+
+.sc-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.sc-meta {
+  font-size: 14px;
+  color: #e94560;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.sc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sc-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 50px;
+  background: var(--color-card2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-mid);
+  white-space: nowrap;
+}
+
+.sc-toggle-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-mid);
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.sc-toggle-btn:hover { border-color: #e94560; color: #e94560; }
+
+/* Zone dépliée */
+.sc-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+  min-width: 0;
+}
+.sc-details.hidden { display: none; }
+
+.sc-desc {
+  font-size: 14px;
+  color: var(--color-text-mid);
+  line-height: 1.5;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.sc-tip {
+  font-size: 13px;
+  color: #f5a623;
+  margin: 0;
+  min-width: 0;
+}
+
+/* Boutons Maps + Photos */
+.sc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sc-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity .2s;
+  min-width: 0;
+  white-space: nowrap;
+}
+.sc-action-btn:hover { opacity: 0.82; }
+
+.sc-maps-btn {
+  background: rgba(52,152,219,0.15);
+  color: #5dade2;
+  border: 1px solid rgba(52,152,219,0.35);
+}
+
+.sc-photo-btn {
+  background: rgba(155,89,182,0.15);
+  color: #a569bd;
+  border: 1px solid rgba(155,89,182,0.35);
+}
+
+/* Responsive — mobile étroit */
+@media (max-width: 430px) {
+  .sc-title { font-size: 18px; }
+  .sc-toggle-btn { width: 100%; text-align: center; }
+  .sc-actions { flex-direction: column; }
+  .sc-action-btn { justify-content: center; }
+}
+
+@media (max-width: 375px) {
+  .sc-card { padding: 14px 12px 12px; }
+  .sc-title { font-size: 17px; }
+  .sc-meta  { font-size: 13px; }
+}

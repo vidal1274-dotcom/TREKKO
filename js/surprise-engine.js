@@ -3,7 +3,7 @@
    ========================================================= */
 import { getBestDeals } from './economy-engine.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
-import { formatCurrency } from './utils.js';
+import { formatCurrency, buildGoogleMapsLink } from './utils.js';
 import { filterUnvisited } from './visited.js';
 
 /* =========================================================
@@ -110,24 +110,69 @@ export function buildSurpriseMiniProgram(site) {
 }
 
 /* =========================================================
-   BLOC 06 — RENDU HTML
+   BLOC 06 — RENDU HTML (carte compacte mobile-first)
    ========================================================= */
+
+// Accordéon accessible depuis les onclick inline
+window.__toggleSurpriseDetails = function(detailsId, btn) {
+  const el = document.getElementById(detailsId);
+  if (!el) return;
+  const isHidden = el.classList.toggle('hidden');
+  btn.setAttribute('aria-expanded', String(!isHidden));
+  btn.textContent = isHidden ? 'Voir détails ▾' : 'Masquer ▴';
+};
+
 export function renderSurpriseCard(card) {
   if (!card) return '<p class="info-disclaimer">Aucune surprise disponible avec ces critères.</p>';
-  const { site, tags, energy, headline, tip } = card;
-  const tagHtml = tags.map(t => `<span class="badge badge-eco">${t}</span>`).join(' ');
-  const energyStr = energy?.total_cost != null ? `Trajet estimé : ${formatCurrency(energy.total_cost)}` : 'Configurer le véhicule pour estimer le trajet';
+  const { site, tip } = card;
+
+  // --- Titre
+  const title = site.destination || '—';
+
+  // --- Ligne méta : distance · Gratuit
+  const distStr  = site.distance_km ? `${site.distance_km} km` : null;
+  const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratu');
+  const priceStr = isGratuit ? 'Gratuit' : null;
+  const metaLine = [distStr, priceStr].filter(Boolean).join(' · ');
+
+  // --- Tags courts depuis type_sortie (max 3)
+  const rawTags = (site.type_sortie || '').split(/[\/,]/).map(p => p.trim()).filter(Boolean).slice(0, 3);
+  const tagsHtml = rawTags.map(t => `<span class="sc-tag">${t}</span>`).join('');
+
+  // --- Bouton Maps (si GPS disponible)
+  const mapsUrl = buildGoogleMapsLink(site.lat, site.lon, site.destination);
+  const mapsBtn = mapsUrl
+    ? `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="sc-action-btn sc-maps-btn">🗺️ Ouvrir dans Maps</a>`
+    : '';
+
+  // --- Lien Photos (recherche Google Images, lien léger externe)
+  const photoQuery = encodeURIComponent(`${site.destination} ${site.secteur || ''} photos`);
+  const photoUrl   = `https://www.google.com/search?tbm=isch&q=${photoQuery}`;
+  const photoBtn   = `<a href="${photoUrl}" target="_blank" rel="noopener noreferrer" class="sc-action-btn sc-photo-btn">📷 Photos</a>`;
+
+  // --- Description (zone dépliée)
+  const descHtml = site.programme_court
+    ? `<p class="sc-desc">${site.programme_court.substring(0, 220)}</p>`
+    : '';
+  const tipHtml  = tip ? `<p class="sc-tip">💡 ${tip}</p>` : '';
+
+  const detailsId = `sc-details-${site.id}`;
 
   return `
-    <div class="site-card" style="border-color:#e94560;cursor:pointer" onclick="window.__openSiteDetail('${site.id}')">
-      <div class="site-name">${headline}</div>
-      <div class="site-sector">${site.secteur || ''} ${site.distance_km ? '· ' + site.distance_km + ' km' : ''}</div>
-      <div class="site-badges" style="margin:8px 0">${tagHtml}</div>
-      <div class="site-summary">${site.programme_court ? site.programme_court.substring(0,150)+'…' : ''}</div>
-      <div class="site-summary" style="margin-top:4px;color:#f5a623">💡 ${tip}</div>
-      <div class="site-footer" style="margin-top:10px">
-        <span class="site-energy-cost">⚡ ${energyStr}</span>
-        <span class="badge badge-eco">Score éco : ${site.eco_score || '—'}/100</span>
+    <div class="sc-card">
+      <div class="sc-title">✨ ${title}</div>
+      ${metaLine ? `<div class="sc-meta">${metaLine}</div>` : ''}
+      ${tagsHtml  ? `<div class="sc-tags">${tagsHtml}</div>`   : ''}
+      <button class="sc-toggle-btn" onclick="window.__toggleSurpriseDetails('${detailsId}', this)" aria-expanded="false">
+        Voir détails ▾
+      </button>
+      <div id="${detailsId}" class="sc-details hidden" aria-hidden="true">
+        ${descHtml}
+        ${tipHtml}
+        <div class="sc-actions">
+          ${mapsBtn}
+          ${photoBtn}
+        </div>
       </div>
     </div>`;
 }

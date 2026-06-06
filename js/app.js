@@ -563,6 +563,11 @@ function initSettingsUI() {
     const url = document.getElementById('nas-url')?.value?.trim();
     const key = document.getElementById('nas-api-key')?.value?.trim();
     if (!url) { showToast('Saisissez l\'URL du NAS', 'warning'); return; }
+    if (!/^https?:\/\//i.test(url)) {
+      const status = document.getElementById('nas-test-status');
+      if (status) { status.textContent = '❌ L\'URL doit commencer par http:// ou https://'; status.style.color = '#e74c3c'; }
+      return;
+    }
     lsSet('nas_url', url);
     lsSet('nas_api_key', key || '');
     const { checkNasHealth } = await import('./nas-api-client.js');

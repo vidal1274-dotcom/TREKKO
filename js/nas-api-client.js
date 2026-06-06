@@ -31,6 +31,7 @@ async function fetchWithTimeout(url, options, timeoutMs = 8000) {
 export async function checkNasHealth() {
   const { url, apiKey, timeout } = getNasConfig();
   if (!url) return { ok: false, reason: 'NAS URL non configurée' };
+  if (!/^https?:\/\//i.test(url)) return { ok: false, reason: 'URL invalide — doit commencer par http:// ou https://' };
   try {
     const resp = await fetchWithTimeout(`${url}/api/health`, { headers: nasHeaders(apiKey) }, timeout);
     if (resp.ok) {
