@@ -275,7 +275,7 @@ export function renderDayPlan(plan) {
         <div class="dp-title">📅 Programme de la journée</div>
         <div class="dp-meta-row">
           <span class="dp-badge">🗺️ ${plan.sites.length} étape${plan.sites.length > 1 ? 's' : ''}</span>
-          <span class="dp-badge">📍 ~${plan.totalDistanceKm} km</span>
+          <span class="dp-badge">📍 ≈ ${plan.totalDistanceKm} km</span>
           <span class="dp-badge">⏱ ${dH}h${String(dM).padStart(2,'0')}</span>
           ${originBadge}
         </div>
@@ -304,7 +304,7 @@ export function exportPlanAsText(plan) {
     `Profil route : ${plan.speedLabel || 'mixte'}`, ''
   ];
   plan.steps.forEach(s => lines.push(`${s.time}  ${s.icon}  ${s.label}`));
-  lines.push('', `Distance totale : ~${plan.totalDistanceKm} km`);
+  lines.push('', `Distance totale estimée : ≈ ${plan.totalDistanceKm} km`);
   if (plan.energyCost != null) lines.push(`Coût énergie estimé : ${plan.energyCost.toFixed(2)} €`);
   lines.push('⚠️ Horaires indicatifs — distances à vol d\'oiseau.');
   return lines.join('\n');

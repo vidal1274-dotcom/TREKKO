@@ -4,7 +4,7 @@
    sauvegarde offline.
    ========================================================= */
 import { generateCircuit, getAiStatus, getModel } from './ai-service.js';
-import { showToast, escapeHTML, formatDistApprox } from './utils.js';
+import { showToast, escapeHTML, formatDistApprox, computeCircuitDistances } from './utils.js';
 
 const LS_CIRCUITS    = 'trekko_saved_circuits';
 const LS_LAST_PARAMS = 'trekko_last_circuit_params';
@@ -310,7 +310,7 @@ function _scoreBar(score) {
   return `<div class="circuit-score-bar"><div style="width:${score}%;background:${color}"></div></div>`;
 }
 
-function _renderSite(site) {
+function _renderSite(site, stepDist = null) {
   const neg = site.negativePoints?.length
     ? `<div class="circuit-site-negatives">⚠️ ${site.negativePoints.map(p => escapeHTML(p)).join(' · ')}</div>` : '';
   const tips = site.tips?.length
@@ -322,6 +322,14 @@ function _renderSite(site) {
   const mapBtn = mapsUrl
     ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener" class="circuit-site-map-btn">🗺️ Maps</a>` : '';
 
+  const prevDist = stepDist?.distFromPrev != null
+    ? formatDistApprox(stepDist.distFromPrev) : null;
+  const cumDist  = stepDist?.cumulative != null
+    ? formatDistApprox(stepDist.cumulative) : null;
+  const distHtml = prevDist
+    ? `<div class="step-distance">📍 Depuis l'étape précédente : ${prevDist}${cumDist ? ` · Cumul : ${cumDist}` : ''}</div>`
+    : '';
+
   return `
     <div class="circuit-site-card">
       <div class="circuit-site-header">
@@ -330,6 +338,7 @@ function _renderSite(site) {
         ${_reliabilityBadge(site.reliability)}
       </div>
       ${_scoreBar(site.score || 0)}
+      ${distHtml}
       <p class="circuit-site-desc">${escapeHTML(site.description || '')}</p>
       <p class="circuit-site-reason">📌 ${escapeHTML(site.reason || '')}</p>
       <div class="circuit-chips">
@@ -343,13 +352,23 @@ function _renderSite(site) {
 }
 
 function _renderDay(day) {
-  const sites = (day.sites || []).map(s => _renderSite(s)).join('');
+  const stepDists = computeCircuitDistances(day.sites || []);
+  const sites = (day.sites || []).map((s, i) => _renderSite(s, stepDists[i])).join('');
+
+  // Distance totale : préférer le calcul local si les coordonnées permettent un résultat
+  const localTotal = stepDists.length ? stepDists[stepDists.length - 1]?.cumulative : null;
+  const distDisplay = localTotal != null
+    ? formatDistApprox(localTotal)
+    : (day.estimatedDistanceKm != null
+      ? (formatDistApprox(Number(day.estimatedDistanceKm)) || '≈ ' + day.estimatedDistanceKm + ' km')
+      : '?');
+
   return `
     <div class="circuit-day">
       <div class="circuit-day-header">
         <span class="circuit-day-title">📅 Jour ${day.day} — ${escapeHTML(day.title || '')}</span>
         <div class="circuit-day-meta">
-          <span>🚗 ${day.estimatedDistanceKm != null ? (formatDistApprox(Number(day.estimatedDistanceKm)) || '≈ ' + day.estimatedDistanceKm + ' km') : '?'}</span>
+          <span>🚗 ${distDisplay}</span>
           <span>⏱ ~${escapeHTML(day.estimatedTravelTime || '?')}</span>
           <span>💰 ~${day.estimatedCost || '?'}€</span>
         </div>
