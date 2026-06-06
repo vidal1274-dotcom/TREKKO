@@ -2,8 +2,10 @@
    BLOC 01 — IMPORTS
    ========================================================= */
 import { getMarkersLayer, createSiteIcon, getSiteStatusColor, flyToSite } from './map.js?v=4';
-import { formatCurrency, formatDistance, formatDistApprox, buildWazeLink, buildGoogleMapsLink } from './utils.js';
+import { formatCurrency, formatDistance, buildWazeLink, buildGoogleMapsLink } from './utils.js';
 import { setState } from './state.js';
+import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
+import { getStoredOrigin } from './geolocation.js';
 
 /* =========================================================
    BLOC 02 — RENDU MARQUEURS SITES
@@ -31,6 +33,16 @@ export function renderSiteMarkers(sites, onSiteClick) {
       setState({ selectedSite: site });
       if (onSiteClick) onSiteClick(site);
     });
+    marker.on('popupopen', async () => {
+      const origin = getStoredOrigin();
+      const roadKm = await getRouteDistance(origin.lat, origin.lon, site.lat, site.lon);
+      if (roadKm !== null) {
+        const popup = marker.getPopup();
+        if (popup?.isOpen()) {
+          popup.setContent(buildSitePopupHtml(site, roadKm));
+        }
+      }
+    });
     layer.addLayer(marker);
   });
 
@@ -41,7 +53,6 @@ export function renderSiteMarkers(sites, onSiteClick) {
    BLOC 03 — TOOLTIP SURVOL (légende rapide)
    ========================================================= */
 function buildSiteTooltipHtml(site) {
-  const dist = formatDistApprox(site.distance_km) || '';
   const color = getSiteStatusColor(site);
   const isFerme  = (site.statut || '').toLowerCase().includes('ferm');
   const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratuit');
@@ -61,7 +72,7 @@ function buildSiteTooltipHtml(site) {
   ].filter(Boolean).join(' · ');
 
   return `<div style="font-weight:800;font-size:14px;margin-bottom:3px;color:${color}">${site.destination || 'Site'}</div>
-    <div style="font-size:12px;color:#a0a0b0;margin-bottom:5px">${site.secteur || ''} ${dist ? '· ' + dist : ''}</div>
+    <div style="font-size:12px;color:#a0a0b0;margin-bottom:5px">${site.secteur || ''}</div>
     <div style="font-size:12px;line-height:1.6">${tags}</div>
     ${site.budget_indicatif ? `<div style="font-size:11px;color:#888;margin-top:4px;max-width:220px;white-space:normal">${site.budget_indicatif.substring(0,80)}…</div>` : ''}`;
 }
@@ -69,14 +80,15 @@ function buildSiteTooltipHtml(site) {
 /* =========================================================
    BLOC 04 — POPUP HTML (clic)
    ========================================================= */
-function buildSitePopupHtml(site) {
+function buildSitePopupHtml(site, roadKm = null) {
+  const distStr = formatRouteDistance(roadKm); // '🚗 28 km' ou null
   const badges = buildSiteBadges(site);
   const wazeUrl = buildWazeLink(site.lat, site.lon, site.destination);
   const gmapsUrl = buildGoogleMapsLink(site.lat, site.lon, site.destination);
 
   return `
     <div class="popup-title">${site.destination || site.nom || 'Site'}</div>
-    <div style="font-size:12px;color:#aaa;margin:2px 0">${site.secteur || ''} ${site.distance_km != null ? '· ' + (formatDistApprox(site.distance_km) || '') : ''}</div>
+    <div style="font-size:12px;color:#aaa;margin:2px 0">${site.secteur || ''}${distStr ? ' · ' + distStr : ''}</div>
     <div class="popup-badges">${badges}</div>
     ${site.programme_court ? `<div style="font-size:13px;margin:4px 0;line-height:1.4">${site.programme_court.substring(0,120)}${site.programme_court.length>120?'…':''}</div>` : ''}
     <div class="popup-actions">

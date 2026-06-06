@@ -4,7 +4,8 @@
    sauvegarde offline.
    ========================================================= */
 import { generateCircuit, getAiStatus, getModel } from './ai-service.js';
-import { showToast, escapeHTML, formatDistApprox, computeCircuitDistances } from './utils.js';
+import { showToast, escapeHTML } from './utils.js';
+import { getRouteLegDistances, formatRouteDistance } from './routing-utils.js';
 
 const LS_CIRCUITS    = 'trekko_saved_circuits';
 const LS_LAST_PARAMS = 'trekko_last_circuit_params';
@@ -219,7 +220,7 @@ async function _onGenerate() {
     circuit = _enrichCircuit(circuit, params);
     circuit._generatedAt = new Date().toISOString();
     circuit._params = params;
-    _renderCircuit(circuit);
+    await _renderCircuit(circuit);
     _el('circuit-results')?.classList.remove('hidden');
     showToast('Circuit généré avec succès !', 'success');
   } catch (e) {
@@ -323,9 +324,9 @@ function _renderSite(site, stepDist = null) {
     ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener" class="circuit-site-map-btn">🗺️ Maps</a>` : '';
 
   const prevDist = stepDist?.distFromPrev != null
-    ? formatDistApprox(stepDist.distFromPrev) : null;
+    ? formatRouteDistance(stepDist.distFromPrev) : null;
   const cumDist  = stepDist?.cumulative != null
-    ? formatDistApprox(stepDist.cumulative) : null;
+    ? formatRouteDistance(stepDist.cumulative) : null;
   const distHtml = prevDist
     ? `<div class="step-distance">📍 Depuis l'étape précédente : ${prevDist}${cumDist ? ` · Cumul : ${cumDist}` : ''}</div>`
     : '';
@@ -351,17 +352,27 @@ function _renderSite(site, stepDist = null) {
     </div>`;
 }
 
-function _renderDay(day) {
-  const stepDists = computeCircuitDistances(day.sites || []);
+async function _renderDay(day) {
+  // Extraire les coordonnées des sites IA (format: coordinates.lat + coordinates.lng)
+  const pts = (day.sites || []).map(s => ({
+    lat: s.coordinates?.lat,
+    lon: s.coordinates?.lng
+  }));
+  const stepDists = await getRouteLegDistances(pts);
+
   const sites = (day.sites || []).map((s, i) => _renderSite(s, stepDists[i])).join('');
 
-  // Distance totale : préférer le calcul local si les coordonnées permettent un résultat
-  const localTotal = stepDists.length ? stepDists[stepDists.length - 1]?.cumulative : null;
-  const distDisplay = localTotal != null
-    ? formatDistApprox(localTotal)
-    : (day.estimatedDistanceKm != null
-      ? (formatDistApprox(Number(day.estimatedDistanceKm)) || '≈ ' + day.estimatedDistanceKm + ' km')
-      : '?');
+  // Distance totale : OSRM local si disponible, fallback IA
+  const lastDist   = stepDists.length ? stepDists[stepDists.length - 1] : null;
+  const localTotal = lastDist?.cumulative ?? null;
+  let distDisplay;
+  if (localTotal != null) {
+    distDisplay = formatRouteDistance(localTotal) || `🚗 ${Math.round(localTotal)} km`;
+  } else if (day.estimatedDistanceKm != null) {
+    distDisplay = `≈ ${day.estimatedDistanceKm} km (estimé IA)`;
+  } else {
+    distDisplay = '?';
+  }
 
   return `
     <div class="circuit-day">
@@ -398,12 +409,12 @@ function _renderCosts(costs) {
 
 let _currentCircuit = null;
 
-function _renderCircuit(circuit) {
+async function _renderCircuit(circuit) {
   _currentCircuit = circuit;
   const container = _el('circuit-results-content');
   if (!container) return;
 
-  const days = (circuit.itinerary || []).map(d => _renderDay(d)).join('');
+  const days = (await Promise.all((circuit.itinerary || []).map(d => _renderDay(d)))).join('');
   const warnings = circuit.warnings?.length
     ? `<div class="circuit-warnings">${circuit.warnings.map(w => `<p>⚠️ ${escapeHTML(w)}</p>`).join('')}</div>` : '';
   const alts = circuit.alternatives?.length
@@ -467,11 +478,11 @@ function _loadSavedCircuits() {
 }
 
 // Exposer pour les onclick inline
-window._circuitLoad = (id) => {
+window._circuitLoad = async (id) => {
   const c = _loadAllCircuits().find(x => x.id === id);
   if (!c) return;
   _currentCircuit = c;
-  _renderCircuit(c);
+  await _renderCircuit(c);
   _el('circuit-results')?.classList.remove('hidden');
   _el('circuit-results-content')?.scrollIntoView({ behavior: 'smooth' });
 };

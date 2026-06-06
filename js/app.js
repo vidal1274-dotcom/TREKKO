@@ -32,6 +32,7 @@ import { initCircuitCreator } from './circuit-creator.js';
 import {
   getAiStatus, testConnection
 } from './ai-service.js';
+import { clearRouteDistanceCache } from './routing-utils.js';
 // Imports lazy — chargés à la demande pour ne pas bloquer le démarrage
 let _fetchWeather = null;
 let _renderCarnet = null;
@@ -200,9 +201,9 @@ async function startApp() {
   });
 
   // Exposition globale pour popups/modales
-  window.__openSiteDetail = (siteId) => {
+  window.__openSiteDetail = async (siteId) => {
     const site = _sites.find(s => s.id === siteId);
-    if (site) openSiteDetail(site, _vehicleProfile);
+    if (site) await openSiteDetail(site, _vehicleProfile);
   };
   window.__openGpsEdit = (siteId) => {
     openGpsEditDialog(siteId, async (id, lat, lon) => {
@@ -212,12 +213,12 @@ async function startApp() {
       showToast('Coordonnées GPS mises à jour.', 'success');
     });
   };
-  window.__addToDayPlan = (siteId) => {
+  window.__addToDayPlan = async (siteId) => {
     const site = _sites.find(s => s.id === siteId);
     if (!site) return;
     if (!site.has_gps) { showToast(`${site.destination} n'a pas de GPS — impossible d'ajouter.`, 'warning'); return; }
     if (!_currentDayPlan) {
-      _currentDayPlan = generateDayPlan(_sites.filter(s => s.has_gps), _vehicleProfile, { maxKm: 80, minStops: 3, maxStops: 5 });
+      _currentDayPlan = await generateDayPlan(_sites.filter(s => s.has_gps), _vehicleProfile, { maxKm: 80, minStops: 3, maxStops: 5 });
     }
     showToast(`${site.destination} pris en compte dans le programme.`, 'success');
     onDayPlanClick();
@@ -416,6 +417,7 @@ function initLocationBar() {
       clearUserLocation();
       _originCoords = { lat: ORIGIN_DEFAULT.lat, lon: ORIGIN_DEFAULT.lon };
       clearUserLocationMarker();
+      clearRouteDistanceCache();
       _sites = recalcDistances(_sites, ORIGIN_DEFAULT.lat, ORIGIN_DEFAULT.lon);
       _sites = enrichSitesWithEcoScore(_sites, _vehicleProfile);
       updateLocationUI();
@@ -430,6 +432,7 @@ function initLocationBar() {
       const pos = await requestUserLocation();
       saveOrigin(pos.lat, pos.lon, 'Ma position');
       _originCoords = pos;
+      clearRouteDistanceCache();
       _sites = recalcDistances(_sites, pos.lat, pos.lon);
       _sites = enrichSitesWithEcoScore(_sites, _vehicleProfile);
       showUserLocationMarker(pos.lat, pos.lon, 'Ma position', _maxDistanceKm < 150 ? _maxDistanceKm : null, pos.accuracy);
@@ -541,11 +544,11 @@ async function onCarnetShowOnMap(sessionId) {
 /* =========================================================
    BLOC 07 — MOTEUR SURPRISE
    ========================================================= */
-function onSurpriseClick() {
+async function onSurpriseClick() {
   const profile = _vehicleProfile;
   const avoidTolls = profile?.avoid_tolls ?? true;
   const card = generateSurprise(_sites, profile, { maxKm: 80, avoidTolls });
-  const html = renderSurpriseCard(card);
+  const html = await renderSurpriseCard(card);
   const modal = document.getElementById('site-detail-modal');
   const content = document.getElementById('site-detail-content');
   if (modal && content) {
@@ -1040,14 +1043,14 @@ function showRunningScreen() {
 /* =========================================================
    BLOC 10b — PROGRAMME JOURNÉE
    ========================================================= */
-function onDayPlanClick() {
+async function onDayPlanClick() {
   const modal   = document.getElementById('day-plan-modal');
   const content = document.getElementById('day-plan-content');
   if (!modal || !content) return;
 
   if (!_currentDayPlan) {
     const km = Math.min(_maxDistanceKm > 0 ? _maxDistanceKm : 80, 80);
-    _currentDayPlan = generateDayPlan(_sites, _vehicleProfile, {
+    _currentDayPlan = await generateDayPlan(_sites, _vehicleProfile, {
       maxKm: km, minStops: 3, maxStops: 5,
       avoidTolls: _vehicleProfile?.avoid_tolls ?? true
     });

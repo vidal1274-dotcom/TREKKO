@@ -3,8 +3,10 @@
    ========================================================= */
 import { getBestDeals } from './economy-engine.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
-import { formatCurrency, buildGoogleMapsLink, escapeHTML, formatDistApprox } from './utils.js';
+import { formatCurrency, buildGoogleMapsLink, escapeHTML } from './utils.js';
 import { filterUnvisited } from './visited.js';
+import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
+import { getStoredOrigin } from './geolocation.js';
 
 /* =========================================================
    BLOC 02 — GÉNÉRATION D'UNE IDÉE SURPRISE
@@ -122,18 +124,22 @@ window.__toggleSurpriseDetails = function(detailsId, btn) {
   btn.textContent = isHidden ? 'Voir détails ▾' : 'Masquer ▴';
 };
 
-export function renderSurpriseCard(card) {
+export async function renderSurpriseCard(card) {
   if (!card) return '<p class="info-disclaimer">Aucune surprise disponible avec ces critères.</p>';
   const { site, tip } = card;
 
   // --- Titre (échappé)
   const title = escapeHTML(site.destination || '—');
 
+  // --- Distance route (OSRM) — null si indisponible
+  const origin  = getStoredOrigin();
+  const roadKm  = await getRouteDistance(origin.lat, origin.lon, site.lat, site.lon);
+  const distStr = formatRouteDistance(roadKm); // '🚗 28 km' ou null
+
   // --- Ligne méta : distance · Gratuit (valeurs numériques/constantes, pas d'injection)
-  const distStr = formatDistApprox(site.distance_km);
   const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratu');
-  const priceStr = isGratuit ? 'Gratuit' : null;
-  const metaLine = [distStr, priceStr].filter(Boolean).join(' · ');
+  const priceStr  = isGratuit ? 'Gratuit' : null;
+  const metaLine  = [distStr, priceStr].filter(Boolean).join(' · ');
 
   // --- Tags courts depuis type_sortie (échappés, max 3)
   const rawTags = (site.type_sortie || '').split(/[\/,]/).map(p => p.trim()).filter(Boolean).slice(0, 3);

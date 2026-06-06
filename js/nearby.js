@@ -3,8 +3,9 @@
    ========================================================= */
 import { OVERPASS_ENDPOINT, THEMATIC_CATEGORIES } from './config.js';
 import { cacheSet, cacheGet } from './storage.js';
-import { escapeHTML, haversineDistance, formatDistApprox, buildGoogleMapsLink } from './utils.js';
+import { escapeHTML, buildGoogleMapsLink } from './utils.js';
 import { getStoredOrigin } from './geolocation.js';
+import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
 
 // AbortController par catégorie — annule les requêtes obsolètes
 const _controllers = {};
@@ -62,15 +63,24 @@ export async function fetchNearbyPlaces(lat, lon, categoryId, radiusM = 5000) {
 /* =========================================================
    BLOC 03 — RENDU HTML RÉSULTATS
    ========================================================= */
-export function renderNearbyResults(places, category) {
+export async function renderNearbyResults(places, category) {
   if (!places.length) return `<p style="color:#aaa;font-size:13px">Aucun résultat trouvé dans ce rayon. <span class="verify-tag">À vérifier</span></p>`;
+
   const origin = getStoredOrigin();
-  return places.slice(0, 10).map(p => {
+  const visible = places.slice(0, 10);
+
+  // Fetch OSRM distances en parallèle (max 5 requêtes simultanées pour ne pas surcharger)
+  const distances = await Promise.all(
+    visible.map(p =>
+      (origin?.lat && p.lat && p.lon)
+        ? getRouteDistance(origin.lat, origin.lon, p.lat, p.lon)
+        : Promise.resolve(null)
+    )
+  );
+
+  return visible.map((p, i) => {
     const safeUrl = escapeHTML(buildGoogleMapsLink(p.lat, p.lon, p.name) || '');
-    const distKm  = (origin?.lat && p.lat && p.lon)
-      ? haversineDistance(origin.lat, origin.lon, p.lat, p.lon)
-      : null;
-    const distStr = formatDistApprox(distKm);
+    const distStr = formatRouteDistance(distances[i]); // '🚗 X km' ou null
     return `
     <div class="site-card" style="cursor:pointer" onclick="window.open('${safeUrl}','_blank')">
       <div class="site-name">${p.icon} ${escapeHTML(p.name)}</div>

@@ -1,7 +1,8 @@
 /* =========================================================
    BLOC 01 — IMPORTS ET CONSTANTES
    ========================================================= */
-import { formatCurrency, haversineDistance, escapeHTML, formatDistApprox } from './utils.js';
+import { formatCurrency, haversineDistance, escapeHTML } from './utils.js';
+import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
 import { lsGet, lsSet, lsDel } from './storage.js';
 import { UCHAUD_COORDS } from './config.js';
@@ -76,7 +77,7 @@ function _nearestNeighbor(pool, originLat, originLon, maxStops) {
   return selected;
 }
 
-export function generateDayPlan(sites, vehicleProfile, options = {}) {
+export async function generateDayPlan(sites, vehicleProfile, options = {}) {
   const {
     maxKm        = 80,
     minStops     = 3,
@@ -123,17 +124,23 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
   let prevLat = originLat, prevLon = originLon;
   let mealInserted = false;
 
-  selected.forEach((site, idx) => {
-    const segKm   = haversineDistance(prevLat, prevLon, site.lat, site.lon) * 1.2;
+  let idx = 0;
+  let _hasRoadDist = false;
+  for (const site of selected) {
+    const roadKm  = await getRouteDistance(prevLat, prevLon, site.lat, site.lon);
+    const segKm   = roadKm != null ? roadKm : haversineDistance(prevLat, prevLon, site.lat, site.lon) * 1.2;
+    const isRoadDist = roadKm != null;
     const travMin = Math.round((segKm / speedKmh) * 60);
     totalKm += segKm;
     cur += travMin;
+    if (isRoadDist) _hasRoadDist = true;
 
     steps.push({
       time: _fmt(cur), icon: '📍',
       label: `Arrivée : ${site.destination}`,
       type: 'arrival', site,
-      travelKm: Math.round(segKm), travelMin: travMin
+      travelKm: Math.round(segKm), travelMin: travMin,
+      isRoadDist
     });
 
     cur += 15; // parking
@@ -153,14 +160,19 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
     }
 
     prevLat = site.lat; prevLon = site.lon;
-  });
+    idx++;
+  }
 
   // Retour
-  const retKm  = haversineDistance(prevLat, prevLon, originLat, originLon) * 1.2;
+  const retRoadKm = await getRouteDistance(prevLat, prevLon, originLat, originLon);
+  const retKm  = retRoadKm != null ? retRoadKm : haversineDistance(prevLat, prevLon, originLat, originLon) * 1.2;
+  const retIsRoad = retRoadKm != null;
+  if (retIsRoad) _hasRoadDist = true;
   const retMin = Math.round((retKm / speedKmh) * 60);
   totalKm += retKm;
   cur += retMin;
-  steps.push({ time: _fmt(cur), icon: '🏠', label: `Retour vers ${escapeHTML(origin.label)} (≈ ${Math.round(retKm)} km)`, type: 'return' });
+  const retDistLabel = retIsRoad ? `🚗 ${Math.round(retKm)} km` : `≈ ${Math.round(retKm)} km`;
+  steps.push({ time: _fmt(cur), icon: '🏠', label: `Retour vers ${escapeHTML(origin.label)} (${retDistLabel})`, type: 'return', isRoadDist: retIsRoad });
 
   // 5. Coût énergie
   let energyCost = null;
@@ -178,6 +190,7 @@ export function generateDayPlan(sites, vehicleProfile, options = {}) {
     originLabel: origin.label,
     originSource: origin.source,
     speedLabel,
+    _hasRoadDist,
     generatedAt: new Date().toISOString()
   };
 }
@@ -227,7 +240,7 @@ export function renderDayPlan(plan) {
         <div class="dp-leg">
           <div class="dp-leg-bar"></div>
           <div class="dp-leg-pill">
-            🚗 <strong>≈ ${s.travelKm} km</strong> &nbsp;·&nbsp; ~${_fmtDuration(s.travelMin)}
+            <strong>${s.isRoadDist ? formatRouteDistance(s.travelKm) : `≈ ${s.travelKm} km`}</strong> &nbsp;·&nbsp; ~${_fmtDuration(s.travelMin)}
             ${wazeUrl ? `<a href="${wazeUrl}" target="_blank" rel="noopener" class="dp-leg-nav dp-nav-waze">Waze</a>` : ''}
             ${gmUrl   ? `<a href="${gmUrl}"   target="_blank" rel="noopener" class="dp-leg-nav dp-nav-gm">Maps</a>` : ''}
           </div>
@@ -241,7 +254,6 @@ export function renderDayPlan(plan) {
     if (s.type === 'arrival' && s.site) {
       if (s.site.budget_indicatif) extras += `<span class="dp-tag dp-tag-budget">💰 ${s.site.budget_indicatif}</span>`;
       if (s.site.eco_score != null) extras += `<span class="dp-tag dp-tag-eco">🌿 ${s.site.eco_score}/10</span>`;
-      if (s.site.distance_km != null) extras += `<span class="dp-tag">📍 ${formatDistApprox(s.site.distance_km) || Math.round(s.site.distance_km) + ' km'} depuis le départ</span>`;
     }
 
     return legHtml + `
@@ -275,7 +287,7 @@ export function renderDayPlan(plan) {
         <div class="dp-title">📅 Programme de la journée</div>
         <div class="dp-meta-row">
           <span class="dp-badge">🗺️ ${plan.sites.length} étape${plan.sites.length > 1 ? 's' : ''}</span>
-          <span class="dp-badge">📍 ≈ ${plan.totalDistanceKm} km</span>
+          <span class="dp-badge">${plan._hasRoadDist ? formatRouteDistance(plan.totalDistanceKm) : `≈ ${plan.totalDistanceKm} km`}</span>
           <span class="dp-badge">⏱ ${dH}h${String(dM).padStart(2,'0')}</span>
           ${originBadge}
         </div>

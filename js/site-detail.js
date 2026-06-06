@@ -3,19 +3,22 @@
    ========================================================= */
 import { enrichSiteInfo, buildWhatToDoList, estimateVisitDuration } from './site-insights.js';
 import { buildSiteBadges } from './markers.js';
-import { buildWazeLink, buildGoogleMapsLink, buildAppleMapsLink, formatDistApprox, escapeHTML } from './utils.js';
+import { buildWazeLink, buildGoogleMapsLink, buildAppleMapsLink, escapeHTML } from './utils.js';
+import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
 import { toggleVisited, isVisited } from './visited.js';
 import { getStoredOrigin } from './geolocation.js';
 
 /* =========================================================
    BLOC 02 — OUVERTURE / FERMETURE
    ========================================================= */
-export function openSiteDetail(site, vehicleProfile) {
+export async function openSiteDetail(site, vehicleProfile) {
   const modal   = document.getElementById('site-detail-modal');
   const content = document.getElementById('site-detail-content');
   if (!modal || !content) return;
 
-  content.innerHTML = buildSiteDetailHtml(enrichSiteInfo(site));
+  const _origin = getStoredOrigin();
+  const roadKm  = await getRouteDistance(_origin.lat, _origin.lon, site.lat, site.lon);
+  content.innerHTML = buildSiteDetailHtml(enrichSiteInfo(site), roadKm);
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 
@@ -42,10 +45,8 @@ export function closeSiteDetail() {
 /* =========================================================
    BLOC 03 — HTML FICHE SITE (design refondu)
    ========================================================= */
-function buildSiteDetailHtml(site) {
-  const _origin      = getStoredOrigin();
-  const _originLabel = escapeHTML(_origin.label || 'le départ');
-  const distStr      = formatDistApprox(site.distance_km);
+function buildSiteDetailHtml(site, roadKm = null) {
+  const distStr = formatRouteDistance(roadKm); // '🚗 28 km' ou null
   const duration = estimateVisitDuration(site);
   const visited  = isVisited(site.id);
 
@@ -112,7 +113,7 @@ function buildSiteDetailHtml(site) {
         <div class="sd-title">${site.destination || site.nom || 'Site'}</div>
         <div class="sd-meta">
           ${site.secteur ? `<span>${site.secteur}</span>` : ''}
-          ${distStr ? `<span class="distance-badge">📍 ${distStr} depuis ${_originLabel}</span>` : ''}
+          ${distStr ? `<span class="distance-badge">${distStr}</span>` : ''}
           ${duration ? `<span>⏱ ${duration}</span>` : ''}
         </div>
         <div class="sd-badges">${buildSiteBadges(site)}</div>
