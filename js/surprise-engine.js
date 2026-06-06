@@ -3,7 +3,7 @@
    ========================================================= */
 import { getBestDeals } from './economy-engine.js';
 import { estimateTripEnergyCost } from './trip-energy-estimator.js';
-import { formatCurrency, buildGoogleMapsLink } from './utils.js';
+import { formatCurrency, buildGoogleMapsLink, escapeHTML } from './utils.js';
 import { filterUnvisited } from './visited.js';
 
 /* =========================================================
@@ -126,36 +126,37 @@ export function renderSurpriseCard(card) {
   if (!card) return '<p class="info-disclaimer">Aucune surprise disponible avec ces critères.</p>';
   const { site, tip } = card;
 
-  // --- Titre
-  const title = site.destination || '—';
+  // --- Titre (échappé)
+  const title = escapeHTML(site.destination || '—');
 
-  // --- Ligne méta : distance · Gratuit
+  // --- Ligne méta : distance · Gratuit (valeurs numériques/constantes, pas d'injection)
   const distStr  = site.distance_km ? `${site.distance_km} km` : null;
   const isGratuit = site.gratuit || (site.budget_indicatif || '').toLowerCase().includes('gratu');
   const priceStr = isGratuit ? 'Gratuit' : null;
   const metaLine = [distStr, priceStr].filter(Boolean).join(' · ');
 
-  // --- Tags courts depuis type_sortie (max 3)
+  // --- Tags courts depuis type_sortie (échappés, max 3)
   const rawTags = (site.type_sortie || '').split(/[\/,]/).map(p => p.trim()).filter(Boolean).slice(0, 3);
-  const tagsHtml = rawTags.map(t => `<span class="sc-tag">${t}</span>`).join('');
+  const tagsHtml = rawTags.map(t => `<span class="sc-tag">${escapeHTML(t)}</span>`).join('');
 
-  // --- Bouton Maps (si GPS disponible)
+  // --- Bouton Maps (buildGoogleMapsLink utilise encodeURIComponent sur le nom + guard lat/lon)
   const mapsUrl = buildGoogleMapsLink(site.lat, site.lon, site.destination);
   const mapsBtn = mapsUrl
-    ? `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="sc-action-btn sc-maps-btn">🗺️ Ouvrir dans Maps</a>`
+    ? `<a href="${escapeHTML(mapsUrl)}" target="_blank" rel="noopener noreferrer" class="sc-action-btn sc-maps-btn">🗺️ Ouvrir dans Maps</a>`
     : '';
 
-  // --- Lien Photos (recherche Google Images, lien léger externe)
+  // --- Lien Photos (encodeURIComponent + escapeHTML sur l'URL finale)
   const photoQuery = encodeURIComponent(`${site.destination} ${site.secteur || ''} photos`);
   const photoUrl   = `https://www.google.com/search?tbm=isch&q=${photoQuery}`;
-  const photoBtn   = `<a href="${photoUrl}" target="_blank" rel="noopener noreferrer" class="sc-action-btn sc-photo-btn">📷 Photos</a>`;
+  const photoBtn   = `<a href="${escapeHTML(photoUrl)}" target="_blank" rel="noopener noreferrer" class="sc-action-btn sc-photo-btn">📷 Photos</a>`;
 
-  // --- Description (zone dépliée)
+  // --- Description et conseil (échappés, zone dépliée uniquement)
   const descHtml = site.programme_court
-    ? `<p class="sc-desc">${site.programme_court.substring(0, 220)}</p>`
+    ? `<p class="sc-desc">${escapeHTML(site.programme_court.substring(0, 220))}</p>`
     : '';
-  const tipHtml  = tip ? `<p class="sc-tip">💡 ${tip}</p>` : '';
+  const tipHtml  = tip ? `<p class="sc-tip">💡 ${escapeHTML(tip)}</p>` : '';
 
+  // site.id = clé alphanumérique+underscore depuis sites.json — sûre comme attribut id/onclick
   const detailsId = `sc-details-${site.id}`;
 
   return `
