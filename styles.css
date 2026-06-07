@@ -5455,3 +5455,109 @@ details.secondary-details[open] > summary { margin-bottom: 6px; }
   width: 100%;
 }
 .hs-import-btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.25); }
+
+/* =========================================================
+   BLOC HIKING — BILAN + ACTIVITÉS (Phase 9)
+   ========================================================= */
+
+/* ── Bilan enrichi ───────────────────────────────────────── */
+.hs-bilan-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hs-text);
+  margin: 0 0 2px;
+}
+.hs-bilan-date {
+  font-size: 12px;
+  color: var(--hs-text-dim);
+  margin: 0 0 10px;
+}
+.hs-bilan-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.hs-bilan-action-btn {
+  flex: 1;
+  min-width: 120px;
+  background: rgba(39,174,96,0.15);
+  border: 1px solid rgba(39,174,96,0.35);
+  border-radius: 8px;
+  color: var(--hs-text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  text-align: center;
+}
+.hs-bilan-action-btn:hover { background: rgba(39,174,96,0.28); }
+.hs-bilan-action-btn-sec {
+  background: rgba(255,255,255,0.07);
+  border-color: var(--hs-border);
+}
+.hs-bilan-action-btn-sec:hover { background: rgba(255,255,255,0.13); }
+
+/* ── Cartes activité (Toutes mes courses) ────────────────── */
+.activity-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--hs-border);
+  border-radius: 12px;
+  padding: 11px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.activity-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.activity-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hs-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activity-card-date { font-size: 11px; color: rgba(255,255,255,0.38); flex-shrink: 0; }
+.activity-card-meta { font-size: 12px; color: var(--hs-text-dim); }
+.activity-card-gps  { font-size: 11px; color: rgba(255,255,255,0.3); }
+.activity-card-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.activity-card-btn {
+  flex: 1;
+  min-width: 54px;
+  border-radius: 8px;
+  border: 1px solid var(--hs-border);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--hs-text);
+  background: rgba(255,255,255,0.07);
+  transition: background 0.13s;
+  text-align: center;
+}
+.activity-card-btn:hover { background: rgba(255,255,255,0.14); }
+.activity-card-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.activity-card-btn-gpx { background: rgba(93,173,226,0.1); border-color: rgba(93,173,226,0.25); }
+.activity-card-btn-del {
+  background: rgba(231,76,60,0.08);
+  border-color: rgba(231,76,60,0.2);
+  color: rgba(231,76,60,0.8);
+  flex: 0 0 auto;
+  min-width: 36px;
+}
+.activity-card-btn-del:hover { background: rgba(231,76,60,0.2); }

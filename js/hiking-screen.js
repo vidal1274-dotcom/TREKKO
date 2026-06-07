@@ -2,7 +2,7 @@
    hiking-screen.js — Écran Randonnée / Balade (AllTrails + Komoot + Strava)
    ========================================================= */
 import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints, getElapsedSec, pauseElapsedTimer, resumeElapsedTimer, getAllSessions } from './tracker.js';
-import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails, renderOfflineRouteLayer, clearOfflineRouteLayer } from './map.js?v=4';
+import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails, renderOfflineRouteLayer, clearOfflineRouteLayer, renderActivityRouteLayer, clearActivityRouteLayer } from './map.js?v=4';
 import { getStoredOrigin } from './geolocation.js';
 import { OVERPASS_ENDPOINT } from './config.js';
 import { showToast, escapeHTML, safeText } from './utils.js';
@@ -13,6 +13,23 @@ import {
   importOfflineRouteFromJson,
   exportOfflineRouteAsJson
 } from './offline-routes-store.js';
+import {
+  getCompletedActivities,
+  getCompletedActivity,
+  deleteCompletedActivity,
+  exportActivityAsGpx,
+  normalizeActivity,
+  formatDuration,
+  formatDistanceKm,
+  formatPace,
+  formatSpeedKmh,
+  formatElevation,
+  formatActivityDate,
+  formatActivityDateShort,
+  formatActivityTime,
+  formatGpsQuality,
+  buildActivityTitle
+} from './activity-store.js';
 
 /* ─── Configuration par mode ───────────────────────────────── */
 const MODE_CONFIG = {
@@ -52,6 +69,7 @@ let _lastWaterMin = 0;
 // Summary
 let _finalStats = null;
 let _sessionId = null;
+let _bilanSessionId = null;  // id de la session affichée dans le bilan (null = plus récente)
 let _screenActive = false;  // garde contre race condition Overpass après fermeture
 
 /* ─── Helpers ───────────────────────────────────────────────── */
@@ -549,7 +567,7 @@ function _wireNav() {
   document.querySelectorAll('[data-hs-section]').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.hsSection;
-      if (target === 'bilan')    _loadBilan();
+      if (target === 'bilan')         { _bilanSessionId = null; _loadBilan(); }
       else if (target === 'courses')  _loadCourses();
       else if (target === 'parcours') _loadParcours();
       _showSection(target);
@@ -558,6 +576,29 @@ function _wireNav() {
 
   document.querySelectorAll('[data-hs-back]').forEach(btn => {
     btn.addEventListener('click', () => _showSection('nav'));
+  });
+
+  // Délégation permanente — bilan : voir tracé, aller vers courses
+  _el('hs-bilan')?.addEventListener('click', e => {
+    const btn = e.target.closest('[data-bilan-action]');
+    if (!btn) return;
+    const action = btn.dataset.bilanAction;
+    const sid    = btn.dataset.sessionId;
+    if (action === 'map')     _openActivityOnMap(sid || null);
+    if (action === 'courses') { _loadCourses(); _showSection('courses'); }
+  });
+
+  // Délégation permanente — toutes mes courses : bilan, tracé, suppression
+  _el('hs-courses')?.addEventListener('click', e => {
+    const btn = e.target.closest('[data-activity-action]');
+    if (!btn) return;
+    const action = btn.dataset.activityAction;
+    const id     = btn.dataset.activityId;
+    if (!id) return;
+    if (action === 'bilan')  { _bilanSessionId = id; _loadBilan(); _showSection('bilan'); }
+    if (action === 'map')    _openActivityOnMap(id);
+    if (action === 'delete') _deleteActivity(id, btn);
+    if (action === 'gpx')    exportActivityAsGpx(id).catch(() => showToast('Erreur export GPX.', 'error'));
   });
 
   // Délégation permanente pour les actions sur les cartes de parcours
@@ -687,38 +728,103 @@ async function _deleteRouteOffline(id, btn) {
   }
 }
 
-/* ─── SECTION BILAN : dernière sortie ───────────────────────── */
-function _loadBilan() {
+/* ─── SECTION BILAN : dernière sortie (ou spécifique) ───────── */
+async function _loadBilan() {
   const el = _el('hs-bilan-content');
   if (!el) return;
+  el.innerHTML = '<div class="hs-shell-msg">⏳ Chargement…</div>';
 
-  if (!_finalStats) {
+  let activity      = null;
+  let sessionIdForMap = null;
+
+  try {
+    if (_bilanSessionId) {
+      // Session spécifique demandée depuis "Toutes mes courses"
+      activity = await getCompletedActivity(_bilanSessionId);
+      sessionIdForMap = _bilanSessionId;
+    } else if (_finalStats) {
+      // Session qui vient de se terminer dans cette instance
+      activity = _buildBilanFromFinalStats();
+      sessionIdForMap = _sessionId;
+    } else {
+      // Charger la plus récente depuis la DB
+      const list = await getCompletedActivities();
+      if (list.length > 0) { activity = list[0]; sessionIdForMap = list[0].id; }
+    }
+  } catch { /* géré ci-dessous */ }
+
+  if (!activity) {
     el.innerHTML = '<p class="hs-shell-msg">Aucun bilan disponible. Effectuez une sortie pour voir votre bilan.</p>';
     return;
   }
 
-  const s = _finalStats;
-  const dist    = (s.distanceKm || 0).toFixed(2);
-  const elev    = Math.round(s.elevGainM || 0);
-  const cals    = Math.round(s.calories  || 0);
-  const elapsed = s.elapsedSec || 0;
-  const pace    = s.paceMinKm ? _fmtPace(s.paceMinKm) : '—';
-  const speedKmh = (s.distanceKm && elapsed > 0)
-    ? ((s.distanceKm / elapsed) * 3600).toFixed(1)
-    : '—';
+  el.innerHTML = _renderBilanGrid(activity, sessionIdForMap);
+}
 
-  el.innerHTML = `
-    <div class="hs-bilan-grid">
-      <div class="hs-bilan-row"><span>⏱ Temps total</span><strong>${_fmtTimerFull(elapsed)}</strong></div>
-      <div class="hs-bilan-row"><span>🥾 Distance</span><strong>${dist} km</strong></div>
-      <div class="hs-bilan-row"><span>⚡ Allure</span><strong>${pace} min/km</strong></div>
-      <div class="hs-bilan-row"><span>🚶 Vitesse moy.</span><strong>${speedKmh} km/h</strong></div>
-      <div class="hs-bilan-row"><span>📈 Dénivelé +</span><strong>+${elev} m</strong></div>
-      <div class="hs-bilan-row"><span>🔥 Calories</span><strong>${cals} kcal</strong></div>
-      <div class="hs-bilan-row"><span>❤️ FC moyenne</span><strong class="hs-unavail">Non disponible</strong></div>
-      <div class="hs-bilan-row"><span>🔴 FC max</span><strong class="hs-unavail">Non disponible</strong></div>
-      <div class="hs-bilan-row hs-row-dim"><span>📡 Source FC</span><span>Non disponible en PWA</span></div>
+function _buildBilanFromFinalStats() {
+  if (!_finalStats) return null;
+  const s    = _finalStats;
+  const dist = s.distanceKm || 0;
+  const ela  = s.elapsedSec || 0;
+  const cfg  = MODE_CONFIG[_mode] || MODE_CONFIG.hiking;
+  return {
+    title:               'Dernière sortie',
+    typeEmoji:           cfg.emoji,
+    startedAt:           null,
+    endedAt:             null,
+    durationSec:         ela,
+    distanceKm:          dist > 0 ? dist : null,
+    averageSpeedKmh:     dist > 0 && ela > 0 ? Math.round(dist / (ela / 3600) * 10) / 10 : null,
+    averagePaceSecPerKm: dist > 0 && ela > 0 ? Math.round(ela / dist) : null,
+    maxSpeedKmh:         null,
+    elevationGainM:      s.elevGainM || null,
+    elevationLossM:      null,
+    caloriesEstimate:    s.calories ? Math.round(s.calories) : null,
+    heartRate:           { available: false },
+    gps:                 { quality: 'inconnu', pointsCount: s.pointCount || null },
+    splits:              s.splits || []
+  };
+}
+
+function _renderBilanGrid(act, sessionIdForMap) {
+  const safeUnavail  = 'Non disponible';
+  const safeUnavailFC = 'Non disponible en PWA';
+
+  const rows = [
+    ['⏱ Temps total',    formatDuration(act.durationSec)],
+    ['🥾 Distance',       act.distanceKm    ? formatDistanceKm(act.distanceKm)       : safeUnavail],
+    ['⚡ Allure moy.',    act.averagePaceSecPerKm ? formatPace(act.averagePaceSecPerKm) : safeUnavail],
+    ['🚶 Vitesse moy.',   act.averageSpeedKmh  ? formatSpeedKmh(act.averageSpeedKmh)  : safeUnavail],
+    ['🚀 Vitesse max',    act.maxSpeedKmh      ? formatSpeedKmh(act.maxSpeedKmh)       : safeUnavail],
+    ['📈 Dénivelé +',     act.elevationGainM   ? `+${formatElevation(act.elevationGainM)}` : safeUnavail],
+    ['📉 Dénivelé −',     act.elevationLossM   ? `−${formatElevation(act.elevationLossM)}` : safeUnavail],
+    ['🔥 Calories',       act.caloriesEstimate ? `${act.caloriesEstimate} kcal`        : safeUnavail],
+    ['❤️ FC moyenne',     safeUnavail],
+    ['🔴 FC max',         safeUnavail],
+    ['📡 Source FC',      safeUnavailFC],
+    ['📍 Qualité GPS',    formatGpsQuality(act.gps?.quality)],
+    ['🕐 Départ',         act.startedAt  ? formatActivityTime(act.startedAt)  : safeUnavail],
+    ['🏁 Arrivée',        act.endedAt    ? formatActivityTime(act.endedAt)    : safeUnavail],
+  ];
+
+  const rowsHTML = rows.map(([label, value]) => {
+    const dim = value === safeUnavail || value === safeUnavailFC;
+    return `<div class="hs-bilan-row">
+      <span>${escapeHTML(label)}</span>
+      <strong${dim ? ' class="hs-unavail"' : ''}>${escapeHTML(value)}</strong>
     </div>`;
+  }).join('');
+
+  const sid        = sessionIdForMap ? escapeHTML(sessionIdForMap) : '';
+  const titleTxt   = escapeHTML((act.typeEmoji || '') + ' ' + (act.title || ''));
+  const dateHTML   = act.startedAt ? `<p class="hs-bilan-date">${escapeHTML(formatActivityDate(act.startedAt))}</p>` : '';
+  const mapBtnHTML = sid ? `<button class="hs-bilan-action-btn" data-bilan-action="map" data-session-id="${sid}">🗺️ Voir le parcours</button>` : '';
+  const crsBtn     = `<button class="hs-bilan-action-btn hs-bilan-action-btn-sec" data-bilan-action="courses">↩ Toutes mes courses</button>`;
+
+  return `<p class="hs-bilan-title">${titleTxt}</p>
+${dateHTML}
+<div class="hs-bilan-grid">${rowsHTML}</div>
+${mapBtnHTML || crsBtn ? `<div class="hs-bilan-actions">${mapBtnHTML}${crsBtn}</div>` : ''}`;
 }
 
 /* ─── SECTION COURSES : historique des sessions ──────────────── */
@@ -729,35 +835,76 @@ async function _loadCourses() {
   el.innerHTML = '<div class="hs-shell-msg">⏳ Chargement…</div>';
 
   try {
-    const sessions = await getAllSessions();
-    if (!sessions || sessions.length === 0) {
+    const activities = await getCompletedActivities();
+    if (!activities || activities.length === 0) {
       el.innerHTML = '<p class="hs-shell-msg">Aucune course enregistrée pour le moment.</p>';
       return;
     }
-
-    const sorted = [...sessions].sort((a, b) =>
-      new Date(b.startedAt || 0) - new Date(a.startedAt || 0)
-    );
-
-    el.innerHTML = sorted.slice(0, 20).map(sess => {
-      const dist = sess.distanceKm != null
-        ? `${Number(sess.distanceKm).toFixed(2)} km` : '—';
-      const durSec = sess.durationSec ?? sess.elapsedSec;
-      const dur = durSec != null ? _fmtTimerFull(Math.round(durSec)) : '—';
-      const date = sess.startedAt
-        ? new Date(sess.startedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-        : '—';
-      const label = escapeHTML(sess.label || 'Sortie');
-      return `<div class="hs-course-item">
-        <div class="hs-course-header">
-          <span class="hs-course-label">${label}</span>
-          <span class="hs-course-date">${date}</span>
-        </div>
-        <div class="hs-course-meta">${dist} · ${dur}</div>
-      </div>`;
-    }).join('');
+    el.innerHTML = activities.slice(0, 30).map(a => _renderActivityCard(a)).join('');
   } catch {
-    el.innerHTML = '<p class="hs-shell-msg">Impossible de charger l\'historique.</p>';
+    el.innerHTML = '<p class="hs-shell-msg">Impossible de charger les courses.</p>';
+  }
+}
+
+function _renderActivityCard(act) {
+  const id    = escapeHTML(act.id);
+  const title = escapeHTML(act.title);
+  const date  = escapeHTML(formatActivityDateShort(act.startedAt));
+  const dist  = act.distanceKm ? escapeHTML(formatDistanceKm(act.distanceKm)) : '—';
+  const dur   = escapeHTML(formatDuration(act.durationSec));
+  const pace  = act.averagePaceSecPerKm ? escapeHTML(formatPace(act.averagePaceSecPerKm)) : '—';
+  const gps   = escapeHTML(formatGpsQuality(act.gps?.quality));
+
+  return `<div class="activity-card">
+    <div class="activity-card-header">
+      <span class="activity-card-title">${title}</span>
+      <span class="activity-card-date">${date}</span>
+    </div>
+    <div class="activity-card-meta">${dist} · ${dur} · ${pace}</div>
+    <div class="activity-card-gps">${gps}</div>
+    <div class="activity-card-actions">
+      <button class="activity-card-btn" data-activity-action="bilan" data-activity-id="${id}">📊 Bilan</button>
+      <button class="activity-card-btn" data-activity-action="map" data-activity-id="${id}">🗺️ Tracé</button>
+      <button class="activity-card-btn activity-card-btn-gpx" data-activity-action="gpx" data-activity-id="${id}">⬇ GPX</button>
+      <button class="activity-card-btn activity-card-btn-del" data-activity-action="delete" data-activity-id="${id}">🗑️</button>
+    </div>
+  </div>`;
+}
+
+/* ─── Ouvrir une activité sur la carte ───────────────────────── */
+async function _openActivityOnMap(id) {
+  if (!id) { showToast('Pas de tracé disponible.', 'info'); return; }
+  try {
+    showToast('Chargement du tracé…', 'info', 1500);
+    const points = await loadTrackPoints(String(id));
+    if (!points || points.length < 2) {
+      showToast('Aucun tracé GPS pour cette sortie.', 'info');
+      return;
+    }
+    const activity = await getCompletedActivity(String(id));
+    const title    = activity ? activity.title : 'Activité';
+    renderActivityRouteLayer(points, title);
+    _closeHikingScreen();
+    const mapBtn = document.querySelector('[data-panel="panel-map"]');
+    if (mapBtn) mapBtn.click();
+  } catch {
+    showToast('Impossible d\'ouvrir le tracé.', 'error');
+  }
+}
+
+/* ─── Supprimer une activité ─────────────────────────────────── */
+async function _deleteActivity(id, btn) {
+  if (!confirm('Supprimer définitivement cette sortie et son tracé GPS ?')) return;
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    await deleteCompletedActivity(String(id));
+    showToast('Activité supprimée.', 'success');
+    if (_bilanSessionId === id) _bilanSessionId = null;
+    clearActivityRouteLayer();
+    _loadCourses();
+  } catch {
+    showToast('Erreur lors de la suppression.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
   }
 }
 
@@ -777,6 +924,7 @@ function _closeHikingScreen() {
   _goalKm = 0;
   _finalStats = null;
   _sessionId = null;
+  _bilanSessionId = null;
   _paused = false;
   _locked = false;
   _lastVoiceKm = 0;

@@ -415,3 +415,65 @@ export function renderOfflineRouteLayer(route) {
 
   return false; // Aucune position disponible
 }
+
+/* =========================================================
+   BLOC 09 — TRACÉ ACTIVITÉ HISTORIQUE (Phase 9)
+   Couche dédiée, isolée du live GPS (_trackPolyline)
+   et des parcours offline (_offlineRoutePolyline).
+   ========================================================= */
+let _historyRoutePolyline = null;
+let _historyRouteMarkers  = [];
+
+export function clearActivityRouteLayer() {
+  if (!isMapReady()) return;
+  if (_historyRoutePolyline) { _map.removeLayer(_historyRoutePolyline); _historyRoutePolyline = null; }
+  _historyRouteMarkers.forEach(m => _map.removeLayer(m));
+  _historyRouteMarkers = [];
+}
+
+/**
+ * Affiche une activité GPS historique sur la carte.
+ * @param {Array} points - tableau de {lat, lon, recorded_at}
+ * @param {string} [title] - titre pour le popup
+ */
+export function renderActivityRouteLayer(points, title = '') {
+  if (!isMapReady()) return false;
+  clearActivityRouteLayer();
+
+  if (!points || points.length < 2) return false;
+
+  const sorted  = [...points].sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+  const latlngs = sorted
+    .filter(p => isValidLatLon(Number(p.lat), Number(p.lon)))
+    .map(p => [Number(p.lat), Number(p.lon)]);
+
+  if (latlngs.length < 2) return false;
+
+  const safeTitle = title ? escapeHTML(title) : 'Activité';
+
+  _historyRoutePolyline = L.polyline(latlngs, {
+    color: '#9b59b6', weight: 4, opacity: 0.85, lineJoin: 'round'
+  }).addTo(_map);
+
+  // Marker départ (violet foncé)
+  const mkStart = L.divIcon({
+    html: `<div style="background:#27ae60;border-radius:50%;width:14px;height:14px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>`,
+    iconSize: [14, 14], iconAnchor: [7, 7], className: ''
+  });
+  const mkEnd = L.divIcon({
+    html: `<div style="background:#9b59b6;border-radius:50%;width:14px;height:14px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>`,
+    iconSize: [14, 14], iconAnchor: [7, 7], className: ''
+  });
+
+  _historyRouteMarkers.push(
+    L.marker(latlngs[0], { icon: mkStart })
+      .bindPopup(`<strong>🟢 Départ</strong><br>${safeTitle}`)
+      .addTo(_map),
+    L.marker(latlngs[latlngs.length - 1], { icon: mkEnd })
+      .bindPopup(`<strong>🏁 Arrivée</strong><br>${safeTitle}`)
+      .addTo(_map)
+  );
+
+  _map.fitBounds(_historyRoutePolyline.getBounds(), { padding: [40, 40] });
+  return true;
+}
