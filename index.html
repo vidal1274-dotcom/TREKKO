@@ -99,7 +99,13 @@
   <button class="nav-tab" data-panel="panel-circuit">🤖 Circuit IA</button>
   <button class="nav-tab" data-panel="panel-settings">⚙️ Paramètres</button>
   <button class="nav-tab" data-panel="panel-prog">📍 Programme</button>
+  <button class="nav-tab" data-panel="panel-health">❤️ Santé</button>
 </nav>
+
+<!-- Titre dynamique de l'onglet actif -->
+<div id="tab-title-bar" class="hidden" role="heading" aria-level="2" aria-live="polite">
+  <span id="tab-title-text"></span>
+</div>
 
 <!-- ═══════════════════════════════════════════════
      FILTRES RAPIDES
@@ -522,6 +528,98 @@
       </div>
     </div>
 
+  </section>
+
+  <!-- Panneau Santé -->
+  <section id="panel-health" class="panel">
+    <div class="panel-health-inner">
+
+      <!-- Statut des sources -->
+      <div class="tab-section">
+        <div class="tab-section-title">Source de données</div>
+        <div class="health-source-list">
+          <div class="health-source-card">
+            <span class="hs-icon">📱</span>
+            <div class="hs-info">
+              <div class="hs-name">Application</div>
+              <div class="hs-desc">PWA pure — accès navigateur uniquement, sans pont natif iOS</div>
+            </div>
+            <span class="source-badge">PWA</span>
+          </div>
+          <div class="health-source-card">
+            <span class="hs-icon">❤️</span>
+            <div class="hs-info">
+              <div class="hs-name">Apple Santé / HealthKit</div>
+              <div class="hs-desc">Non disponible dans cette version PWA</div>
+            </div>
+            <span class="warning-badge">Indisponible</span>
+          </div>
+          <div class="health-source-card">
+            <span class="hs-icon">⌚</span>
+            <div class="hs-info">
+              <div class="hs-name">Apple Watch Ultra</div>
+              <div class="hs-desc">Données synchronisées avec l'iPhone, mais inaccessibles à Trekko en PWA</div>
+            </div>
+            <span class="warning-badge">Indisponible</span>
+          </div>
+          <div class="health-source-card">
+            <span class="hs-icon">🗺️</span>
+            <div class="hs-info">
+              <div class="hs-name">Données Trekko locales</div>
+              <div class="hs-desc">Parcours GPS, activités et imports disponibles progressivement</div>
+            </div>
+            <span class="success-badge">Disponible</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ce que Trekko mesure -->
+      <div class="tab-section">
+        <div class="tab-section-title">Ce que Trekko peut mesurer</div>
+        <div class="health-dashboard-card">
+          <p class="muted-info">Trekko enregistre vos activités GPS et calcule : distance, durée, allure, vitesse, dénivelé estimé et calories (méthode MET).</p>
+          <p class="muted-info" style="margin-top:8px">Consultez l'onglet <strong>Carnet</strong> pour accéder à vos sorties enregistrées.</p>
+        </div>
+      </div>
+
+      <!-- Apple Santé non accessible -->
+      <div class="tab-section">
+        <div class="tab-section-title">Données Apple Santé (non disponibles en PWA)</div>
+        <div class="health-permission-state">
+          <span class="hp-icon">🔒</span>
+          <div class="hp-title">Accès direct Apple Santé non disponible</div>
+          <div class="hp-desc">Fréquence cardiaque, pas, sommeil, VO₂ max, oxygène sanguin, calories HealthKit et entraînements Apple Watch nécessitent un accès natif iOS — impossible depuis une PWA.</div>
+        </div>
+        <div class="health-unavailable-list">
+          <div class="health-unavailable-item">❤️ Fréquence cardiaque (Apple Watch)</div>
+          <div class="health-unavailable-item">👟 Pas quotidiens</div>
+          <div class="health-unavailable-item">😴 Sommeil</div>
+          <div class="health-unavailable-item">🫁 VO₂ max</div>
+          <div class="health-unavailable-item">🩸 Oxygène sanguin (SpO₂)</div>
+          <div class="health-unavailable-item">🔥 Calories Apple Santé</div>
+          <div class="health-unavailable-item">🏋️ Entraînements HealthKit</div>
+        </div>
+      </div>
+
+      <!-- Évolutions possibles -->
+      <div class="tab-section">
+        <div class="tab-section-title">Évolutions possibles</div>
+        <div class="health-future-list">
+          <div class="health-future-item">📱 Version mobile native avec pont iOS HealthKit</div>
+          <div class="health-future-item">📁 Import de fichiers GPX / FIT / TCX / CSV</div>
+          <div class="health-future-item">✏️ Saisie manuelle optionnelle de certaines mesures</div>
+          <div class="health-future-item">🔄 Synchronisation locale enrichie des activités Trekko</div>
+        </div>
+      </div>
+
+      <!-- Confidentialité -->
+      <div class="tab-section">
+        <div class="privacy-warning">
+          🔒 Les parcours, bilans et données de santé restent stockés <strong>localement sur cet appareil</strong>. Aucune synchronisation automatique vers un serveur ou un NAS n'est effectuée.
+        </div>
+      </div>
+
+    </div>
   </section>
 
 </main>

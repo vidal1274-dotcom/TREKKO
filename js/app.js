@@ -11,7 +11,7 @@ import { loadVehicleProfile } from './vehicle-profile.js';
 import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=11';
 import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
 import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
-import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=25';
+import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel, setActiveTabTitle } from './ui.js?v=25';
 import { initNetworkManager, getNetworkStatus } from './network-manager.js';
 import { initNetworkUI } from './network-ui.js';
 import { loadAllPhotos, importPhotos } from './photos.js';
@@ -526,6 +526,7 @@ async function onPanelChange(panelId) {
   if (filtersBar)  filtersBar.classList.toggle('hidden-for-map', hideChrome);
   if (locationBar) locationBar.classList.toggle('hidden-for-map', hideChrome);
   if (appMain)     appMain.classList.toggle('map-fullscreen', hideChrome);
+  setActiveTabTitle(panelId);
 
   if (isMap) {
     setTimeout(() => { invalidateMapSize(); fitBoundsToSites(_filteredSites); }, 80);

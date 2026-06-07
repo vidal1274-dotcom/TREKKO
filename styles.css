@@ -27,6 +27,7 @@
 
   --header-height:       58px;
   --nav-height:          50px;
+  --tab-title-height:    32px;
   --filters-height:      46px;
   --location-bar-height: 42px;
 
@@ -229,7 +230,7 @@ html, body {
    ========================================================= */
 #filters-bar {
   position: fixed;
-  top: calc(var(--header-height) + var(--nav-height));
+  top: calc(var(--header-height) + var(--nav-height) + var(--tab-title-height));
   left: 0; right: 0;
   height: var(--filters-height);
   background: var(--color-bg);
@@ -272,7 +273,7 @@ html, body {
    ========================================================= */
 #location-bar {
   position: fixed;
-  top: calc(var(--header-height) + var(--nav-height) + var(--filters-height));
+  top: calc(var(--header-height) + var(--nav-height) + var(--tab-title-height) + var(--filters-height));
   left: 0; right: 0;
   height: var(--location-bar-height);
   background: var(--color-surface);
@@ -372,7 +373,7 @@ html, body {
    ========================================================= */
 #app-main {
   position: fixed;
-  top: calc(var(--header-height) + var(--nav-height) + var(--filters-height) + var(--location-bar-height));
+  top: calc(var(--header-height) + var(--nav-height) + var(--tab-title-height) + var(--filters-height) + var(--location-bar-height));
   left: 0; right: 0;
   bottom: 0;
   overflow: hidden;
@@ -4946,4 +4947,85 @@ body.satellite-mode .map-labels-btn { display: block; }
 .programme-selected-item:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* =========================================================
+   BLOC — TITRE STICKY PAR ONGLET (Phase 4)
+   ========================================================= */
+#tab-title-bar {
+  position: fixed;
+  top: calc(var(--header-height) + var(--nav-height));
+  left: 0; right: 0;
+  height: var(--tab-title-height);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  z-index: 996;
+  gap: 8px;
+}
+#tab-title-bar.hidden { display: none !important; }
+
+#tab-title-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   BLOC — PANNEAU SANTÉ (Phase 4)
+   ========================================================= */
+#panel-health { overflow-y: auto; }
+
+.panel-health-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 6px 0 24px;
+}
+
+.health-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.health-unavailable-list,
+.health-future-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.health-unavailable-item,
+.health-future-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--color-text-mid);
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: var(--radius-xs);
+  border-left: 3px solid var(--color-border2);
+}
+
+.health-unavailable-item {
+  color: var(--color-text-dim);
+  border-left-color: rgba(231,76,60,0.3);
+}
+
+.health-future-item {
+  border-left-color: rgba(46,204,113,0.3);
+}
+
+@media (max-width: 430px) {
+  .panel-health-inner { padding: 4px 0 20px; }
+  .health-unavailable-item,
+  .health-future-item { font-size: 13px; padding: 7px 10px; }
 }
