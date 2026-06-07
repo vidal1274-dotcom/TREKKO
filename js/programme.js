@@ -1,6 +1,7 @@
 /* =========================================================
    PROGRAMME.JS — Sélection de sites, carte, photos
    ========================================================= */
+import { escapeHTML } from './utils.js';
 // formatDistApprox supprimé — les listes ne doivent plus afficher de distances haversine
 const LS_KEY = 'trekko_programme_v1';
 const ORIGIN = { lat: 43.7169, lon: 4.3789 }; // Nages-et-Solorgues
@@ -217,8 +218,8 @@ function _renderListe() {
     <div class="prog2-item">
       <div class="prog2-item-num">${i + 1}</div>
       <div class="prog2-item-info">
-        <div class="prog2-item-name">${s.destination}</div>
-        <div class="prog2-item-meta">${s.secteur || ''}${s.distance_km != null ? ' · ' + Math.round(s.distance_km) + ' km' : ''}${dur}</div>
+        <div class="prog2-item-name">${escapeHTML(s.destination)}</div>
+        <div class="prog2-item-meta">${escapeHTML(s.secteur || '')}${s.distance_km != null ? ' · ' + Math.round(s.distance_km) + ' km' : ''}${dur}</div>
       </div>
       <button class="prog2-item-del" data-idx="${i}" title="Retirer">✕</button>
     </div>`;
@@ -370,12 +371,12 @@ function _renderPhotos() {
       if (!card) return;
       if (url) {
         card.innerHTML = `
-          <img src="${url}" alt="${site.destination}" class="prog-photo-img" loading="lazy" />
-          <div class="prog-photo-label">${site.destination}</div>`;
+          <img src="${escapeHTML(url)}" alt="${escapeHTML(site.destination)}" class="prog-photo-img" loading="lazy" />
+          <div class="prog-photo-label">${escapeHTML(site.destination)}</div>`;
       } else {
         card.innerHTML = `
           <div class="prog-photo-placeholder">📷</div>
-          <div class="prog-photo-label">${site.destination}</div>`;
+          <div class="prog-photo-label">${escapeHTML(site.destination)}</div>`;
       }
     }).catch(() => {});
   });

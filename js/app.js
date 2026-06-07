@@ -19,7 +19,7 @@ import { renderPhotoMarkers } from './photo-map.js?v=4';
 import { syncPendingPhotos, getSyncStatus, setupAutoSync, schedulePhotoForSync } from './photo-sync.js';
 import { lsGet, lsSet } from './storage.js';
 import { startTracking, stopTracking, isTracking, loadTrackPoints, getAllSessions, updateSessionVisibility, exportAsGPX, getActiveSessionId, getLiveStats, calculateWaterNeeds, getActivityConfig, getActivityModes } from './tracker.js?v=2';
-import { showToast } from './utils.js';
+import { showToast, escapeHTML } from './utils.js';
 import { buildVerificationLinks } from './energy-rules.js';
 import { exportAllData, importData } from './import-export.js';
 import { addGoogleSearchToHistory } from './google-search.js';
@@ -685,15 +685,17 @@ async function updatePhotoPanel() {
   }
   grid.innerHTML = photos.map(photo => `
     <div class="photo-thumb ${photo.sync_status === 'synced' ? 'photo-synced' : 'photo-pending'}"
-         onclick="window.__viewPhoto('${photo.id}')">
-      ${photo.thumbnail ? `<img src="${photo.thumbnail}" alt="${photo.filename}" loading="lazy" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:30px">📷</div>'}
+         data-pid="${escapeHTML(String(photo.id))}">
+      ${photo.thumbnail ? `<img src="${photo.thumbnail}" alt="${escapeHTML(photo.filename || '')}" loading="lazy" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:30px">📷</div>'}
       <div class="photo-thumb-badge">${photo.sync_status === 'synced' ? '✅' : '⏳'}</div>
     </div>`).join('');
 
-  window.__viewPhoto = (id) => {
-    const photo = photos.find(p => p.id === id);
+  grid.addEventListener('click', e => {
+    const thumb = e.target.closest('[data-pid]');
+    if (!thumb?.dataset.pid) return;
+    const photo = photos.find(p => String(p.id) === thumb.dataset.pid);
     if (photo?.site_id) window.__openSiteDetail(photo.site_id);
-  };
+  });
 }
 
 /* =========================================================
@@ -764,7 +766,7 @@ function _refreshAiStatusUI() {
   } else {
     if (iconEl) iconEl.textContent = '🟢';
     if (msgEl)  msgEl.textContent  = `Backend IA prêt — modèle : ${st.model || 'gpt-4o-mini'}`;
-    if (barEl)  barEl.innerHTML    = `🟢 IA prête — ${st.model || 'gpt-4o-mini'}`;
+    if (barEl)  barEl.innerHTML    = `🟢 IA prête — ${escapeHTML(st.model || 'gpt-4o-mini')}`;
   }
 
   if (st.checkedAt && lastEl) {
@@ -1131,6 +1133,11 @@ function _bindDayPlanActions() {
     document.getElementById('day-plan-modal')?.classList.add('hidden');
     showToast('Programme supprimé.', 'info');
   });
+
+  document.querySelector('.dp-steps')?.addEventListener('click', e => {
+    const step = e.target.closest('[data-sid]');
+    if (step?.dataset.sid) window.__openSiteDetail(step.dataset.sid);
+  });
 }
 
 /* =========================================================
@@ -1447,7 +1454,7 @@ function initTrackingUI() {
         return `<div class="track-history-item" data-sid="${s.id}">
           <span style="font-size:20px">${modeEmoji}</span>
           <div class="track-history-item-info">
-            <div class="track-history-item-label">${s.label || 'Parcours'}</div>
+            <div class="track-history-item-label">${escapeHTML(s.label || 'Parcours')}</div>
             <div class="track-history-item-meta">${date} · ${s.is_public ? '🌍 Public' : '🔒 Privé'}</div>
           </div>
           <div class="track-history-item-actions">

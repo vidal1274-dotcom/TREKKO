@@ -2,7 +2,7 @@
    BLOC 01 — IMPORTS
    ========================================================= */
 import { getMarkersLayer, createSiteIcon, getSiteStatusColor, flyToSite } from './map.js?v=4';
-import { formatCurrency, formatDistance, buildWazeLink, buildGoogleMapsLink } from './utils.js';
+import { formatCurrency, formatDistance, buildWazeLink, buildGoogleMapsLink, escapeHTML } from './utils.js';
 import { setState } from './state.js';
 import { getRouteDistance, formatRouteDistance } from './routing-utils.js';
 import { getStoredOrigin } from './geolocation.js';
@@ -34,13 +34,17 @@ export function renderSiteMarkers(sites, onSiteClick) {
       if (onSiteClick) onSiteClick(site);
     });
     marker.on('popupopen', async () => {
+      const popup = marker.getPopup();
+      const wireBtn = () => {
+        const btn = popup.getElement()?.querySelector('[data-popup-sid]');
+        if (btn) btn.addEventListener('click', () => window.__openSiteDetail(btn.dataset.popupSid));
+      };
+      wireBtn();
       const origin = getStoredOrigin();
       const roadKm = await getRouteDistance(origin.lat, origin.lon, site.lat, site.lon);
-      if (roadKm !== null) {
-        const popup = marker.getPopup();
-        if (popup?.isOpen()) {
-          popup.setContent(buildSitePopupHtml(site, roadKm));
-        }
+      if (roadKm !== null && popup?.isOpen()) {
+        popup.setContent(buildSitePopupHtml(site, roadKm));
+        wireBtn();
       }
     });
     layer.addLayer(marker);
@@ -71,10 +75,10 @@ function buildSiteTooltipHtml(site) {
     site.tarif_verifie ? '<span style="color:#7fb3d3">✓ Prix vérifié</span>' : null,
   ].filter(Boolean).join(' · ');
 
-  return `<div style="font-weight:800;font-size:14px;margin-bottom:3px;color:${color}">${site.destination || 'Site'}</div>
-    <div style="font-size:12px;color:#a0a0b0;margin-bottom:5px">${site.secteur || ''}</div>
+  return `<div style="font-weight:800;font-size:14px;margin-bottom:3px;color:${color}">${escapeHTML(site.destination || 'Site')}</div>
+    <div style="font-size:12px;color:#a0a0b0;margin-bottom:5px">${escapeHTML(site.secteur || '')}</div>
     <div style="font-size:12px;line-height:1.6">${tags}</div>
-    ${site.budget_indicatif ? `<div style="font-size:11px;color:#888;margin-top:4px;max-width:220px;white-space:normal">${site.budget_indicatif.substring(0,80)}…</div>` : ''}`;
+    ${site.budget_indicatif ? `<div style="font-size:11px;color:#888;margin-top:4px;max-width:220px;white-space:normal">${escapeHTML(site.budget_indicatif.substring(0,80))}…</div>` : ''}`;
 }
 
 /* =========================================================
@@ -87,14 +91,14 @@ function buildSitePopupHtml(site, roadKm = null) {
   const gmapsUrl = buildGoogleMapsLink(site.lat, site.lon, site.destination);
 
   return `
-    <div class="popup-title">${site.destination || site.nom || 'Site'}</div>
-    <div style="font-size:12px;color:#aaa;margin:2px 0">${site.secteur || ''}${distStr ? ' · ' + distStr : ''}</div>
+    <div class="popup-title">${escapeHTML(site.destination || site.nom || 'Site')}</div>
+    <div style="font-size:12px;color:#aaa;margin:2px 0">${escapeHTML(site.secteur || '')}${distStr ? ' · ' + distStr : ''}</div>
     <div class="popup-badges">${badges}</div>
-    ${site.programme_court ? `<div style="font-size:13px;margin:4px 0;line-height:1.4">${site.programme_court.substring(0,120)}${site.programme_court.length>120?'…':''}</div>` : ''}
+    ${site.programme_court ? `<div style="font-size:13px;margin:4px 0;line-height:1.4">${escapeHTML(site.programme_court.substring(0,120))}${site.programme_court.length>120?'…':''}</div>` : ''}
     <div class="popup-actions">
-      <button class="popup-btn" onclick="window.__openSiteDetail('${site.id}')">📋 Fiche</button>
-      ${wazeUrl ? `<a class="popup-btn secondary" href="${wazeUrl}" target="_blank">🚗 Waze</a>` : ''}
-      ${gmapsUrl ? `<a class="popup-btn secondary" href="${gmapsUrl}" target="_blank">🗺️ Maps</a>` : ''}
+      <button class="popup-btn" data-popup-sid="${escapeHTML(String(site.id))}">📋 Fiche</button>
+      ${wazeUrl ? `<a class="popup-btn secondary" href="${escapeHTML(wazeUrl)}" target="_blank" rel="noopener noreferrer">🚗 Waze</a>` : ''}
+      ${gmapsUrl ? `<a class="popup-btn secondary" href="${escapeHTML(gmapsUrl)}" target="_blank" rel="noopener noreferrer">🗺️ Maps</a>` : ''}
     </div>`;
 }
 

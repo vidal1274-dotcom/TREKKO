@@ -5,7 +5,7 @@
 import { getAllSessions, loadTrackPoints, exportAsGPX, getActivityConfig } from './tracker.js';
 import { loadAllPhotos } from './photos.js';
 import { dbGet, dbPut, STORES } from './storage.js';
-import { showToast } from './utils.js';
+import { showToast, escapeHTML } from './utils.js';
 
 /* ── Journal ── */
 export async function saveJournalToSession(sessionId, updates) {
@@ -88,7 +88,7 @@ export async function renderCarnet(container, { onShowOnMap } = {}) {
       ${bestSession ? `
       <div class="carnet-best-session">
         <span class="best-label">🏆 Meilleure sortie</span>
-        <span class="best-name">${bestSession.label || 'Sortie'}</span>
+        <span class="best-name">${escapeHTML(bestSession.label || 'Sortie')}</span>
         <span class="best-km">${bestSession.total_distance_km} km</span>
       </div>` : ''}
 

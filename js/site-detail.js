@@ -32,6 +32,15 @@ export async function openSiteDetail(site, vehicleProfile) {
     });
   }
 
+  content.querySelectorAll('[data-action][data-sid]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sid = btn.dataset.sid;
+      if (btn.dataset.action === 'gps-edit')   window.__openGpsEdit(sid);
+      if (btn.dataset.action === 'add-plan')   window.__addToDayPlan(sid);
+      if (btn.dataset.action === 'view-photo') window.__openPhotoForSite(sid);
+    });
+  });
+
   document.getElementById('modal-close-btn')?.addEventListener('click', closeSiteDetail);
   modal.querySelector('.modal-overlay')?.addEventListener('click', closeSiteDetail);
 }
@@ -57,11 +66,11 @@ function buildSiteDetailHtml(site, roadKm = null) {
 
   const navHtml = site.has_gps ? `
     <div class="sd-nav-row">
-      ${waze  ? `<a class="sd-nav-btn sd-nav-waze"  href="${waze}"  target="_blank" rel="noopener">🚗 Waze</a>` : ''}
-      ${gmaps ? `<a class="sd-nav-btn sd-nav-gmaps" href="${gmaps}" target="_blank" rel="noopener">🗺️ Maps</a>` : ''}
-      ${apple ? `<a class="sd-nav-btn sd-nav-apple" href="${apple}" target="_blank" rel="noopener">🍎 Plans</a>` : ''}
+      ${waze  ? `<a class="sd-nav-btn sd-nav-waze"  href="${waze}"  target="_blank" rel="noopener noreferrer">🚗 Waze</a>` : ''}
+      ${gmaps ? `<a class="sd-nav-btn sd-nav-gmaps" href="${gmaps}" target="_blank" rel="noopener noreferrer">🗺️ Maps</a>` : ''}
+      ${apple ? `<a class="sd-nav-btn sd-nav-apple" href="${apple}" target="_blank" rel="noopener noreferrer">🍎 Plans</a>` : ''}
     </div>` : `<p class="sd-no-gps">📍 Coordonnées GPS à compléter
-      <button class="sd-gps-btn" onclick="window.__openGpsEdit('${site.id}')">Saisir GPS</button></p>`;
+      <button class="sd-gps-btn" data-action="gps-edit" data-sid="${escapeHTML(String(site.id))}">Saisir GPS</button></p>`;
 
   // Infos rapides (pills)
   const pills = [];
@@ -139,10 +148,10 @@ function buildSiteDetailHtml(site, roadKm = null) {
         <button id="btn-mark-visited" class="sd-action-btn ${visited ? 'visited-active' : ''}">
           ${visited ? '✅ Déjà visité' : '👁️ Marquer comme vu'}
         </button>
-        <button class="sd-action-btn sd-action-plan" onclick="window.__addToDayPlan('${site.id}')">
+        <button class="sd-action-btn sd-action-plan" data-action="add-plan" data-sid="${escapeHTML(String(site.id))}">
           📅 Ajouter au programme
         </button>
-        <button class="sd-action-btn sd-action-photo" onclick="window.__openPhotoForSite('${site.id}')">
+        <button class="sd-action-btn sd-action-photo" data-action="view-photo" data-sid="${escapeHTML(String(site.id))}">
           📷 Photos
         </button>
       </div>
