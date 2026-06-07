@@ -704,7 +704,7 @@ let _cachedAiStatus = null;
 function initAiSettings() {
   // Vérifier le statut au chargement
   _refreshAiStatusUI();
-  getAiStatus().then(_updateAiStatusFromResponse);
+  getAiStatus().then(_updateAiStatusFromResponse).catch(() => {});
 
   document.getElementById('ai-test-btn')?.addEventListener('click', async () => {
     const btn = document.getElementById('ai-test-btn');

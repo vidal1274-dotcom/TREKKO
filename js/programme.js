@@ -319,7 +319,7 @@ async function _updateMapAndPhotos() {
       if (!el || !url) return;
       el.style.backgroundImage = `url('${url}')`;
       el.classList.add('prog-pm-photo');
-    });
+    }).catch(() => {});
   });
 
   // Tracé OSRM si ≥ 2 points
@@ -377,7 +377,7 @@ function _renderPhotos() {
           <div class="prog-photo-placeholder">📷</div>
           <div class="prog-photo-label">${site.destination}</div>`;
       }
-    });
+    }).catch(() => {});
   });
 }
 
