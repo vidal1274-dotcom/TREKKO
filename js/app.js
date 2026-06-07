@@ -520,11 +520,13 @@ async function onPanelChange(panelId) {
   const filtersBar  = document.getElementById('filters-bar');
   const locationBar = document.getElementById('location-bar');
   const appMain     = document.getElementById('app-main');
-  const isMap  = panelId === 'panel-map';
-  const isProg = panelId === 'panel-prog';
-  const hideChrome = isMap || isProg;
-  if (filtersBar)  filtersBar.classList.toggle('hidden-for-map', hideChrome);
-  if (locationBar) locationBar.classList.toggle('hidden-for-map', hideChrome);
+  const isMap    = panelId === 'panel-map';
+  const isProg   = panelId === 'panel-prog';
+  const isHealth = panelId === 'panel-health';
+  const hideChrome  = isMap || isProg;
+  const hideFilters = hideChrome || isHealth;
+  if (filtersBar)  filtersBar.classList.toggle('hidden-for-map', hideFilters);
+  if (locationBar) locationBar.classList.toggle('hidden-for-map', hideFilters);
   if (appMain)     appMain.classList.toggle('map-fullscreen', hideChrome);
   setActiveTabTitle(panelId);
 

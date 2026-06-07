@@ -4434,7 +4434,20 @@ body.satellite-mode .map-labels-btn { display: block; }
 .secondary-details {
   border-top: 1px solid var(--color-border);
   margin-top: 8px;
+  padding-top: 4px;
 }
+details.secondary-details > summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text-mid);
+  padding: 6px 0;
+  list-style: none;
+  user-select: none;
+}
+details.secondary-details > summary::-webkit-details-marker { display: none; }
+details.secondary-details > summary::before { content: '▶ '; font-size: 10px; opacity: .7; }
+details.secondary-details[open] > summary::before { content: '▼ '; }
+details.secondary-details[open] > summary { margin-bottom: 6px; }
 
 .details-toggle {
   background: none;

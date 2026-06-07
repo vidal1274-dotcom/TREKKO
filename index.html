@@ -313,11 +313,14 @@
       <!-- Paramètres IA / OpenAI -->
       <div class="settings-section" id="section-ai">
         <h3>🤖 Paramètres IA / ChatGPT</h3>
-        <div class="ai-info-box">
-          <p>La clé API OpenAI est configurée <strong>côté serveur</strong>, dans le fichier <code>.env</code> du backend Trekko.</p>
-          <p>Elle n'est jamais stockée dans le navigateur.</p>
-          <p>Pour configurer : ajoutez <code>OPENAI_API_KEY=sk-...</code> dans <code>.env</code> et lancez le backend (<code>cd server && npm start</code>).</p>
-        </div>
+        <details class="secondary-details">
+          <summary>ℹ️ Fonctionnement</summary>
+          <div class="ai-info-box">
+            <p>La clé API OpenAI est configurée <strong>côté serveur</strong>, dans le fichier <code>.env</code> du backend Trekko.</p>
+            <p>Elle n'est jamais stockée dans le navigateur.</p>
+            <p>Pour configurer : ajoutez <code>OPENAI_API_KEY=sk-...</code> dans <code>.env</code> et lancez le backend (<code>cd server && npm start</code>).</p>
+          </div>
+        </details>
 
         <div id="ai-status-box" class="ai-status-box">
           <span id="ai-status-icon">⚪</span>
@@ -330,17 +333,19 @@
           <button id="ai-refresh-btn" class="btn-secondary">🔄 Actualiser le statut</button>
         </div>
 
-        <div class="ai-help-box">
-          <h4>📘 Aide</h4>
-          <ol>
-            <li>Créez une clé sur <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a></li>
-            <li>Copiez <code>.env.example</code> → <code>.env</code></li>
-            <li>Ajoutez votre clé dans <code>.env</code></li>
-            <li>Lancez : <code>cd server && npm install && npm start</code></li>
-            <li>Cliquez "Tester la connexion" ici</li>
-          </ol>
-          <p class="ai-cost-warning">⚠️ L'API OpenAI est facturée séparément de ChatGPT Plus. Chaque circuit génère ~0.01-0.05€ de coût API.</p>
-        </div>
+        <details class="secondary-details">
+          <summary>📘 Instructions d'installation</summary>
+          <div class="ai-help-box">
+            <ol>
+              <li>Créez une clé sur <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">platform.openai.com</a></li>
+              <li>Copiez <code>.env.example</code> → <code>.env</code></li>
+              <li>Ajoutez votre clé dans <code>.env</code></li>
+              <li>Lancez : <code>cd server && npm install && npm start</code></li>
+              <li>Cliquez "Tester la connexion" ici</li>
+            </ol>
+            <p class="ai-cost-warning">⚠️ L'API OpenAI est facturée séparément de ChatGPT Plus. Chaque circuit génère ~0.01-0.05€ de coût API.</p>
+          </div>
+        </details>
       </div>
 
       <!-- Reset SW / Cache -->
