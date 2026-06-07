@@ -1,11 +1,11 @@
 /* =========================================================
    hiking-screen.js — Écran Randonnée / Balade (AllTrails + Komoot + Strava)
    ========================================================= */
-import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints, getElapsedSec, pauseElapsedTimer, resumeElapsedTimer } from './tracker.js';
+import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints, getElapsedSec, pauseElapsedTimer, resumeElapsedTimer, getAllSessions } from './tracker.js';
 import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails } from './map.js?v=4';
 import { getStoredOrigin } from './geolocation.js';
 import { OVERPASS_ENDPOINT } from './config.js';
-import { showToast } from './utils.js';
+import { showToast, escapeHTML } from './utils.js';
 
 /* ─── Configuration par mode ───────────────────────────────── */
 const MODE_CONFIG = {
@@ -27,7 +27,7 @@ const MODE_CONFIG = {
 
 /* ─── État interne ──────────────────────────────────────────── */
 let _mode = 'hiking';            // 'hiking' | 'walking'
-let _section = 'setup';          // 'setup' | 'live' | 'summary'
+let _section = 'nav';            // 'nav' | 'setup' | 'live' | 'summary' | 'rechercher' | 'parcours' | 'bilan' | 'courses' | 'health'
 let _weight = 70;
 let _temp = 20;
 let _difficulty = 'moyen';
@@ -94,6 +94,7 @@ function _el(id) { return document.getElementById(id); }
 
 /* ─── Export public ─────────────────────────────────────────── */
 export function initHikingScreen() {
+  _wireNav();
   _wireSetup();
   _wireLive();
   _wireSummary();
@@ -114,12 +115,14 @@ export function showHikingScreen(activityMode) {
   const inp = _el('hs-label-input');
   if (inp) inp.value = cfg.defaultLabel();
 
-  // Update header mode label
+  // Update header mode label (setup + nav)
   const modeLabel = _el('hs-mode-label');
   if (modeLabel) modeLabel.textContent = `${cfg.emoji} ${cfg.title}`;
+  const navLabel = _el('hs-nav-mode-label');
+  if (navLabel) navLabel.textContent = `${cfg.emoji} ${cfg.title}`;
 
-  // Reset to setup section
-  _showSection('setup');
+  // Show nav landing screen
+  _showSection('nav');
   _screenActive = true;
 
   // Cacher les marqueurs POI de l'app principale
@@ -137,9 +140,11 @@ export function showHikingScreen(activityMode) {
 }
 
 /* ─── Navigation entre sections ────────────────────────────── */
+const _ALL_SECTIONS = ['nav', 'setup', 'live', 'summary', 'rechercher', 'parcours', 'bilan', 'courses', 'health'];
+
 function _showSection(name) {
   _section = name;
-  ['setup', 'live', 'summary'].forEach(s => {
+  _ALL_SECTIONS.forEach(s => {
     const el = _el(`hs-${s}`);
     if (el) el.classList.toggle('hidden', s !== name);
   });
@@ -147,8 +152,8 @@ function _showSection(name) {
 
 /* ─── SECTION A : SETUP ─────────────────────────────────────── */
 function _wireSetup() {
-  // Bouton retour
-  _el('hs-back-btn')?.addEventListener('click', _closeHikingScreen);
+  // Bouton retour → nav landing (plus vers fermeture)
+  _el('hs-back-btn')?.addEventListener('click', () => _showSection('nav'));
 
   // Sélecteur difficulté
   document.querySelectorAll('.hs-diff-btn').forEach(btn => {
@@ -527,6 +532,98 @@ out skel qt;`;
   } catch (e) {
     if (!_screenActive) return;
     if (infoEl) infoEl.textContent = '⚠️ Sentiers non disponibles';
+  }
+}
+
+/* ─── SECTION NAV : Accueil navigation ──────────────────────── */
+function _wireNav() {
+  _el('hs-nav-close')?.addEventListener('click', _closeHikingScreen);
+
+  document.querySelectorAll('[data-hs-section]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.hsSection;
+      if (target === 'bilan')   _loadBilan();
+      else if (target === 'courses') _loadCourses();
+      _showSection(target);
+    });
+  });
+
+  document.querySelectorAll('[data-hs-back]').forEach(btn => {
+    btn.addEventListener('click', () => _showSection('nav'));
+  });
+}
+
+/* ─── SECTION BILAN : dernière sortie ───────────────────────── */
+function _loadBilan() {
+  const el = _el('hs-bilan-content');
+  if (!el) return;
+
+  if (!_finalStats) {
+    el.innerHTML = '<p class="hs-shell-msg">Aucun bilan disponible. Effectuez une sortie pour voir votre bilan.</p>';
+    return;
+  }
+
+  const s = _finalStats;
+  const dist    = (s.distanceKm || 0).toFixed(2);
+  const elev    = Math.round(s.elevGainM || 0);
+  const cals    = Math.round(s.calories  || 0);
+  const elapsed = s.elapsedSec || 0;
+  const pace    = s.paceMinKm ? _fmtPace(s.paceMinKm) : '—';
+  const speedKmh = (s.distanceKm && elapsed > 0)
+    ? ((s.distanceKm / elapsed) * 3600).toFixed(1)
+    : '—';
+
+  el.innerHTML = `
+    <div class="hs-bilan-grid">
+      <div class="hs-bilan-row"><span>⏱ Temps total</span><strong>${_fmtTimerFull(elapsed)}</strong></div>
+      <div class="hs-bilan-row"><span>🥾 Distance</span><strong>${dist} km</strong></div>
+      <div class="hs-bilan-row"><span>⚡ Allure</span><strong>${pace} min/km</strong></div>
+      <div class="hs-bilan-row"><span>🚶 Vitesse moy.</span><strong>${speedKmh} km/h</strong></div>
+      <div class="hs-bilan-row"><span>📈 Dénivelé +</span><strong>+${elev} m</strong></div>
+      <div class="hs-bilan-row"><span>🔥 Calories</span><strong>${cals} kcal</strong></div>
+      <div class="hs-bilan-row"><span>❤️ FC moyenne</span><strong class="hs-unavail">Non disponible</strong></div>
+      <div class="hs-bilan-row"><span>🔴 FC max</span><strong class="hs-unavail">Non disponible</strong></div>
+      <div class="hs-bilan-row hs-row-dim"><span>📡 Source FC</span><span>Non disponible en PWA</span></div>
+    </div>`;
+}
+
+/* ─── SECTION COURSES : historique des sessions ──────────────── */
+async function _loadCourses() {
+  const el = _el('hs-courses-list');
+  if (!el) return;
+
+  el.innerHTML = '<div class="hs-shell-msg">⏳ Chargement…</div>';
+
+  try {
+    const sessions = await getAllSessions();
+    if (!sessions || sessions.length === 0) {
+      el.innerHTML = '<p class="hs-shell-msg">Aucune course enregistrée pour le moment.</p>';
+      return;
+    }
+
+    const sorted = [...sessions].sort((a, b) =>
+      new Date(b.startedAt || 0) - new Date(a.startedAt || 0)
+    );
+
+    el.innerHTML = sorted.slice(0, 20).map(sess => {
+      const dist = sess.distanceKm != null
+        ? `${Number(sess.distanceKm).toFixed(2)} km` : '—';
+      const durSec = sess.durationSec ?? sess.elapsedSec;
+      const dur = durSec != null ? _fmtTimerFull(Math.round(durSec)) : '—';
+      const date = sess.startedAt
+        ? new Date(sess.startedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+        : '—';
+      const label = escapeHTML(sess.label || 'Sortie');
+      return `<div class="hs-course-item">
+        <div class="hs-course-header">
+          <span class="hs-course-label">${label}</span>
+          <span class="hs-course-date">${date}</span>
+        </div>
+        <div class="hs-course-meta">${dist} · ${dur}</div>
+      </div>`;
+    }).join('');
+  } catch {
+    el.innerHTML = '<p class="hs-shell-msg">Impossible de charger l\'historique.</p>';
   }
 }
 

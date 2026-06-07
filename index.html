@@ -813,8 +813,42 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 ═══════════════════════════════════════════════ -->
 <div id="hiking-screen" class="hiking-screen hidden">
 
+  <!-- ══ SECTION NAV : Accueil navigation ══════════════ -->
+  <div id="hs-nav" class="hs-section">
+    <div class="hs-nav-header">
+      <button id="hs-nav-close" class="hs-icon-btn" title="Fermer">✕</button>
+      <span id="hs-nav-mode-label" class="hs-setup-title">🥾 Randonnée</span>
+    </div>
+    <div class="hs-nav-grid">
+      <button class="hs-nav-card" data-hs-section="rechercher">
+        <span class="hs-nav-icon">🔍</span>
+        <span class="hs-nav-label">Rechercher</span>
+      </button>
+      <button class="hs-nav-card" data-hs-section="parcours">
+        <span class="hs-nav-icon">📥</span>
+        <span class="hs-nav-label">Parcours<br>téléchargés</span>
+      </button>
+      <button class="hs-nav-card hs-nav-card-accent" data-hs-section="setup">
+        <span class="hs-nav-icon">▶️</span>
+        <span class="hs-nav-label">Suivi en<br>cours</span>
+      </button>
+      <button class="hs-nav-card" data-hs-section="bilan">
+        <span class="hs-nav-icon">📊</span>
+        <span class="hs-nav-label">Bilan</span>
+      </button>
+      <button class="hs-nav-card" data-hs-section="courses">
+        <span class="hs-nav-icon">🏃</span>
+        <span class="hs-nav-label">Toutes mes<br>courses</span>
+      </button>
+      <button class="hs-nav-card" data-hs-section="health">
+        <span class="hs-nav-icon">⌚</span>
+        <span class="hs-nav-label">Montre /<br>Santé</span>
+      </button>
+    </div>
+  </div><!-- /#hs-nav -->
+
   <!-- ══ SECTION A : SETUP ══════════════════════════════ -->
-  <div id="hs-setup" class="hs-section">
+  <div id="hs-setup" class="hs-section hidden">
     <div class="hs-setup-header">
       <button id="hs-back-btn" class="hs-icon-btn">←</button>
       <span id="hs-mode-label" class="hs-setup-title">🥾 Randonnée</span>
@@ -841,25 +875,28 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
         <input id="hs-label-input" class="hs-text-input" type="text" placeholder="Mon parcours…" />
       </div>
 
-      <!-- Poids + Température sur la même ligne -->
-      <div class="hs-form-row">
-        <div class="hs-form-group hs-form-half">
-          <label class="hs-form-label">Poids (kg)</label>
-          <div class="hs-stepper">
-            <button id="hs-weight-minus" class="hs-step-btn">−</button>
-            <span id="hs-weight-val" class="hs-step-val">70</span>
-            <button id="hs-weight-plus" class="hs-step-btn">+</button>
+      <!-- Poids + Température (calorie et hydratation) -->
+      <details class="secondary-details">
+        <summary>⚙️ Poids et température</summary>
+        <div class="hs-form-row">
+          <div class="hs-form-group hs-form-half">
+            <label class="hs-form-label">Poids (kg)</label>
+            <div class="hs-stepper">
+              <button id="hs-weight-minus" class="hs-step-btn">−</button>
+              <span id="hs-weight-val" class="hs-step-val">70</span>
+              <button id="hs-weight-plus" class="hs-step-btn">+</button>
+            </div>
+          </div>
+          <div class="hs-form-group hs-form-half">
+            <label class="hs-form-label">Température (°C)</label>
+            <div class="hs-stepper">
+              <button id="hs-temp-minus" class="hs-step-btn">−</button>
+              <span id="hs-temp-val" class="hs-step-val">20</span>
+              <button id="hs-temp-plus" class="hs-step-btn">+</button>
+            </div>
           </div>
         </div>
-        <div class="hs-form-group hs-form-half">
-          <label class="hs-form-label">Température (°C)</label>
-          <div class="hs-stepper">
-            <button id="hs-temp-minus" class="hs-step-btn">−</button>
-            <span id="hs-temp-val" class="hs-step-val">20</span>
-            <button id="hs-temp-plus" class="hs-step-btn">+</button>
-          </div>
-        </div>
-      </div>
+      </details>
 
       <!-- Objectif distance -->
       <div class="hs-form-group">
@@ -1002,6 +1039,77 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
       <button id="btn-hs-new" class="hs-sum-btn hs-sum-btn-primary">Nouvelle sortie</button>
     </div>
   </div><!-- /#hs-summary -->
+
+  <!-- ══ SECTION D : RECHERCHER ════════════════════════ -->
+  <div id="hs-rechercher" class="hs-section hidden">
+    <div class="hs-section-header">
+      <button class="hs-icon-btn" data-hs-back title="Retour">←</button>
+      <span class="hs-section-title">🔍 Rechercher</span>
+    </div>
+    <div class="hs-section-content">
+      <div class="hs-search-bar">
+        <input type="text" class="hs-search-input" placeholder="Rechercher un lieu pour trouver des randonnées…" disabled />
+        <button class="hs-search-btn" disabled>Rechercher</button>
+      </div>
+      <p class="hs-shell-msg">Recherche de parcours à finaliser dans une prochaine version.</p>
+    </div>
+  </div><!-- /#hs-rechercher -->
+
+  <!-- ══ SECTION E : PARCOURS TÉLÉCHARGÉS ══════════════ -->
+  <div id="hs-parcours" class="hs-section hidden">
+    <div class="hs-section-header">
+      <button class="hs-icon-btn" data-hs-back title="Retour">←</button>
+      <span class="hs-section-title">📥 Parcours téléchargés</span>
+    </div>
+    <div class="hs-section-content">
+      <p class="hs-shell-msg">Aucun parcours téléchargé pour le moment.</p>
+      <p class="hs-shell-msg-sub">Les parcours GPX téléchargés apparaîtront ici.</p>
+    </div>
+  </div><!-- /#hs-parcours -->
+
+  <!-- ══ SECTION F : BILAN ══════════════════════════════ -->
+  <div id="hs-bilan" class="hs-section hidden">
+    <div class="hs-section-header">
+      <button class="hs-icon-btn" data-hs-back title="Retour">←</button>
+      <span class="hs-section-title">📊 Bilan de la sortie</span>
+    </div>
+    <div class="hs-section-content" id="hs-bilan-content">
+      <p class="hs-shell-msg">Aucun bilan disponible. Effectuez une sortie pour voir votre bilan.</p>
+    </div>
+  </div><!-- /#hs-bilan -->
+
+  <!-- ══ SECTION G : TOUTES MES COURSES ════════════════ -->
+  <div id="hs-courses" class="hs-section hidden">
+    <div class="hs-section-header">
+      <button class="hs-icon-btn" data-hs-back title="Retour">←</button>
+      <span class="hs-section-title">🏃 Toutes mes courses</span>
+    </div>
+    <div class="hs-section-content" id="hs-courses-list">
+      <p class="hs-shell-msg">Aucune course enregistrée pour le moment.</p>
+    </div>
+  </div><!-- /#hs-courses -->
+
+  <!-- ══ SECTION H : MONTRE / SANTÉ ════════════════════ -->
+  <div id="hs-health" class="hs-section hidden">
+    <div class="hs-section-header">
+      <button class="hs-icon-btn" data-hs-back title="Retour">←</button>
+      <span class="hs-section-title">⌚ Données montre / santé</span>
+    </div>
+    <div class="hs-section-content">
+      <div class="hs-health-list">
+        <div class="hs-health-item"><span>Application</span><span class="hs-unavail">PWA pure</span></div>
+        <div class="hs-health-item"><span>Apple Santé / HealthKit</span><span class="hs-unavail">Non disponible</span></div>
+        <div class="hs-health-item"><span>Apple Watch Ultra</span><span class="hs-unavail">Non accessible</span></div>
+        <div class="hs-health-item"><span>Fréquence cardiaque</span><span class="hs-unavail">Non disponible</span></div>
+        <div class="hs-health-item"><span>Pas</span><span class="hs-unavail">Non disponible</span></div>
+        <div class="hs-health-item"><span>Sommeil</span><span class="hs-unavail">Non disponible</span></div>
+        <div class="hs-health-item"><span>VO₂ max</span><span class="hs-unavail">Non disponible</span></div>
+        <div class="hs-health-item"><span>Oxygène sanguin</span><span class="hs-unavail">Non disponible</span></div>
+      </div>
+      <p class="hs-shell-msg hs-health-note">Pour récupérer les données Apple Watch automatiquement, Trekko devra évoluer vers une application iOS native avec accès HealthKit.</p>
+      <p class="hs-privacy-note">🔒 Les parcours et bilans Trekko restent stockés localement sur cet appareil. Aucune synchronisation automatique vers un serveur ou un NAS n'est effectuée.</p>
+    </div>
+  </div><!-- /#hs-health -->
 
 </div><!-- /#hiking-screen -->
 

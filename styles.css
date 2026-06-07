@@ -5142,3 +5142,191 @@ details.secondary-details[open] > summary { margin-bottom: 6px; }
   .health-unavailable-item,
   .health-future-item { font-size: 13px; padding: 7px 10px; }
 }
+
+/* =========================================================
+   BLOC HIKING — SECTION NAV + SOUS-ÉCRANS (Phase 7)
+   ========================================================= */
+
+/* ── Accueil nav ─────────────────────────────────────────── */
+.hs-nav-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.35);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--hs-border);
+}
+.hs-nav-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+  align-content: start;
+}
+.hs-nav-card {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--hs-border);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  color: var(--hs-text);
+  text-align: center;
+  font-family: inherit;
+}
+.hs-nav-card:hover,
+.hs-nav-card:focus { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.25); }
+.hs-nav-card-accent { border-color: var(--hs-color); background: rgba(39,174,96,0.12); }
+.hs-nav-card-accent:hover { background: rgba(39,174,96,0.22); }
+.hs-nav-icon { font-size: 28px; line-height: 1; }
+.hs-nav-label { font-size: 13px; font-weight: 600; line-height: 1.3; }
+
+/* ── En-têtes des sous-sections ─────────────────────────── */
+.hs-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.35);
+  border-bottom: 1px solid var(--hs-border);
+  flex-shrink: 0;
+}
+.hs-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--hs-text);
+}
+.hs-section-content {
+  padding: 14px 16px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Messages shell ──────────────────────────────────────── */
+.hs-shell-msg {
+  color: var(--hs-text-dim);
+  font-size: 14px;
+  text-align: center;
+  padding: 10px 0;
+  line-height: 1.5;
+}
+.hs-shell-msg-sub {
+  color: rgba(255,255,255,0.3);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── Bilan ────────────────────────────────────────────────── */
+.hs-bilan-grid {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--hs-border);
+}
+.hs-bilan-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hs-border);
+  font-size: 13px;
+  color: var(--hs-text-dim);
+}
+.hs-bilan-row:last-child { border-bottom: none; }
+.hs-bilan-row strong { color: var(--hs-text); font-weight: 700; }
+.hs-unavail { color: rgba(255,255,255,0.28) !important; font-weight: 400 !important; font-style: italic; }
+.hs-row-dim { color: rgba(255,255,255,0.28); font-size: 12px; }
+
+/* ── Historique courses ──────────────────────────────────── */
+.hs-course-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--hs-border);
+  border-radius: 10px;
+  padding: 10px 13px;
+  flex-shrink: 0;
+}
+.hs-course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.hs-course-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hs-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.hs-course-date { font-size: 11px; color: rgba(255,255,255,0.38); flex-shrink: 0; }
+.hs-course-meta { font-size: 12px; color: var(--hs-text-dim); }
+
+/* ── Santé / Montre ─────────────────────────────────────── */
+.hs-health-list {
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--hs-border);
+  flex-shrink: 0;
+}
+.hs-health-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hs-border);
+  font-size: 13px;
+  color: var(--hs-text-dim);
+}
+.hs-health-item:last-child { border-bottom: none; }
+.hs-health-note { font-style: italic; font-size: 13px; text-align: left; padding: 0; }
+.hs-privacy-note {
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 10px 13px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.38);
+  text-align: left;
+  flex-shrink: 0;
+}
+
+/* ── Rechercher (shell) ──────────────────────────────────── */
+.hs-search-bar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.hs-search-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--hs-border);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.45);
+  font-size: 13px;
+  padding: 8px 12px;
+  font-family: inherit;
+}
+.hs-search-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--hs-border);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.38);
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: not-allowed;
+  flex-shrink: 0;
+  font-family: inherit;
+}
