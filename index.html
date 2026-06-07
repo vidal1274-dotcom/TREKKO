@@ -505,7 +505,7 @@
       <div class="prog2-search-wrap">
         <span class="prog2-search-icon">&#x1F50D;</span>
         <input id="prog2-input" type="text"
-               placeholder="Rechercher un lieu&#x2026;"
+               placeholder="Rechercher une ville, un site, une activit&#xe9;&#x2026;"
                autocomplete="off" autocorrect="off" spellcheck="false" />
       </div>
       <div id="prog2-results" class="prog2-results hidden"></div>
@@ -514,6 +514,20 @@
     <!-- Liste des lieux ajoutés -->
     <div id="prog2-list" class="prog2-list">
       <div class="prog2-empty">Aucun lieu &#x2014; utilisez la recherche ci-dessus</div>
+    </div>
+
+    <!-- Résumé de l'itinéraire OSRM -->
+    <div id="prog2-route-summary" class="prog2-route-summary hidden"></div>
+
+    <!-- Sauvegarde -->
+    <div class="prog2-save-section">
+      <div class="prog2-save-bar">
+        <input type="text" id="prog2-save-title" class="prog2-save-input"
+               placeholder="Nom du programme&#x2026;" maxlength="60"
+               autocomplete="off" autocorrect="off" spellcheck="false" />
+        <button id="prog2-btn-save" class="btn-primary prog2-btn-compact">&#x1F4BE; Sauvegarder</button>
+      </div>
+      <div id="prog2-saves-list" class="prog2-saves-list"></div>
     </div>
 
     <!-- Carte itinéraire -->
