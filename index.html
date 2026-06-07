@@ -1061,9 +1061,14 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
       <button class="hs-icon-btn" data-hs-back title="Retour">←</button>
       <span class="hs-section-title">📥 Parcours téléchargés</span>
     </div>
-    <div class="hs-section-content">
+    <div class="hs-section-content" id="hs-parcours-list">
       <p class="hs-shell-msg">Aucun parcours téléchargé pour le moment.</p>
       <p class="hs-shell-msg-sub">Les parcours GPX téléchargés apparaîtront ici.</p>
+    </div>
+    <div class="hs-parcours-import">
+      <input type="file" id="hs-import-route-input" accept=".json" style="display:none" />
+      <button id="hs-import-route-btn" class="hs-import-btn">📁 Importer un parcours JSON</button>
+      <p class="hs-shell-msg-sub">La carte de fond peut nécessiter une connexion internet.</p>
     </div>
   </div><!-- /#hs-parcours -->
 

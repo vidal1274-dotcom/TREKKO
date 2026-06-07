@@ -2,10 +2,17 @@
    hiking-screen.js — Écran Randonnée / Balade (AllTrails + Komoot + Strava)
    ========================================================= */
 import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints, getElapsedSec, pauseElapsedTimer, resumeElapsedTimer, getAllSessions } from './tracker.js';
-import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails } from './map.js?v=4';
+import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails, renderOfflineRouteLayer, clearOfflineRouteLayer } from './map.js?v=4';
 import { getStoredOrigin } from './geolocation.js';
 import { OVERPASS_ENDPOINT } from './config.js';
-import { showToast, escapeHTML } from './utils.js';
+import { showToast, escapeHTML, safeText } from './utils.js';
+import {
+  getOfflineHikingRoutes,
+  getOfflineHikingRoute,
+  deleteOfflineHikingRoute,
+  importOfflineRouteFromJson,
+  exportOfflineRouteAsJson
+} from './offline-routes-store.js';
 
 /* ─── Configuration par mode ───────────────────────────────── */
 const MODE_CONFIG = {
@@ -542,8 +549,9 @@ function _wireNav() {
   document.querySelectorAll('[data-hs-section]').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset.hsSection;
-      if (target === 'bilan')   _loadBilan();
-      else if (target === 'courses') _loadCourses();
+      if (target === 'bilan')    _loadBilan();
+      else if (target === 'courses')  _loadCourses();
+      else if (target === 'parcours') _loadParcours();
       _showSection(target);
     });
   });
@@ -551,6 +559,132 @@ function _wireNav() {
   document.querySelectorAll('[data-hs-back]').forEach(btn => {
     btn.addEventListener('click', () => _showSection('nav'));
   });
+
+  // Délégation permanente pour les actions sur les cartes de parcours
+  _el('hs-parcours')?.addEventListener('click', e => {
+    const btn = e.target.closest('[data-route-action]');
+    if (!btn) return;
+    const action = btn.dataset.routeAction;
+    const id     = btn.dataset.routeId;
+    if (!id) return;
+    if (action === 'open')   _openRouteOnMap(id);
+    if (action === 'delete') _deleteRouteOffline(id, btn);
+    if (action === 'export') exportOfflineRouteAsJson(id).catch(() => showToast('Erreur export.', 'error'));
+  });
+
+  // Import JSON
+  _el('hs-import-route-btn')?.addEventListener('click', () => {
+    _el('hs-import-route-input')?.click();
+  });
+  _el('hs-import-route-input')?.addEventListener('change', async e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    try {
+      await importOfflineRouteFromJson(file);
+      showToast('Parcours importé.', 'success');
+      _loadParcours();
+    } catch (err) {
+      showToast(`Import échoué : ${safeText(err.message, 'Erreur inconnue')}`, 'error');
+    }
+  });
+}
+
+/* ─── SECTION PARCOURS TÉLÉCHARGÉS ──────────────────────────── */
+async function _loadParcours() {
+  const el = _el('hs-parcours-list');
+  if (!el) return;
+
+  el.innerHTML = '<div class="hs-shell-msg">⏳ Chargement…</div>';
+
+  try {
+    const routes = await getOfflineHikingRoutes();
+    if (!routes || routes.length === 0) {
+      el.innerHTML = `
+        <p class="hs-shell-msg">Aucun parcours téléchargé pour le moment.</p>
+        <p class="hs-shell-msg-sub">Télécharge un parcours pour le retrouver ici hors connexion.</p>`;
+      return;
+    }
+    el.innerHTML = routes.map(r => _renderRouteCard(r)).join('');
+  } catch {
+    el.innerHTML = '<p class="hs-shell-msg">Impossible de charger les parcours.</p>';
+  }
+}
+
+function _renderRouteCard(r) {
+  const title      = escapeHTML(r.title || 'Parcours sans titre');
+  const sourceLbl  = escapeHTML(r.sourceLabel || 'Inconnu');
+  const isComplete = r.status === 'complete';
+  const statusBadge = isComplete
+    ? '<span class="offline-status offline-status-complete">✓ Complet</span>'
+    : '<span class="offline-status offline-status-partial">~ Partiel</span>';
+
+  const diffLabel  = { facile: '🟢 Facile', moyen: '🟡 Moyen', difficile: '🔴 Difficile', unknown: '' };
+  const diff       = diffLabel[r.difficulty] || '';
+  const distTxt    = r.distanceKm != null ? `${Number(r.distanceKm).toFixed(1)} km` : '';
+  const meta       = [distTxt, diff].filter(Boolean).join(' · ');
+
+  const date = r.downloadedAt
+    ? new Date(r.downloadedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '';
+
+  const notesHtml = r.notes ? `
+    <details class="secondary-details">
+      <summary>Notes</summary>
+      <p class="offline-route-notes">${escapeHTML(r.notes)}</p>
+    </details>` : '';
+
+  const id = escapeHTML(r.id);
+
+  return `<div class="offline-route-card">
+    <div class="offline-route-card-header">
+      <span class="offline-route-title">${title}</span>
+      ${statusBadge}
+    </div>
+    ${meta ? `<div class="offline-route-meta">${meta}</div>` : ''}
+    <div class="offline-route-source">Source : ${sourceLbl} · Téléchargé le ${date}</div>
+    ${notesHtml}
+    <div class="offline-route-actions">
+      <button class="offline-route-btn offline-route-btn-open" data-route-action="open" data-route-id="${id}">🗺️ Ouvrir</button>
+      <button class="offline-route-btn offline-route-btn-export" data-route-action="export" data-route-id="${id}">⬇️ JSON</button>
+      <button class="offline-route-btn offline-route-btn-del" data-route-action="delete" data-route-id="${id}">🗑️</button>
+    </div>
+  </div>`;
+}
+
+async function _openRouteOnMap(id) {
+  try {
+    const route = await getOfflineHikingRoute(id);
+    if (!route) { showToast('Parcours introuvable.', 'error'); return; }
+
+    const rendered = renderOfflineRouteLayer(route);
+    _closeHikingScreen();
+
+    if (!rendered) {
+      showToast('Aucune position disponible pour ce parcours.', 'info');
+      return;
+    }
+
+    // Naviguer vers le panneau carte
+    const mapBtn = document.querySelector('[data-panel="panel-map"]');
+    if (mapBtn) mapBtn.click();
+  } catch {
+    showToast('Impossible d\'ouvrir le parcours.', 'error');
+  }
+}
+
+async function _deleteRouteOffline(id, btn) {
+  if (!confirm('Supprimer ce parcours hors ligne ?')) return;
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    await deleteOfflineHikingRoute(id);
+    showToast('Parcours supprimé.', 'success');
+    clearOfflineRouteLayer();
+    _loadParcours();
+  } catch {
+    showToast('Erreur lors de la suppression.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+  }
 }
 
 /* ─── SECTION BILAN : dernière sortie ───────────────────────── */

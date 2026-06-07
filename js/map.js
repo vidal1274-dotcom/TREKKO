@@ -1,3 +1,5 @@
+import { escapeHTML, isValidLatLon } from './utils.js';
+
 /* =========================================================
    BLOC 01 — INITIALISATION CARTE LEAFLET
    ========================================================= */
@@ -353,4 +355,63 @@ export function clearDayPlanRoute() {
   if (_dayPlanPolyline) { _map.removeLayer(_dayPlanPolyline); _dayPlanPolyline = null; }
   _dayPlanMarkers.forEach(m => _map.removeLayer(m));
   _dayPlanMarkers = [];
+}
+
+/* =========================================================
+   BLOC 08 — TRACÉ PARCOURS OFFLINE (Phase 8)
+   ========================================================= */
+let _offlineRoutePolyline = null;
+let _offlineRouteMarkers  = [];
+
+export function clearOfflineRouteLayer() {
+  if (!isMapReady()) return;
+  if (_offlineRoutePolyline) { _map.removeLayer(_offlineRoutePolyline); _offlineRoutePolyline = null; }
+  _offlineRouteMarkers.forEach(m => _map.removeLayer(m));
+  _offlineRouteMarkers = [];
+}
+
+function _addOfflineMarker(latlng, popupHtml, color) {
+  const icon = L.divIcon({
+    html: `<div style="background:${color};border-radius:50%;width:14px;height:14px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5)"></div>`,
+    iconSize: [14, 14], iconAnchor: [7, 7], className: ''
+  });
+  const m = L.marker(latlng, { icon }).bindPopup(popupHtml).addTo(_map);
+  _offlineRouteMarkers.push(m);
+}
+
+export function renderOfflineRouteLayer(route) {
+  if (!isMapReady() || !route) return false;
+  clearOfflineRouteLayer();
+
+  const safeTitle = escapeHTML(route.title || 'Parcours');
+
+  const hasGeometry = (
+    route.geometry?.type === 'LineString' &&
+    Array.isArray(route.geometry.coordinates) &&
+    route.geometry.coordinates.length >= 2
+  );
+
+  if (hasGeometry) {
+    // GeoJSON [lon, lat] → Leaflet [lat, lon]
+    const latlngs = route.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+    _offlineRoutePolyline = L.polyline(latlngs, {
+      color: '#27ae60', weight: 4, opacity: 0.9, lineJoin: 'round'
+    }).addTo(_map);
+
+    _addOfflineMarker(latlngs[0], `<strong>🟢 Départ</strong><br>${safeTitle}`, '#27ae60');
+    if (latlngs.length > 1) {
+      _addOfflineMarker(latlngs[latlngs.length - 1], `<strong>🏁 Arrivée</strong><br>${safeTitle}`, '#e74c3c');
+    }
+    _map.fitBounds(_offlineRoutePolyline.getBounds(), { padding: [40, 40] });
+    return true;
+  }
+
+  const sp = route.startPoint;
+  if (sp && isValidLatLon(sp.lat, sp.lon)) {
+    _addOfflineMarker([sp.lat, sp.lon], `<strong>📍 ${safeTitle}</strong><br>Point de départ`, '#5dade2');
+    _map.setView([sp.lat, sp.lon], 14);
+    return true;
+  }
+
+  return false; // Aucune position disponible
 }
