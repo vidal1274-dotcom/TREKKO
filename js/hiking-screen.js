@@ -164,6 +164,11 @@ export function showHikingScreen(activityMode) {
   }, 200);
 }
 
+export function openHikingSection(sectionName) {
+  showHikingScreen();
+  if (_ALL_SECTIONS.includes(sectionName)) _showSection(sectionName);
+}
+
 /* ─── Navigation entre sections ────────────────────────────── */
 const _ALL_SECTIONS = ['nav', 'setup', 'live', 'summary', 'rechercher', 'parcours', 'bilan', 'courses', 'health'];
 

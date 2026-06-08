@@ -39,6 +39,8 @@ let _renderCarnet = null;
 let _saveJournalToSession = null;
 let _initProg = null;
 let _invalidateProgMap = null;
+let _initHealth = null;
+let _refreshHealth = null;
 async function _loadWeather() {
   if (!_fetchWeather) { try { const m = await import('./weather.js'); _fetchWeather = m.fetchWeather; } catch(e) {} }
   return _fetchWeather;
@@ -132,6 +134,14 @@ async function startApp() {
   initWelcomeScreen(onWelcomeModeSelect);
   initHikingScreen();
   initCircuitCreator();
+
+  document.addEventListener('trekko:navigate-hiking', e => {
+    const section = e.detail?.section;
+    showHikingScreen();
+    if (section) setTimeout(() => {
+      document.querySelector(`[data-hs-section="${section}"]`)?.click();
+    }, 60);
+  });
   initAiSettings();
   window._showWelcome = showWelcomeScreen;
   showWelcomeScreen();
@@ -548,6 +558,17 @@ async function onPanelChange(panelId) {
     const container = document.getElementById('carnet-container');
     await _loadCarnet();
     if (container && _renderCarnet) _renderCarnet(container, { onShowOnMap: onCarnetShowOnMap });
+  }
+  if (isHealth) {
+    if (!_initHealth) {
+      try {
+        const m = await import('./health-tab.js');
+        _initHealth   = m.initHealthTab;
+        _refreshHealth = m.refreshHealthTab;
+        _initHealth();
+      } catch(e) { /* health tab non bloquant */ }
+    }
+    if (_refreshHealth) await _refreshHealth();
   }
 }
 
