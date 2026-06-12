@@ -164,11 +164,6 @@ export function showHikingScreen(activityMode) {
   }, 200);
 }
 
-export function openHikingSection(sectionName) {
-  showHikingScreen();
-  if (_ALL_SECTIONS.includes(sectionName)) _showSection(sectionName);
-}
-
 /* ─── Navigation entre sections ────────────────────────────── */
 const _ALL_SECTIONS = ['nav', 'setup', 'live', 'summary', 'rechercher', 'parcours', 'bilan', 'courses', 'health'];
 
@@ -178,6 +173,11 @@ function _showSection(name) {
     const el = _el(`hs-${s}`);
     if (el) el.classList.toggle('hidden', s !== name);
   });
+}
+
+export function openHikingSection(sectionName) {
+  showHikingScreen();
+  if (_ALL_SECTIONS.includes(sectionName)) _showSection(sectionName);
 }
 
 /* ─── SECTION A : SETUP ─────────────────────────────────────── */
