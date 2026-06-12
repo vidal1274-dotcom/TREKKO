@@ -85,9 +85,9 @@ export function renderInsightsSection(site) {
   const negHtml = summary.negatifs.map(n => `<li class="insight-negative">⚠️ ${n}</li>`).join('');
   const verHtml = summary.aVerifier.map(v => `<li style="color:#f39c12">❓ ${v}</li>`).join('');
 
-  const googleLinks = links.google.map(l => `<a href="${l.url}" target="_blank" class="action-link">${l.icon} ${l.label}</a>`).join('');
-  const ytLinks = links.youtube.map(l => `<a href="${l.url}" target="_blank" class="action-link">${l.icon} ${l.label}</a>`).join('');
-  const taLink = links.tripadvisor.map(l => `<a href="${l.url}" target="_blank" class="action-link">${l.icon} ${l.label}</a>`).join('');
+  const googleLinks = links.google.map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer" class="action-link">${l.icon} ${l.label}</a>`).join('');
+  const ytLinks = links.youtube.map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer" class="action-link">${l.icon} ${l.label}</a>`).join('');
+  const taLink = links.tripadvisor.map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer" class="action-link">${l.icon} ${l.label}</a>`).join('');
 
   return `
     <div class="insights-block">

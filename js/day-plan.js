@@ -248,7 +248,7 @@ export function renderDayPlan(plan) {
         </div>`;
     }
 
-    const click = s.site?.id ? `onclick="window.__openSiteDetail('${s.site.id}')"` : '';
+    const dataSid = s.site?.id ? `data-sid="${escapeHTML(String(s.site.id))}"` : '';
 
     let extras = '';
     if (s.type === 'arrival' && s.site) {
@@ -257,7 +257,7 @@ export function renderDayPlan(plan) {
     }
 
     return legHtml + `
-      <div class="dp-step dp-step-${s.type}" ${click}>
+      <div class="dp-step dp-step-${s.type}" ${dataSid}>
         <div class="dp-step-time">${s.time}</div>
         <div class="dp-step-icon">${s.icon}</div>
         <div class="dp-step-body">

@@ -1,7 +1,7 @@
 /* =========================================================
    BLOC 01 — IMPORTS
    ========================================================= */
-import { normalizeSearchText } from './utils.js';
+import { normalizeSearchText, escapeHTML } from './utils.js';
 import { detectEconomyIntent } from './economy-engine.js';
 import { lsGet, lsSet } from './storage.js';
 
@@ -207,8 +207,8 @@ function _renderSuggestions(el, query, onSuggestion, siteMatches, smartMatches, 
   var sitesHtml = siteMatches.map(function(site) {
     return '<div class="suggestion-item" data-site-id="' + site.id + '">' +
       '<span class="suggestion-icon">🗺️</span>' +
-      '<span class="suggestion-label">' + site.destination +
-      '<span style="color:#888;font-size:12px"> — ' + (site.secteur || '') + '</span></span></div>';
+      '<span class="suggestion-label">' + escapeHTML(site.destination) +
+      '<span style="color:#888;font-size:12px"> — ' + escapeHTML(site.secteur || '') + '</span></span></div>';
   }).join('');
 
   var addrHtml = '';
@@ -218,7 +218,7 @@ function _renderSuggestions(el, query, onSuggestion, siteMatches, smartMatches, 
     addrHtml = header('📍 Adresses') + addresses.map(function(a, i) {
       return '<div class="suggestion-item" data-addr-index="' + i + '">' +
         '<span class="suggestion-icon">📍</span>' +
-        '<span class="suggestion-label">' + a.label + '</span></div>';
+        '<span class="suggestion-label">' + escapeHTML(a.label) + '</span></div>';
     }).join('');
   }
 

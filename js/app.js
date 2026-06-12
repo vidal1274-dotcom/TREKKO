@@ -11,7 +11,7 @@ import { loadVehicleProfile } from './vehicle-profile.js';
 import { initGlobalSearch, interpretSearchQuery } from './global-search.js?v=11';
 import { openSiteDetail, closeSiteDetail, openGpsEditDialog } from './site-detail.js?v=26';
 import { generateSurprise, renderSurpriseCard } from './surprise-engine.js?v=26';
-import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel } from './ui.js?v=25';
+import { initNavTabs, renderSitesList, renderEconomyPanel, showLoading, switchToPanel, setActiveTabTitle } from './ui.js?v=25';
 import { initNetworkManager, getNetworkStatus } from './network-manager.js';
 import { initNetworkUI } from './network-ui.js';
 import { loadAllPhotos, importPhotos } from './photos.js';
@@ -19,7 +19,7 @@ import { renderPhotoMarkers } from './photo-map.js?v=4';
 import { syncPendingPhotos, getSyncStatus, setupAutoSync, schedulePhotoForSync } from './photo-sync.js';
 import { lsGet, lsSet } from './storage.js';
 import { startTracking, stopTracking, isTracking, loadTrackPoints, getAllSessions, updateSessionVisibility, exportAsGPX, getActiveSessionId, getLiveStats, calculateWaterNeeds, getActivityConfig, getActivityModes } from './tracker.js?v=2';
-import { showToast } from './utils.js';
+import { showToast, escapeHTML } from './utils.js';
 import { buildVerificationLinks } from './energy-rules.js';
 import { exportAllData, importData } from './import-export.js';
 import { addGoogleSearchToHistory } from './google-search.js';
@@ -27,7 +27,7 @@ import { initWelcomeScreen, showWelcomeScreen } from './welcome.js?v=4';
 import { initAuthScreen, logout, getCurrentUser } from './auth.js';
 import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=27';
 import { getVisitedIds } from './visited.js?v=25';
-import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=4';
+import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=5';
 import { initCircuitCreator } from './circuit-creator.js';
 import {
   getAiStatus, testConnection
@@ -39,6 +39,8 @@ let _renderCarnet = null;
 let _saveJournalToSession = null;
 let _initProg = null;
 let _invalidateProgMap = null;
+let _initHealth = null;
+let _refreshHealth = null;
 async function _loadWeather() {
   if (!_fetchWeather) { try { const m = await import('./weather.js'); _fetchWeather = m.fetchWeather; } catch(e) {} }
   return _fetchWeather;
@@ -132,6 +134,14 @@ async function startApp() {
   initWelcomeScreen(onWelcomeModeSelect);
   initHikingScreen();
   initCircuitCreator();
+
+  document.addEventListener('trekko:navigate-hiking', e => {
+    const section = e.detail?.section;
+    showHikingScreen();
+    if (section) setTimeout(() => {
+      document.querySelector(`[data-hs-section="${section}"]`)?.click();
+    }, 60);
+  });
   initAiSettings();
   window._showWelcome = showWelcomeScreen;
   showWelcomeScreen();
@@ -520,12 +530,15 @@ async function onPanelChange(panelId) {
   const filtersBar  = document.getElementById('filters-bar');
   const locationBar = document.getElementById('location-bar');
   const appMain     = document.getElementById('app-main');
-  const isMap  = panelId === 'panel-map';
-  const isProg = panelId === 'panel-prog';
-  const hideChrome = isMap || isProg;
-  if (filtersBar)  filtersBar.classList.toggle('hidden-for-map', hideChrome);
-  if (locationBar) locationBar.classList.toggle('hidden-for-map', hideChrome);
+  const isMap    = panelId === 'panel-map';
+  const isProg   = panelId === 'panel-prog';
+  const isHealth = panelId === 'panel-health';
+  const hideChrome  = isMap || isProg;
+  const hideFilters = hideChrome || isHealth;
+  if (filtersBar)  filtersBar.classList.toggle('hidden-for-map', hideFilters);
+  if (locationBar) locationBar.classList.toggle('hidden-for-map', hideFilters);
   if (appMain)     appMain.classList.toggle('map-fullscreen', hideChrome);
+  setActiveTabTitle(panelId);
 
   if (isMap) {
     setTimeout(() => { invalidateMapSize(); fitBoundsToSites(_filteredSites); }, 80);
@@ -545,6 +558,17 @@ async function onPanelChange(panelId) {
     const container = document.getElementById('carnet-container');
     await _loadCarnet();
     if (container && _renderCarnet) _renderCarnet(container, { onShowOnMap: onCarnetShowOnMap });
+  }
+  if (isHealth) {
+    if (!_initHealth) {
+      try {
+        const m = await import('./health-tab.js');
+        _initHealth   = m.initHealthTab;
+        _refreshHealth = m.refreshHealthTab;
+        _initHealth();
+      } catch(e) { /* health tab non bloquant */ }
+    }
+    if (_refreshHealth) await _refreshHealth();
   }
 }
 
@@ -685,15 +709,17 @@ async function updatePhotoPanel() {
   }
   grid.innerHTML = photos.map(photo => `
     <div class="photo-thumb ${photo.sync_status === 'synced' ? 'photo-synced' : 'photo-pending'}"
-         onclick="window.__viewPhoto('${photo.id}')">
-      ${photo.thumbnail ? `<img src="${photo.thumbnail}" alt="${photo.filename}" loading="lazy" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:30px">📷</div>'}
+         data-pid="${escapeHTML(String(photo.id))}">
+      ${photo.thumbnail ? `<img src="${photo.thumbnail}" alt="${escapeHTML(photo.filename || '')}" loading="lazy" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:30px">📷</div>'}
       <div class="photo-thumb-badge">${photo.sync_status === 'synced' ? '✅' : '⏳'}</div>
     </div>`).join('');
 
-  window.__viewPhoto = (id) => {
-    const photo = photos.find(p => p.id === id);
+  grid.addEventListener('click', e => {
+    const thumb = e.target.closest('[data-pid]');
+    if (!thumb?.dataset.pid) return;
+    const photo = photos.find(p => String(p.id) === thumb.dataset.pid);
     if (photo?.site_id) window.__openSiteDetail(photo.site_id);
-  };
+  });
 }
 
 /* =========================================================
@@ -764,7 +790,7 @@ function _refreshAiStatusUI() {
   } else {
     if (iconEl) iconEl.textContent = '🟢';
     if (msgEl)  msgEl.textContent  = `Backend IA prêt — modèle : ${st.model || 'gpt-4o-mini'}`;
-    if (barEl)  barEl.innerHTML    = `🟢 IA prête — ${st.model || 'gpt-4o-mini'}`;
+    if (barEl)  barEl.innerHTML    = `🟢 IA prête — ${escapeHTML(st.model || 'gpt-4o-mini')}`;
   }
 
   if (st.checkedAt && lastEl) {
@@ -1131,6 +1157,11 @@ function _bindDayPlanActions() {
     document.getElementById('day-plan-modal')?.classList.add('hidden');
     showToast('Programme supprimé.', 'info');
   });
+
+  document.querySelector('.dp-steps')?.addEventListener('click', e => {
+    const step = e.target.closest('[data-sid]');
+    if (step?.dataset.sid) window.__openSiteDetail(step.dataset.sid);
+  });
 }
 
 /* =========================================================
@@ -1447,7 +1478,7 @@ function initTrackingUI() {
         return `<div class="track-history-item" data-sid="${s.id}">
           <span style="font-size:20px">${modeEmoji}</span>
           <div class="track-history-item-info">
-            <div class="track-history-item-label">${s.label || 'Parcours'}</div>
+            <div class="track-history-item-label">${escapeHTML(s.label || 'Parcours')}</div>
             <div class="track-history-item-meta">${date} · ${s.is_public ? '🌍 Public' : '🔒 Privé'}</div>
           </div>
           <div class="track-history-item-actions">

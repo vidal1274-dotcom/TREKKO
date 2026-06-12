@@ -475,13 +475,21 @@ function _loadSavedCircuits() {
         <span class="circuit-saved-date">${new Date(c._savedAt || c._generatedAt || 0).toLocaleDateString('fr-FR')}</span>
       </div>
       <div class="circuit-saved-actions">
-        <button class="btn-xs" onclick="_circuitLoad('${c.id}')">📖 Voir</button>
-        <button class="btn-xs btn-danger" onclick="_circuitDelete('${c.id}')">🗑️</button>
+        <button class="btn-xs" data-action="load" data-cid="${escapeHTML(String(c.id))}">📖 Voir</button>
+        <button class="btn-xs btn-danger" data-action="delete" data-cid="${escapeHTML(String(c.id))}">🗑️</button>
       </div>
     </div>`).join('');
+  if (!list._circuitBound) {
+    list._circuitBound = true;
+    list.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action][data-cid]');
+      if (!btn) return;
+      if (btn.dataset.action === 'load')   window._circuitLoad(btn.dataset.cid);
+      if (btn.dataset.action === 'delete') window._circuitDelete(btn.dataset.cid);
+    });
+  }
 }
 
-// Exposer pour les onclick inline
 window._circuitLoad = async (id) => {
   const c = _loadAllCircuits().find(x => x.id === id);
   if (!c) return;

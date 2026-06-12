@@ -225,3 +225,29 @@ export function safeUrl(url) {
     return null;
   }
 }
+
+export function safeText(value, fallback = '') {
+  if (value == null || value === '') return fallback;
+  return String(value);
+}
+
+export function safeExternalUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return null;
+    return url;
+  } catch (_) { return null; }
+}
+
+export function buildSafeExternalLink(url, label, cssClass = '') {
+  const href = safeExternalUrl(url);
+  if (!href) return '';
+  const cls = cssClass ? ` class="${escapeHTML(cssClass)}"` : '';
+  return `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer"${cls}>${escapeHTML(String(label || ''))}</a>`;
+}
+
+export function parseSafeJson(raw, fallback = null) {
+  if (raw == null) return fallback;
+  try { return JSON.parse(raw); } catch (_) { return fallback; }
+}

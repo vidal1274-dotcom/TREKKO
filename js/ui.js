@@ -32,6 +32,30 @@ export function switchToPanel(panelId) {
   _applyPanel(panelId);
 }
 
+const _TAB_TITLES = {
+  'panel-map':      '🗺️ Carte',
+  'panel-list':     '📋 Liste',
+  'panel-economy':  '💰 Bons plans',
+  'panel-carnet':   '📔 Carnet',
+  'panel-photos':   '📷 Photos',
+  'panel-circuit':  '🤖 Circuit IA',
+  'panel-settings': '⚙️ Paramètres',
+  'panel-prog':     '📍 Programme',
+  'panel-health':   '❤️ Santé',
+};
+const _TAB_TITLE_HIDDEN = new Set(['panel-map', 'panel-prog']);
+
+export function setActiveTabTitle(panelId) {
+  const bar  = document.getElementById('tab-title-bar');
+  const text = document.getElementById('tab-title-text');
+  if (!bar || !text) return;
+  const title = _TAB_TITLES[panelId] || '';
+  text.textContent = title;
+  const hide = _TAB_TITLE_HIDDEN.has(panelId);
+  bar.classList.toggle('hidden', hide);
+  document.title = hide || !title ? 'Trekko' : `Trekko — ${title.replace(/^\S+\s/, '')}`;
+}
+
 /* =========================================================
    BLOC 03 — RENDU LISTE SITES
    ========================================================= */
