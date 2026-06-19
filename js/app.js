@@ -18,16 +18,16 @@ import { loadAllPhotos, importPhotos } from './photos.js';
 import { renderPhotoMarkers } from './photo-map.js?v=4';
 import { syncPendingPhotos, getSyncStatus, setupAutoSync, schedulePhotoForSync } from './photo-sync.js';
 import { lsGet, lsSet } from './storage.js';
-import { startTracking, stopTracking, isTracking, loadTrackPoints, getAllSessions, updateSessionVisibility, exportAsGPX, getActiveSessionId, getLiveStats, calculateWaterNeeds, getActivityConfig, getActivityModes } from './tracker.js?v=2';
+import { startTracking, stopTracking, isTracking, loadTrackPoints, getAllSessions, updateSessionVisibility, exportAsGPX, getActiveSessionId, getLiveStats, calculateWaterNeeds, getActivityConfig, getActivityModes } from './tracker.js?v=3';
 import { showToast, escapeHTML } from './utils.js';
 import { buildVerificationLinks } from './energy-rules.js';
 import { exportAllData, importData } from './import-export.js';
 import { addGoogleSearchToHistory } from './google-search.js';
-import { initWelcomeScreen, showWelcomeScreen } from './welcome.js?v=4';
+import { initWelcomeScreen, showWelcomeScreen } from './welcome.js?v=5';
 import { initAuthScreen, logout, getCurrentUser } from './auth.js';
 import { generateDayPlan, renderDayPlan, saveDayPlan, loadSavedDayPlan, deleteSavedDayPlan, exportPlanAsText } from './day-plan.js?v=27';
 import { getVisitedIds } from './visited.js?v=25';
-import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=5';
+import { initHikingScreen, showHikingScreen } from './hiking-screen.js?v=6';
 import { initCircuitCreator } from './circuit-creator.js';
 import {
   getAiStatus, testConnection
