@@ -11,11 +11,11 @@ const SCHEMA_VERSION = 1;
 const ACTIVITY_META = {
   running: { label: 'Course',      emoji: '🏃' },
   hiking:  { label: 'Randonnée',   emoji: '🥾' },
-  walking: { label: 'Balade',      emoji: '🚶' },
+  walking: { label: 'Randonnée',   emoji: '🥾' }, // ancien mode fusionné dans hiking
   casual:  { label: 'Exploration', emoji: '🗺️' }
 };
 
-const MET_VALUES = { running: 10, hiking: 6, walking: 4, casual: 3 };
+const MET_VALUES = { running: 10, hiking: 6, walking: 6, casual: 3 };
 
 /* ── Formatters ───────────────────────────────────────────── */
 export function formatDuration(sec) {

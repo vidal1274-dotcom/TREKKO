@@ -1,5 +1,5 @@
 /* =========================================================
-   hiking-screen.js — Écran Randonnée / Balade (AllTrails + Komoot + Strava)
+   hiking-screen.js — Écran Randonnée (AllTrails + Komoot + Strava)
    ========================================================= */
 import { startTracking, stopTracking, getLiveStats, calculateWaterNeeds, exportAsGPX, loadTrackPoints, getElapsedSec, pauseElapsedTimer, resumeElapsedTimer, getAllSessions } from './tracker.js';
 import { invalidateMapSize, hidePoiLayers, showPoiLayers, centerMap, drawHikingTrails, clearHikingTrails, renderOfflineRouteLayer, clearOfflineRouteLayer, renderActivityRouteLayer, clearActivityRouteLayer } from './map.js?v=4';
@@ -39,18 +39,11 @@ const MODE_CONFIG = {
     color: '#27ae60',
     waterIntervalMin: 45,
     defaultLabel: () => `🥾 Rando ${_fmtDateShort()}`
-  },
-  walking: {
-    emoji: '🚶',
-    title: 'Balade',
-    color: '#5dade2',
-    waterIntervalMin: 60,
-    defaultLabel: () => `🚶 Balade ${_fmtDateShort()}`
   }
 };
 
 /* ─── État interne ──────────────────────────────────────────── */
-let _mode = 'hiking';            // 'hiking' | 'walking'
+let _mode = 'hiking';
 let _section = 'nav';            // 'nav' | 'setup' | 'live' | 'summary' | 'rechercher' | 'parcours' | 'bilan' | 'courses' | 'health'
 let _weight = 70;
 let _temp = 20;
@@ -485,7 +478,7 @@ function _showSummary() {
 
   // Header
   const hdr = _el('hs-summary-header-text');
-  if (hdr) hdr.textContent = `${cfg.emoji} ${cfg.title === 'Randonnée' ? 'Randonnée terminée' : 'Balade terminée'}`;
+  if (hdr) hdr.textContent = `${cfg.emoji} Randonnée terminée`;
   const dateEl = _el('hs-summary-date');
   if (dateEl) dateEl.textContent = _fmtDateLong();
 

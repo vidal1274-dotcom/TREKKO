@@ -1191,7 +1191,7 @@ function openPhotoFullscreen(photo) {
 function onWelcomeModeSelect(mode) {
   if (!mode) return;
   if (mode.id === 'running') { showRunningScreen(); return; }
-  if (mode.id === 'hiking' || mode.id === 'walking') {
+  if (mode.id === 'hiking') {
     switchToPanel('panel-map');
     onPanelChange('panel-map');
     setTimeout(() => showHikingScreen(mode.id), 100);
@@ -1474,7 +1474,7 @@ function initTrackingUI() {
       .sort((a, b) => (b.started_at || '').localeCompare(a.started_at || ''))
       .map(s => {
         const date = s.started_at ? new Date(s.started_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
-        const modeEmoji = { running:'🏃', hiking:'🥾', walking:'🚶', casual:'🗺️' }[s.activity_mode] || '📍';
+        const modeEmoji = { running:'🏃', hiking:'🥾', walking:'🥾', casual:'🗺️' }[s.activity_mode] || '📍';
         return `<div class="track-history-item" data-sid="${s.id}">
           <span style="font-size:20px">${modeEmoji}</span>
           <div class="track-history-item-info">

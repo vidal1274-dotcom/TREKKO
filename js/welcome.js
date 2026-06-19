@@ -23,15 +23,6 @@ const MODES = [
     trackMode: 'hiking'
   },
   {
-    id:    'walking',
-    emoji: '🚶',
-    title: 'Balade',
-    desc:  'Promenade légère · Découverte',
-    color: '#5dade2',
-    panel: 'panel-map',
-    trackMode: 'walking'
-  },
-  {
     id:    'car',
     emoji: '🚗',
     title: 'Sortie en voiture',

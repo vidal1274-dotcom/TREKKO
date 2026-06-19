@@ -135,7 +135,7 @@ function _buildSectionSummary(activities) {
   );
 
   if (summary.count === 0) {
-    wrap.appendChild(_mk('div', 'hdash-empty-state', 'Aucune activité enregistrée sur cette période. Lance une randonnée ou une balade pour alimenter ton tableau de bord !'));
+    wrap.appendChild(_mk('div', 'hdash-empty-state', 'Aucune activité enregistrée sur cette période. Lance une randonnée pour alimenter ton tableau de bord !'));
     return wrap;
   }
 

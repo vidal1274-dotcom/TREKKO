@@ -6,7 +6,6 @@ import { dbPut, dbGetAll, dbGetByIndex, STORES } from './storage.js';
 const ACTIVITY_CONFIG = {
   running: { label: 'Course',      emoji: '🏃', interval_ms: 10000,  water_base_ml_h: 900, met: 10 },
   hiking:  { label: 'Randonnée',   emoji: '🥾', interval_ms: 30000,  water_base_ml_h: 650, met: 6  },
-  walking: { label: 'Balade',      emoji: '🚶', interval_ms: 60000,  water_base_ml_h: 400, met: 4  },
   casual:  { label: 'Exploration', emoji: '🗺️', interval_ms: 3600000, water_base_ml_h: 250, met: 3  }
 };
 
@@ -270,7 +269,7 @@ export function calculateWaterNeeds(activityMode, durationMin, tempCelsius) {
   return { mlPerHour, totalMl };
 }
 
-export function getActivityConfig(mode) { return ACTIVITY_CONFIG[mode] || ACTIVITY_CONFIG.casual; }
+export function getActivityConfig(mode) { return ACTIVITY_CONFIG[mode] || ACTIVITY_CONFIG.hiking; }
 export function getActivityModes()      { return ACTIVITY_CONFIG; }
 export function isAutoPaused()          { return _autoPaused; }
 export function getCurrentSplits()      { return [..._splits]; }
