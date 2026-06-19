@@ -4981,24 +4981,28 @@ details.secondary-details[open] > summary { margin-bottom: 6px; }
 
 /* ── Accueil nav ─────────────────────────────────────────── */
 #hs-nav {
-  background: var(--hs-bg);
+  background: transparent;
+  pointer-events: none;
+}
+.hs-nav-bottom {
+  pointer-events: auto;
+  background: #0a0c14;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
 }
 .hs-nav-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  background: rgba(0,0,0,0.35);
+  padding: 12px 16px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--hs-border);
 }
 .hs-nav-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 16px;
-  flex: 1;
-  overflow-y: auto;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 12px 16px 16px;
   align-content: start;
 }
 .hs-nav-card {

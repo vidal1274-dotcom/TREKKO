@@ -22,7 +22,7 @@
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=40" />
+  <link rel="stylesheet" href="styles.css?v=41" />
 
   <!-- Leaflet CSS (local) -->
   <link rel="stylesheet" href="assets/vendor/leaflet.css" />
@@ -701,35 +701,41 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
 
   <!-- ══ SECTION NAV : Accueil navigation ══════════════ -->
   <div id="hs-nav" class="hs-section">
-    <div class="hs-nav-header">
-      <button id="hs-nav-close" class="hs-icon-btn" title="Fermer">✕</button>
-      <span id="hs-nav-mode-label" class="hs-setup-title">🥾 Randonnée</span>
-    </div>
-    <div class="hs-nav-grid">
-      <button class="hs-nav-card" data-hs-section="rechercher">
-        <span class="hs-nav-icon">🔍</span>
-        <span class="hs-nav-label">Rechercher</span>
-      </button>
-      <button class="hs-nav-card" data-hs-section="parcours">
-        <span class="hs-nav-icon">📥</span>
-        <span class="hs-nav-label">Parcours<br>téléchargés</span>
-      </button>
-      <button class="hs-nav-card hs-nav-card-accent" data-hs-section="setup">
-        <span class="hs-nav-icon">▶️</span>
-        <span class="hs-nav-label">Suivi en<br>cours</span>
-      </button>
-      <button class="hs-nav-card" data-hs-section="bilan">
-        <span class="hs-nav-icon">📊</span>
-        <span class="hs-nav-label">Bilan</span>
-      </button>
-      <button class="hs-nav-card" data-hs-section="courses">
-        <span class="hs-nav-icon">🏃</span>
-        <span class="hs-nav-label">Toutes mes<br>courses</span>
-      </button>
-      <button class="hs-nav-card" data-hs-section="health">
-        <span class="hs-nav-icon">⌚</span>
-        <span class="hs-nav-label">Montre /<br>Santé</span>
-      </button>
+    <!-- Zone carte transparente -->
+    <div class="hs-map-gap" style="pointer-events:none"></div>
+
+    <!-- Bandeau bas — fond noir, zéro chevauchement -->
+    <div class="hs-nav-bottom">
+      <div class="hs-nav-header">
+        <button id="hs-nav-close" class="hs-icon-btn" title="Fermer">✕</button>
+        <span id="hs-nav-mode-label" class="hs-setup-title">🥾 Randonnée</span>
+      </div>
+      <div class="hs-nav-grid">
+        <button class="hs-nav-card" data-hs-section="rechercher">
+          <span class="hs-nav-icon">🔍</span>
+          <span class="hs-nav-label">Rechercher</span>
+        </button>
+        <button class="hs-nav-card" data-hs-section="parcours">
+          <span class="hs-nav-icon">📥</span>
+          <span class="hs-nav-label">Parcours<br>téléchargés</span>
+        </button>
+        <button class="hs-nav-card hs-nav-card-accent" data-hs-section="setup">
+          <span class="hs-nav-icon">▶️</span>
+          <span class="hs-nav-label">Suivi en<br>cours</span>
+        </button>
+        <button class="hs-nav-card" data-hs-section="bilan">
+          <span class="hs-nav-icon">📊</span>
+          <span class="hs-nav-label">Bilan</span>
+        </button>
+        <button class="hs-nav-card" data-hs-section="courses">
+          <span class="hs-nav-icon">🏃</span>
+          <span class="hs-nav-label">Toutes mes<br>courses</span>
+        </button>
+        <button class="hs-nav-card" data-hs-section="health">
+          <span class="hs-nav-icon">⌚</span>
+          <span class="hs-nav-label">Montre /<br>Santé</span>
+        </button>
+      </div>
     </div>
   </div><!-- /#hs-nav -->
 
