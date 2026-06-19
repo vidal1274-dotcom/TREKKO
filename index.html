@@ -2,10 +2,14 @@
 <html lang="fr">
 <head>
   <script>
-    const _V='71';
-    if(location.search!=='?v='+_V) location.replace('./?v='+_V);
-    if('serviceWorker' in navigator && navigator.serviceWorker.controller){
-      navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(true));
+    /* Force une URL fraîche à chaque nouvelle session (ouvre/ferme l'app)
+       → contourne tout cache navigateur et SW quelle que soit la version installée */
+    if (!sessionStorage.getItem('_s')) {
+      sessionStorage.setItem('_s', '1');
+      location.replace('./?t=' + Date.now());
+    }
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(true));
     }
   </script>
   <meta charset="UTF-8" />
@@ -18,7 +22,7 @@
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=37" />
+  <link rel="stylesheet" href="styles.css?v=38" />
 
   <!-- Leaflet CSS (local) -->
   <link rel="stylesheet" href="assets/vendor/leaflet.css" />
