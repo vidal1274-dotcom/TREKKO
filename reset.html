@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reset TREKKO</title>
+<style>
+  body { background:#0a0c14; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; gap:16px; }
+  p { color:#7a7d99; font-size:14px; text-align:center; }
+  .spinner { width:40px; height:40px; border:3px solid rgba(255,255,255,0.1); border-top-color:#27ae60; border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="spinner"></div>
+<p>Nettoyage du cache…</p>
+<script>
+(async () => {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    sessionStorage.clear();
+    localStorage.removeItem('trekko_sw_version');
+  } catch(e) {}
+  location.replace('./index.html?t=' + Date.now());
+})();
+</script>
+</body>
+</html>
