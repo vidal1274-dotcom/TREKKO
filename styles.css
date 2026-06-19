@@ -4980,6 +4980,9 @@ details.secondary-details[open] > summary { margin-bottom: 6px; }
    ========================================================= */
 
 /* ── Accueil nav ─────────────────────────────────────────── */
+#hs-nav {
+  background: var(--hs-bg);
+}
 .hs-nav-header {
   display: flex;
   align-items: center;
