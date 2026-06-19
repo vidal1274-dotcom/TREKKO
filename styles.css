@@ -1494,22 +1494,17 @@ input[type="range"] { accent-color: var(--color-accent); cursor: pointer; }
    BLOC — CONTRÔLES TRACÉ GPS
    ========================================================= */
 #track-controls {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  z-index: 500;
-  background: rgba(13,15,26,0.88);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(233,69,96,0.3);
-  border-radius: 50px;
-  padding: 6px 10px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   flex-wrap: wrap;
-  max-width: calc(100vw - 24px);
+  gap: 8px;
+  background: #0a0c14;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 10px 14px;
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 10;
 }
 
 .activity-selector {
@@ -2138,7 +2133,7 @@ body.welcome-open #welcome-screen { display: flex !important; }
    ========================================================= */
 .track-history-panel {
   position: absolute;
-  bottom: 80px;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   width: min(380px, calc(100vw - 24px));
