@@ -215,17 +215,22 @@ async function startApp() {
   // Liens vérification énergie
   renderEnergyVerificationLinks();
 
-  // Reset SW / cache
-  document.getElementById('btn-reset-sw')?.addEventListener('click', async () => {
-    if (!confirm('Vider le cache et recharger ? Vos données locales sont conservées.')) return;
+  // Reset SW / cache — partagé entre le bouton settings et le bouton welcome
+  async function resetCacheAndReload() {
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
       for (const reg of regs) await reg.unregister();
     }
     const keys = await caches.keys();
     for (const k of keys) await caches.delete(k);
-    location.reload(true);
+    sessionStorage.clear();
+    location.replace(location.pathname + '?t=' + Date.now());
+  }
+  document.getElementById('btn-reset-sw')?.addEventListener('click', async () => {
+    if (!confirm('Vider le cache et recharger ? Vos données locales sont conservées.')) return;
+    await resetCacheAndReload();
   });
+  document.getElementById('btn-welcome-reset-cache')?.addEventListener('click', () => resetCacheAndReload());
 
   // Exposition globale pour popups/modales
   window.__openSiteDetail = async (siteId) => {
