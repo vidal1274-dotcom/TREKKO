@@ -3567,24 +3567,35 @@ body.hiking-active #app-main {
    SECTION B — HUD LIVE
 ═══════════════════════════════════════════════ */
 #hs-live {
-  position: relative;
   background: transparent;
+  pointer-events: none; /* laisse tous les gestes passer à la carte */
 }
 
-/* Barre haute */
-.hs-top-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+/* Zone transparente carte — occupe tout l'espace au-dessus de la barre */
+.hs-map-gap {
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* Barre inférieure noire — tout en bas, aucun chevauchement */
+.hs-bottom-bar {
+  pointer-events: auto;
+  background: #0a0c14;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 10px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Ligne header : mode + timer + boutons */
+.hs-bottom-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: rgba(13,17,23,0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   gap: 10px;
 }
 .hs-live-mode {
@@ -3610,15 +3621,13 @@ body.hiking-active #app-main {
   flex-shrink: 0;
 }
 
-/* Zone transparente carte */
-.hs-map-gap {
-  flex: 1;
-  min-height: 45%;
-  background: transparent;
-  pointer-events: none;
+/* Masquer contrôles Leaflet en mode randonnée (zéro chevauchement) */
+body.hiking-active .leaflet-control-zoom,
+body.hiking-active .leaflet-control-attribution {
+  display: none !important;
 }
 
-/* Panneau stats bas */
+/* Panneau stats bas (ancien — plus utilisé mais gardé pour compatibilité) */
 .hs-stats-panel {
   background: var(--hs-panel-bg);
   border-radius: 20px 20px 0 0;
@@ -3767,9 +3776,10 @@ body.hiking-active #app-main {
 
 /* Overlay verrouillage */
 .hs-lock-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 9000;
+  pointer-events: auto;
   background: rgba(13,17,23,0.93);
   display: flex;
   align-items: center;

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <script>const _V='69';if(location.search!=='?v='+_V)location.replace('./?v='+_V);</script>
+  <script>const _V='70';if(location.search!=='?v='+_V)location.replace('./?v='+_V);</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#e94560" />
@@ -12,7 +12,7 @@
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=35" />
+  <link rel="stylesheet" href="styles.css?v=36" />
 
   <!-- Leaflet CSS (local) -->
   <link rel="stylesheet" href="assets/vendor/leaflet.css" />
@@ -803,26 +803,26 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
       </div>
     </div>
 
-    <!-- Barre haute fixe -->
-    <div class="hs-top-bar">
-      <span id="hs-live-mode-label" class="hs-live-mode">🥾 Randonnée</span>
-      <span id="hs-timer" class="hs-live-timer">00:00:00</span>
-      <div class="hs-top-btns">
-        <button id="btn-hs-pause" class="hs-icon-btn" title="Pause">⏸</button>
-        <button id="btn-hs-lock"  class="hs-icon-btn" title="Verrouiller">🔓</button>
-      </div>
-    </div>
-
-    <!-- Zone transparente → carte visible en dessous -->
+    <!-- Zone carte — transparent, pointer-events none → carte zoomable librement -->
     <div class="hs-map-gap"></div>
 
-    <!-- Panneau stats bas -->
-    <div class="hs-stats-panel">
+    <!-- Barre inférieure noire — tout en bas, zéro chevauchement avec la carte -->
+    <div class="hs-bottom-bar">
+
+      <!-- Ligne 1 : mode + timer + boutons contrôle -->
+      <div class="hs-bottom-header">
+        <span id="hs-live-mode-label" class="hs-live-mode">🥾 Randonnée</span>
+        <span id="hs-timer" class="hs-live-timer">00:00:00</span>
+        <div class="hs-top-btns">
+          <button id="btn-hs-pause" class="hs-icon-btn" title="Pause">⏸</button>
+          <button id="btn-hs-lock"  class="hs-icon-btn" title="Verrouiller">🔓</button>
+        </div>
+      </div>
 
       <!-- Alerte hydratation -->
       <div id="hs-water-alert" class="hs-water-bar hidden">💧 Boire ~250ml maintenant</div>
 
-      <!-- Ligne héro -->
+      <!-- Stats héros -->
       <div class="hs-stat-hero">
         <div class="hs-stat-main">
           <span id="hs-stat-dist" class="hs-hero-val">0.00</span>
@@ -834,7 +834,7 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
         </div>
       </div>
 
-      <!-- Grille stats secondaires -->
+      <!-- Stats secondaires -->
       <div class="hs-stat-grid">
         <div class="hs-stat-cell">
           <span id="hs-stat-pace" class="hs-stat-val">—</span>
@@ -854,13 +854,13 @@ window.addEventListener('unhandledrejection',function(e){var d=document.getEleme
         <span id="hs-progress-label" class="hs-progress-label">0 / 0 km</span>
       </div>
 
-      <!-- Actions bas -->
+      <!-- Boutons action -->
       <div class="hs-live-actions">
         <button id="btn-hs-sound" class="hs-action-btn" title="Son">🔊</button>
         <button id="btn-hs-stop"  class="hs-action-btn hs-btn-stop" title="Arrêter">⏹ ARRÊTER</button>
       </div>
 
-    </div><!-- /.hs-stats-panel -->
+    </div><!-- /.hs-bottom-bar -->
   </div><!-- /#hs-live -->
 
   <!-- ══ SECTION C : RÉSUMÉ ══════════════════════════════ -->
