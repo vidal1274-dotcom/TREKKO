@@ -1,5 +1,5 @@
-/* SERVICE WORKER v13 — cache propre, notifie l'UI à la mise à jour */
-const CACHE_NAME = 'trekko-v13';
+/* SERVICE WORKER v14 — cache propre, rechargement forcé à chaque update */
+const CACHE_NAME = 'trekko-v14';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -10,18 +10,14 @@ self.addEventListener('activate', event => {
     caches.keys()
       .then(keys => Promise.all(keys.map(k => caches.delete(k))))
       .then(() => self.clients.claim())
-      .then(() => {
-        // Notifier tous les onglets ouverts qu'une nouvelle version est active
-        return self.clients.matchAll({ type: 'window' }).then(clients => {
-          clients.forEach(client => client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME }));
-        });
-      })
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .then(clients => clients.forEach(c => {
+        try { c.navigate(c.url); } catch (_) {}
+      }))
   );
 });
 
-/* Navigation HTML : bypass total du cache navigateur */
+/* Toutes les requêtes passent au réseau sans cache */
 self.addEventListener('fetch', event => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request, { cache: 'no-store' }));
-  }
+  event.respondWith(fetch(event.request, { cache: 'no-store' }).catch(() => fetch(event.request)));
 });
