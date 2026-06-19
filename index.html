@@ -12,7 +12,7 @@
 
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=33" />
+  <link rel="stylesheet" href="styles.css?v=34" />
 
   <!-- Leaflet CSS (local) -->
   <link rel="stylesheet" href="assets/vendor/leaflet.css" />
@@ -155,16 +155,6 @@
       <div id="map"></div>
       <div id="map-overlay-info" class="hidden"></div>
 
-      <!-- Bascule carte satellite / rue -->
-      <button id="btn-map-layer" class="map-layer-btn" title="Changer le fond de carte">
-        🛰️ Satellite
-      </button>
-
-      <!-- Lisibilité renforcée des labels (visible uniquement en mode satellite) -->
-      <button id="btn-labels-enhance" class="map-labels-btn" title="Activer la lisibilité renforcée des noms de rues">
-        Aa
-      </button>
-
       <!-- Panneau métriques sport (affiché pendant enregistrement) -->
       <div id="sport-metrics" class="sport-metrics hidden">
         <div class="metric-row">
@@ -205,40 +195,10 @@
       </div>
     </div>
 
-    <!-- Barre contrôles tracé GPS — fond noir, hors carte, zéro chevauchement -->
-    <div id="track-controls">
-      <!-- Sélecteur activité -->
-      <div id="activity-selector" class="activity-selector">
-        <button class="activity-btn active" data-mode="running" title="Course à pied">🏃</button>
-        <button class="activity-btn" data-mode="hiking"  title="Randonnée">🥾</button>
-        <button class="activity-btn" data-mode="casual"  title="Exploration">🗺️</button>
-      </div>
-
-      <!-- Température -->
-      <div class="temp-control">
-        <span class="temp-icon">🌡️</span>
-        <input type="range" id="temp-slider" min="0" max="45" step="1" value="20" class="temp-slider" />
-        <span id="temp-display" class="temp-display">20°C</span>
-      </div>
-
-      <div class="weight-control">
-        <span class="weight-icon">⚖️</span>
-        <input type="number" id="weight-input" min="40" max="150" value="70" class="weight-input" title="Votre poids en kg" />
-        <span class="weight-unit">kg</span>
-      </div>
-      <button id="btn-track-toggle" class="track-btn" title="Démarrer l'enregistrement">
-        <span class="track-icon">⏺</span>
-        <span id="track-label">Enregistrer</span>
-      </button>
-
-      <div id="track-info" class="track-info hidden">
-        <span id="track-timer">0:00</span>
-      </div>
-
-      <button id="btn-track-export" class="track-btn track-btn-secondary hidden" title="Exporter GPX">⬇ GPX</button>
-      <button id="btn-track-visibility" class="track-btn track-btn-secondary hidden" title="Visibilité">🔒 Privé</button>
-      <button id="btn-voice-coach" class="track-btn track-btn-secondary" title="Coaching vocal ON/OFF">🔇 Son</button>
-      <button id="btn-track-history" class="track-btn track-btn-secondary" title="Historique des parcours">📋 Historique</button>
+    <!-- Barre carte — fond noir, sous la carte, zéro chevauchement -->
+    <div id="map-bottom-bar">
+      <button id="btn-map-layer" class="map-layer-btn" title="Changer le fond de carte">🛰️ Satellite</button>
+      <button id="btn-labels-enhance" class="map-labels-btn" title="Lisibilité renforcée des noms">Aa</button>
     </div>
   </section>
 
